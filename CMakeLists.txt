@@ -1,0 +1,61 @@
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+project(GPUBF LANGUAGES CXX CUDA)
+
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(GPUBF_TOPLEVEL_PROJECT ON)
+else()
+  set(GPUBF_TOPLEVEL_PROJECT OFF)
+endif()
+
+### Configuration
+set(GPUBF_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/external")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(Warnings)
+include(UseColors)
+include(GPUBF_Utils)
+
+include(${PROJECT_NAME}_Dependencies)
+
+### the library
+add_subdirectory(src)
+prepend_current_path(GPUBF_SOURCES)
+gpubf_copy_headers(${GPUBF_SOURCES})
+GPUBF_set_source_group(${GPUBF_SOURCES})
+add_library(GPUBF STATIC ${GPUBF_SOURCES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR}/include)
+# target_link_libraries(GPUBF PRIVATE warnings::all)
+target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
+
+# Request that GPUBF be built with -std=c++11
+# As this is a public compile feature anything that links to GPUBF
+# will also build with -std=c++11
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
+
+# We need to explicitly state that we need all CUDA files in the GPUBF
+# library to be built with -dc as the member functions could be called by
+# other libraries and executables
+set_target_properties( ${PROJECT_NAME}
+                       PROPERTIES CUDA_SEPARABLE_COMPILATION ON
+                      )
+# Nvidia RTX8000 -> compute_75
+# Nvidia V100 -> compute_70
+# Nvidia 1080/1080Ti -> compute_61                 
+set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 61 70 75)
+
+# executable
+add_executable(GPUBF_bin app/main.cu)
+set_target_properties(GPUBF_bin PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET GPUBF_bin PROPERTY CUDA_ARCHITECTURES 61 70 75)
+target_link_libraries(GPUBF_bin PRIVATE ${PROJECT_NAME})
+                  
+                  
+if(APPLE)
+# We need to add the default path to the driver (libcuda.dylib) as an rpath,
+# so that the static cuda runtime can find it at runtime.
+set_property(TARGET GPUBF_bin PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+endif()
+
+
+
+###############################################################################
