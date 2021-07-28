@@ -5,36 +5,12 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-class Aabb {
-    public:
-        int id;
-        float min[4]{};
-        float max[4]{};
+#include <igl/readOBJ.h>
+#include <igl/edges.h>
 
-        Aabb(int assignid)
-        {
-            float tempmax[4] = {1,1,1,0};
-            float tempmin[4] = {0,0,0,0};
-            memcpy(max,tempmax, sizeof(float)*4);
-            memcpy(min,tempmin, sizeof(float)*4);
-            id = assignid;
-        };
+#include <gpubf/aabb.h>
 
-        Aabb(int assignid, float* tempmin, float* tempmax)
-        {
-            memcpy(min, tempmin, sizeof(float)*4);
-            memcpy(min,tempmin, sizeof(float)*4);
-            id = assignid;
-        };
-
-        Aabb() = default;
-        // mat << 1, 2, 6, 9,
-        //  3, 1, 7, 2;
-  
-        // std::cout << "Column's maximum: " << std::endl
-        // << mat.colwise().maxCoeff() << std::endl;
-        // --> 3, 2, 7, 9
-};
+using namespace std;
 
 __global__ void count_collisions(Aabb * boxes, int * count, int N){
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -57,14 +33,14 @@ __global__ void reset_counter(int * counter){
     *counter = 0;
 }
 
-int run_simulation() {
-    int N = 200000;
-    Aabb boxes[N];
-    for (int i = 0; i<N; i++)
-    {
-        boxes[i] = Aabb(i);
-        // printf("box %i created\n", boxes[i].id);
-    }
+int run_simulation(Aabb* boxes, int N) {
+    // int N = 200000;
+    // Aabb boxes[N];
+    // for (int i = 0; i<N; i++)
+    // {
+    //     boxes[i] = Aabb(i);
+    //     // printf("box %i created\n", boxes[i].id);
+    // }
 
     // Allocate boxes to GPU 
     Aabb * d_boxes;
@@ -162,57 +138,50 @@ int run_simulation() {
     // return 0;
 }
 
-// void constructBoxes(Eigen::MatrixXd* vertices_t0, Eigen::MatrixXd* vertices_t1, Eigen::MatrixXi* faces, Eigen::MatrixXi* edges)
-// {
-//     for (long i = 0; i < edges.rows(); i++) {
-//         edge_vertex0_t0 = vertices_t0.row(edges(i, 0));
-//         edge_vertex1_t0 = vertices_t0.row(edges(i, 1));
-//         edge_vertex0_t1 = vertices_t1.row(edges(i, 0));
-//         edge_vertex1_t1 = vertices_t1.row(edges(i, 1));
+void constructBoxes
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    Eigen::MatrixXi& faces, 
+    Eigen::MatrixXi& edges, 
+    vector<Aabb>& boxes
+)
+{
+   addEdges(vertices_t0, vertices_t1, edges, boxes);
+   addVertices(vertices_t0, vertices_t1, boxes);
+   addFaces(vertices_t0, vertices_t1, faces, boxes);
+}
 
-//         Eigen::MatrixXd points(4, edge_vertex0_t0.size());
-//         points.row(0) = edge_vertex0_t0;
-//         points.row(1) = edge_vertex1_t0;
-//         points.row(2) = edge_vertex0_t1;
-//         points.row(3) = edge_vertex1_t1;
+void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
+{
 
-//         Eigen::MatrixXd lower_bound = points.colwise().minCoeff();
-//         Eigen::MatrixXd upper_bound = points.colwise().maxCoeff();
-//         Aabb box = Aabb(i, lower_bound.min().min(), upper_bound.max().max());
-//     }
-// }
+    // read in vertices, faces t=0
+    Eigen::MatrixXd V0;
+    Eigen::MatrixXi F;
+    igl::readOBJ(filet0, V0, F);
 
-// void parseMesh(const char* filet0, const char* filet1, Aabb* boxes)
-// {
-//     ifstream file(filet0);
+    // get edges and close file
+    Eigen::MatrixXi E;
+    igl::edges(F,E);
 
-//     // read in vertices, faces t=0
-//     Eigen::MatrixXd V0;
-//     Eigen::MatrixXi F;
-//     igl::readOBJ(file, V0, F);
+    // read in vertices, t=1
+    // faces should be same F^{t=0} = F^{t=1}
+    Eigen::MatrixXd V1;    
+    igl::readOBJ(filet1, V1, F);
 
-//     // get edges and close file
-//     Eigen::MatrixXi E;
-//     igl::edges(F,E);
-//     file.close();
-
-//     // read in vertices, t=1
-//     // faces should be same F^{t=0} = F^{t=1}
-//     Eigen::MatrixXd V1;    
-//     file.open(filet1);
-//     igl::readOBJ(file, V1, F);
-
-//     // constructBoxes(Eigen::MatrixXd* )
-// }
+    constructBoxes(V0, V1, F, E, boxes);
+}
 
 
 int main( int argc, const char* argv[] )
 {
-    // filet0 = argv[argc-2];
-    // filet1 = argv[argc-1];
+    const char* filet0 = argv[argc-2];
+    const char* filet1 = argv[argc-1];
     
-    // Aabb* boxes;
-    // parseMesh(filet0, filet1, boxes);
+    vector<Aabb> boxes;
+    parseMesh(filet0, filet1, boxes);
 
-    run_simulation();
+    Aabb* boxes_ptr = boxes.data();
+
+    run_simulation(boxes_ptr, boxes.size());
 }

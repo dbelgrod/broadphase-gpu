@@ -10,6 +10,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 list(REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 include(GPUBF_DownloadExternal)
 
+# libigl
+if(NOT TARGET igl::core)
+    gpubf_download_libigl()
+    add_subdirectory(${GPUBF_EXTERNAL}/libigl EXCLUDE_FROM_ALL)
+endif()
 
 # if(TIGHT_INCLUSION_WITH_GMP OR TIGHT_INCLUSION_WITH_TESTS)
 #   #GMP
@@ -21,7 +26,7 @@ include(GPUBF_DownloadExternal)
 
 
 # if(NOT TARGET Eigen3::Eigen)
-#   ccd_download_eigen()
+#   gpu_download_eigen()
 #   add_library(tccd_eigen INTERFACE)
 #   target_include_directories(tccd_eigen SYSTEM INTERFACE
 #     $<BUILD_INTERFACE:${TIGHT_INCLUSION_EXTERNAL}/eigen>
