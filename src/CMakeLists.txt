@@ -10,6 +10,10 @@ set(GPUBF_SOURCES
 # src/root_finder.cu
 src/aabb.h
 src/aabb.cu
+src/collision.cu
+src/collision.h
+src/simulation.cu
+src/simulation.h
 
 PARENT_SCOPE
 )

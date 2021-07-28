@@ -32,12 +32,20 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
 # will also build with -std=c++11
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 
+
+################################################################################
+# CUDA
+##########
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
+
 # We need to explicitly state that we need all CUDA files in the GPUBF
 # library to be built with -dc as the member functions could be called by
 # other libraries and executables
 set_target_properties( ${PROJECT_NAME}
                        PROPERTIES CUDA_SEPARABLE_COMPILATION ON
                       )
+                      
 # Nvidia RTX8000 -> compute_75
 # Nvidia V100 -> compute_70
 # Nvidia 1080/1080Ti -> compute_61                 
@@ -57,5 +65,11 @@ set_property(TARGET GPUBF_bin PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DI
 endif()
 
 
+################################################################################
+# Required Libraries
+################################################################################
+
+# libigl
+target_link_libraries(${PROJECT_NAME} PUBLIC igl::core)
 
 ###############################################################################
