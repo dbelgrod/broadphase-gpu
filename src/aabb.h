@@ -25,7 +25,7 @@ __global__ class Aabb {
         Aabb(int assignid, float* tempmin, float* tempmax)
         {
             memcpy(min, tempmin, sizeof(float)*4);
-            memcpy(min,tempmin, sizeof(float)*4);
+            memcpy(max ,tempmax, sizeof(float)*4);
             id = assignid;
         };
 
