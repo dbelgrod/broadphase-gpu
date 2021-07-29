@@ -16,7 +16,7 @@ __global__ void count_collisions(Aabb * boxes, int * count, int N){
         atomicAdd(count, 1);
 }
 
-__global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, int N)
+__global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, int N, int G)
 {
         // __shared__ Object s_objects[2*BLOCK_SIZE];
     
@@ -42,8 +42,11 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
             int i = atomicAdd(count, 1);
             // d_overlaps[2*i] = s_objects[threadIdx.x].m_id;
             // d_overlaps[2*i+1] = s_objects[BLOCK_SIZE + threadIdx.y].m_id;
-            overlaps[2*i] = a.id;
-            overlaps[2*i+1] = b.id;
+            if (2*i + 1 < G)
+            {
+                overlaps[2*i] = a.id;
+                overlaps[2*i+1] = b.id;
+            }
         }
         // __syncthreads();
     

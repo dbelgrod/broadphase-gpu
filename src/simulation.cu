@@ -1,6 +1,9 @@
 #include <gpubf/simulation.h>
 
-void run_simulation(Aabb* boxes, int N) {
+#define BLOCK_SIZE_1D 32 //sqrt(MAX_BLOCK_SIZE)
+#define MAX_BLOCK_SIZE 1024 //for 1080Ti, V100
+
+void run_collision_counter(Aabb* boxes, int N) {
     // int N = 200000;
     // Aabb boxes[N];
     // for (int i = 0; i<N; i++)
@@ -103,4 +106,64 @@ void run_simulation(Aabb* boxes, int N) {
     // cudaMemcpy(&counter, d_counter, sizeof(int), cudaMemcpyDeviceToHost);
     // printf("count: %d\n", counter);
     // return 0;
+}
+
+void run_scaling(Aabb* boxes, int N)
+{
+    // guess overlaps size
+    int guess = 18*N;
+
+    // Allocate boxes to GPU 
+    Aabb * d_boxes;
+    cudaMalloc((void**)&d_boxes, sizeof(Aabb)*N);
+    cudaMemcpy(d_boxes, boxes, sizeof(Aabb)*N, cudaMemcpyHostToDevice);
+
+    // Allocate counter to GPU + set to 0 collisions
+    int * d_count;
+    cudaMalloc((void**)&d_count, sizeof(int));
+    reset_counter<<<1,1>>>(d_count);
+    cudaDeviceSynchronize();
+
+    int * d_overlaps;
+    cudaMalloc((void**)&d_overlaps, sizeof(int)*(guess) * 2);
+
+    dim3 block(BLOCK_SIZE_1D,BLOCK_SIZE_1D);
+    dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
+
+    get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, guess);
+    cudaDeviceSynchronize();
+
+    int count;
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    if (count > guess) //we went over
+    {
+        printf("Running again\n");
+        cudaFree(d_overlaps);
+        cudaMalloc((void**)&d_overlaps, sizeof(int)*(count) * 2);
+        reset_counter<<<1,1>>>(d_count);
+        cudaDeviceSynchronize();
+        get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, count);
+        cudaDeviceSynchronize();
+    }
+
+    int * overlaps =  (int*)malloc(sizeof(int) * (count)*2);
+    cudaMemcpy( overlaps, d_overlaps, sizeof(int)*(count)*2, cudaMemcpyDeviceToHost);
+
+
+    cudaFree(d_overlaps);
+    
+    // for (size_t i=0; i< count; i++)
+    // {
+    //     // const Aabb& a = boxes[overlaps[2*i]];
+    //     // const Aabb& b = boxes[overlaps[2*i + 1]];
+
+    //     // m_cache.AddPair(&a, &b);
+    // }
+
+    printf("Total overlaps: %i\n", count);
+    free(overlaps);
+    // free(counter);
+    // free(counter);
+    cudaFree(d_count); 
+
 }

@@ -28,21 +28,14 @@ void constructBoxes
 
 void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
 {
-
-    // read in vertices, faces t=0
     Eigen::MatrixXd V0;
+    Eigen::MatrixXd V1;
     Eigen::MatrixXi F;
     igl::readOBJ(filet0, V0, F);
-
-    // get edges and close file
+    igl::readOBJ(filet1, V1, F);
     Eigen::MatrixXi E;
     igl::edges(F,E);
-
-    // read in vertices, t=1
     // faces should be same F^{t=0} = F^{t=1}
-    Eigen::MatrixXd V1;    
-    igl::readOBJ(filet1, V1, F);
-
     constructBoxes(V0, V1, F, E, boxes);
 }
 
@@ -55,5 +48,6 @@ int main( int argc, const char* argv[] )
     vector<Aabb> boxes;
     parseMesh(filet0, filet1, boxes);
 
-    run_simulation(boxes.data(), boxes.size());
+    // run_simulation(boxes.data(), boxes.size());
+    run_scaling(boxes.data(), boxes.size());
 }
