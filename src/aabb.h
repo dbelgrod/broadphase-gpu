@@ -7,26 +7,31 @@
 
 using namespace std;
 
+typedef enum { VERTEX, FACE, EDGE }  Simplex;
+
+
 __global__ class Aabb {
     public:
         int id;
-        float min[4]{};
-        float max[4]{};
+        float min[3]{};
+        float max[3]{};
+        Simplex type;
 
         Aabb(int assignid)
         {
-            float tempmax[4] = {1,1,1,0};
-            float tempmin[4] = {0,0,0,0};
-            memcpy(max,tempmax, sizeof(float)*4);
-            memcpy(min,tempmin, sizeof(float)*4);
+            float tempmax[3] = {1,1,1};
+            float tempmin[3] = {0,0,0};
+            memcpy(max,tempmax, sizeof(float)*3);
+            memcpy(min,tempmin, sizeof(float)*3);
             id = assignid;
         };
 
-        Aabb(int assignid, float* tempmin, float* tempmax)
+        Aabb(int assignid, Simplex assigntype, float* tempmin, float* tempmax)
         {
-            memcpy(min, tempmin, sizeof(float)*4);
-            memcpy(max ,tempmax, sizeof(float)*4);
+            memcpy(min, tempmin, sizeof(float)*3);
+            memcpy(max ,tempmax, sizeof(float)*3);
             id = assignid;
+            type = assigntype;
         };
 
         Aabb() = default;

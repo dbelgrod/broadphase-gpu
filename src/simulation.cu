@@ -108,7 +108,7 @@ void run_collision_counter(Aabb* boxes, int N) {
     // return 0;
 }
 
-void run_scaling(Aabb* boxes, int N)
+void run_scaling(Aabb* boxes, int N, vector<int>& finOverlaps)
 {
     // guess overlaps size
     int guess = 18*N;
@@ -151,16 +151,20 @@ void run_scaling(Aabb* boxes, int N)
 
 
     cudaFree(d_overlaps);
-    
-    // for (size_t i=0; i< count; i++)
-    // {
-    //     // const Aabb& a = boxes[overlaps[2*i]];
-    //     // const Aabb& b = boxes[overlaps[2*i + 1]];
+    for (size_t i=0; i< count; i++)
+    {
+        const Aabb& a = boxes[overlaps[2*i]];
+        const Aabb& b = boxes[overlaps[2*i + 1]];
+        // if ( (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
+        //     || (a.type == Simplex::EDGE && b.type == Simplex::EDGE) )
+            {
+                finOverlaps.push_back(2*i);
+                finOverlaps.push_back(2*i+1);
+            }
+        // m_cache.AddPair(&a, &b);
+    }
 
-    //     // m_cache.AddPair(&a, &b);
-    // }
-
-    printf("Total overlaps: %i\n", count);
+    printf("Total overlaps: %lu\n", finOverlaps.size() / 2);
     free(overlaps);
     // free(counter);
     // free(counter);

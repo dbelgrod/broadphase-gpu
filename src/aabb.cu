@@ -22,7 +22,7 @@ void addEdges
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), Simplex::EDGE, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -43,7 +43,7 @@ void addVertices
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), Simplex::VERTEX, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -73,6 +73,6 @@ void addFaces
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), Simplex::FACE, lower_bound.array().data(), upper_bound.array().data());
     }
 };

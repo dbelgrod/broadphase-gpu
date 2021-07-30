@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <ctype.h>
+#include <unistd.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
@@ -40,8 +42,22 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
 }
 
 
-int main( int argc, const char* argv[] )
+int main( int argc, char **argv )
 {
+    int o;
+    while ((o = getopt (argc, argv, "c:")) != -1)
+    {
+        switch (o)
+        {
+            case 'c':
+                optind--;
+                for( ;optind < argc && *argv[optind] != '-'; optind++)
+                {
+                    printf("%s\n", argv[optind] );    
+                }
+        }
+    }
+
     const char* filet0 = argv[argc-2];
     const char* filet1 = argv[argc-1];
     
@@ -49,5 +65,6 @@ int main( int argc, const char* argv[] )
     parseMesh(filet0, filet1, boxes);
 
     // run_simulation(boxes.data(), boxes.size());
-    run_scaling(boxes.data(), boxes.size());
+    vector<int> overlaps;
+    run_scaling(boxes.data(), boxes.size(), overlaps);
 }
