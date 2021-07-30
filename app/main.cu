@@ -24,9 +24,9 @@ void constructBoxes
     vector<Aabb>& boxes
 )
 {
-   addEdges(vertices_t0, vertices_t1, edges, boxes);
-   addVertices(vertices_t0, vertices_t1, boxes);
-   addFaces(vertices_t0, vertices_t1, faces, boxes);
+    addVertices(vertices_t0, vertices_t1, boxes);
+    addEdges(vertices_t0, vertices_t1, edges, boxes);
+    addFaces(vertices_t0, vertices_t1, faces, boxes);
 }
 
 void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
@@ -53,7 +53,7 @@ int main( int argc, char **argv )
     parseMesh(filet0, filet1, boxes);
 
     // run_simulation(boxes.data(), boxes.size());
-    vector<int> overlaps;
+    vector<unsigned long> overlaps;
     run_scaling(boxes.data(), boxes.size(), overlaps);
 
     int o;

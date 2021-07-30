@@ -23,7 +23,7 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
         int threadRowId = blockIdx.x * blockDim.x + threadIdx.x;
         int threadColId = blockIdx.y * blockDim.y + threadIdx.y;
        
-        if (threadRowId >= N || threadColId >= N || threadColId <= threadRowId) return;
+        if (threadRowId >= N || threadColId >= N || threadColId >= threadRowId) return;
     
         // s_objects[threadIdx.x] = d_objects[threadRowId];
         // s_objects[BLOCK_SIZE + threadIdx.y] = d_objects[threadColId];

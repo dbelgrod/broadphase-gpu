@@ -8,7 +8,7 @@ void addEdges
     vector<Aabb>& boxes
 )
 {
-    for (long i = 0; i < edges.rows(); i++) {
+    for (unsigned long i = 0; i < edges.rows(); i++) {
         Eigen::MatrixXf edge_vertex0_t0 = vertices_t0.cast<float>().row(edges(i, 0));
         Eigen::MatrixXf edge_vertex1_t0 = vertices_t0.cast<float>().row(edges(i, 1));
         Eigen::MatrixXf edge_vertex0_t1 = vertices_t1.cast<float>().row(edges(i, 0));
@@ -22,7 +22,7 @@ void addEdges
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), Simplex::EDGE, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, Simplex::EDGE, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -33,7 +33,7 @@ void addVertices
     vector<Aabb>& boxes
 )
 {
-    for (long i = 0; i < vertices_t0.rows(); i++) {
+    for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
         Eigen::MatrixXf vertex_t0 = vertices_t0.cast<float>().row(i);
         Eigen::MatrixXf vertex_t1 = vertices_t1.cast<float>().row(i);
 
@@ -43,7 +43,7 @@ void addVertices
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), Simplex::VERTEX, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, Simplex::VERTEX, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -55,7 +55,7 @@ void addFaces
     vector<Aabb>& boxes
 )
 {
-    for (long i = 0; i < faces.rows(); i++) {
+    for (unsigned long i = 0; i < faces.rows(); i++) {
         Eigen::MatrixXf face_vertex0_t0 = vertices_t0.cast<float>().row(faces(i, 0));
         Eigen::MatrixXf face_vertex1_t0 = vertices_t0.cast<float>().row(faces(i, 1));
         Eigen::MatrixXf face_vertex2_t0 = vertices_t0.cast<float>().row(faces(i, 2)); 
@@ -73,6 +73,7 @@ void addFaces
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), Simplex::FACE, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, Simplex::FACE, lower_bound.array().data(), upper_bound.array().data());
     }
 };
+

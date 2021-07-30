@@ -108,10 +108,10 @@ void run_collision_counter(Aabb* boxes, int N) {
     // return 0;
 }
 
-void run_scaling(Aabb* boxes, int N, vector<int>& finOverlaps)
+void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
 {
     // guess overlaps size
-    int guess = 18*N;
+    int guess = 2*18*N;
 
     // Allocate boxes to GPU 
     Aabb * d_boxes;
@@ -125,7 +125,7 @@ void run_scaling(Aabb* boxes, int N, vector<int>& finOverlaps)
     cudaDeviceSynchronize();
 
     int * d_overlaps;
-    cudaMalloc((void**)&d_overlaps, sizeof(int)*(guess) * 2);
+    cudaMalloc((void**)&d_overlaps, sizeof(int)*(guess));
 
     dim3 block(BLOCK_SIZE_1D,BLOCK_SIZE_1D);
     dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
@@ -135,14 +135,14 @@ void run_scaling(Aabb* boxes, int N, vector<int>& finOverlaps)
 
     int count;
     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-    if (count > guess) //we went over
+    if (2*count > guess) //we went over
     {
         printf("Running again\n");
         cudaFree(d_overlaps);
         cudaMalloc((void**)&d_overlaps, sizeof(int)*(count) * 2);
         reset_counter<<<1,1>>>(d_count);
         cudaDeviceSynchronize();
-        get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, count);
+        get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, 2*count);
         cudaDeviceSynchronize();
     }
 
@@ -155,13 +155,22 @@ void run_scaling(Aabb* boxes, int N, vector<int>& finOverlaps)
     {
         const Aabb& a = boxes[overlaps[2*i]];
         const Aabb& b = boxes[overlaps[2*i + 1]];
-        // if ( (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
-        //     || (a.type == Simplex::EDGE && b.type == Simplex::EDGE) )
-            {
-                finOverlaps.push_back(2*i);
-                finOverlaps.push_back(2*i+1);
-            }
-        // m_cache.AddPair(&a, &b);
+        if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
+        {
+            finOverlaps.push_back(a.ref_id);
+            finOverlaps.push_back(b.ref_id);
+        }
+        else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
+        {
+            finOverlaps.push_back(b.ref_id);
+            finOverlaps.push_back(a.ref_id);
+        }
+        else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
+        {
+            
+            finOverlaps.push_back(min(a.ref_id, b.ref_id));
+            finOverlaps.push_back(max(a.ref_id, b.ref_id));
+        }
     }
 
     printf("Total overlaps: %lu\n", finOverlaps.size() / 2);
