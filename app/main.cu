@@ -11,6 +11,7 @@
 #include <igl/edges.h>
 
 #include <gpubf/simulation.h>
+#include <gpubf/groundtruth.h>
 
 using namespace std;
 
@@ -44,6 +45,17 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
 
 int main( int argc, char **argv )
 {
+
+    const char* filet0 = argv[1];
+    const char* filet1 = argv[2];
+    
+    vector<Aabb> boxes;
+    parseMesh(filet0, filet1, boxes);
+
+    // run_simulation(boxes.data(), boxes.size());
+    vector<int> overlaps;
+    run_scaling(boxes.data(), boxes.size(), overlaps);
+
     int o;
     while ((o = getopt (argc, argv, "c:")) != -1)
     {
@@ -53,18 +65,9 @@ int main( int argc, char **argv )
                 optind--;
                 for( ;optind < argc && *argv[optind] != '-'; optind++)
                 {
-                    printf("%s\n", argv[optind] );    
+                    printf("%s\n", argv[optind] );
+                    compare_mathematica(overlaps, argv[optind]); 
                 }
         }
     }
-
-    const char* filet0 = argv[argc-2];
-    const char* filet1 = argv[argc-1];
-    
-    vector<Aabb> boxes;
-    parseMesh(filet0, filet1, boxes);
-
-    // run_simulation(boxes.data(), boxes.size());
-    vector<int> overlaps;
-    run_scaling(boxes.data(), boxes.size(), overlaps);
 }

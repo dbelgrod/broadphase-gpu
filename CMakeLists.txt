@@ -72,4 +72,7 @@ endif()
 # libigl
 target_link_libraries(${PROJECT_NAME} PUBLIC igl::core)
 
+# JSON
+target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
+
 ###############################################################################

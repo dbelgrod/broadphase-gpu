@@ -16,6 +16,12 @@ if(NOT TARGET igl::core)
     add_subdirectory(${GPUBF_EXTERNAL}/libigl EXCLUDE_FROM_ALL)
 endif()
 
+# JSON
+if(NOT TARGET nlohmann_json::nlohmann_json)
+  gpubf_download_nlohmann_json()
+  add_subdirectory(${GPUBF_EXTERNAL}/nlohmann_json EXCLUDE_FROM_ALL)
+endif()
+
 # if(TIGHT_INCLUSION_WITH_GMP OR TIGHT_INCLUSION_WITH_TESTS)
 #   #GMP
 #   find_package(GMPECCD)

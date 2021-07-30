@@ -14,6 +14,8 @@ src/collision.cu
 src/collision.h
 src/simulation.cu
 src/simulation.h
+src/groundtruth.cu
+src/groundtruth.h
 
 PARENT_SCOPE
 )

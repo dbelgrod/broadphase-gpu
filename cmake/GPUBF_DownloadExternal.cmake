@@ -28,6 +28,13 @@ function(gpubf_download_libigl)
   )
 endfunction()
 
+function(gpubf_download_nlohmann_json)
+  gpubf_download_project(nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.9.1
+)
+endfunction()
+
 # Eigen
 # function(gpubf_download_eigen)
 #     ccd_download_project(eigen
