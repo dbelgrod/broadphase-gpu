@@ -110,6 +110,11 @@ void run_collision_counter(Aabb* boxes, int N) {
 
 void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
 {
+    finOverlaps.clear();
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop); 
+
     // guess overlaps size
     int guess = 2*18*N;
 
@@ -130,11 +135,18 @@ void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
     dim3 block(BLOCK_SIZE_1D,BLOCK_SIZE_1D);
     dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
 
+    cudaEventRecord(start);
     get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, guess);
-    cudaDeviceSynchronize();
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    // cudaDeviceSynchronize();
 
     int count;
     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+
     if (2*count > guess) //we went over
     {
         printf("Running again\n");
@@ -142,9 +154,18 @@ void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
         cudaMalloc((void**)&d_overlaps, sizeof(int)*(count) * 2);
         reset_counter<<<1,1>>>(d_count);
         cudaDeviceSynchronize();
+        cudaEventRecord(start);
         get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, 2*count);
-        cudaDeviceSynchronize();
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&milliseconds, start, stop);
+        // cudaDeviceSynchronize();
     }
+    printf("Elapsed time: %.6f ms\n", milliseconds);
+    printf("Collisions: %i\n", count);
+    printf("Elapsed time: %.9f ms/collision\n", milliseconds/count);
+    printf("Boxes: %i\n", N);
+    printf("Elapsed time: %.9f ms/box\n", milliseconds/N);
 
     int * overlaps =  (int*)malloc(sizeof(int) * (count)*2);
     cudaMemcpy( overlaps, d_overlaps, sizeof(int)*(count)*2, cudaMemcpyDeviceToHost);
@@ -168,12 +189,12 @@ void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
         else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
         {
             
-            finOverlaps.push_back(min(a.ref_id, b.ref_id));
-            finOverlaps.push_back(max(a.ref_id, b.ref_id));
+            finOverlaps.push_back(b.ref_id);
+            finOverlaps.push_back(a.ref_id);
         }
     }
 
-    printf("Total overlaps: %lu\n", finOverlaps.size() / 2);
+    printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
     free(overlaps);
     // free(counter);
     // free(counter);

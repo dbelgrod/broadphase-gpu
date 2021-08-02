@@ -74,7 +74,15 @@ int main( int argc, char **argv )
     }
 
     vector<unsigned long> overlaps;
+    int i = 1;
+    while (i < N)
+    {
+        run_scaling(boxes.data(), i, overlaps);
+        printf("\n");
+        i = i << 1;
+    }
     run_scaling(boxes.data(), N, overlaps);
+
     for (auto i : compare)
     {
         printf("%s\n", i );
