@@ -45,19 +45,17 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
 
 int main( int argc, char **argv )
 {
+    vector<char*> compare;
 
     const char* filet0 = argv[1];
     const char* filet1 = argv[2];
     
     vector<Aabb> boxes;
     parseMesh(filet0, filet1, boxes);
-
-    // run_simulation(boxes.data(), boxes.size());
-    vector<unsigned long> overlaps;
-    run_scaling(boxes.data(), boxes.size(), overlaps);
-
+    int N = boxes.size();
+    
     int o;
-    while ((o = getopt (argc, argv, "c:")) != -1)
+    while ((o = getopt (argc, argv, "c:n:")) != -1)
     {
         switch (o)
         {
@@ -65,9 +63,21 @@ int main( int argc, char **argv )
                 optind--;
                 for( ;optind < argc && *argv[optind] != '-'; optind++)
                 {
-                    printf("%s\n", argv[optind] );
-                    compare_mathematica(overlaps, argv[optind]); 
+                    compare.push_back(argv[optind]);
+                    // compare_mathematica(overlaps, argv[optind]); 
                 }
+                break;
+            case 'n':
+                N = atoi(optarg);
+                break;
         }
+    }
+
+    vector<unsigned long> overlaps;
+    run_scaling(boxes.data(), N, overlaps);
+    for (auto i : compare)
+    {
+        printf("%s\n", i );
+        compare_mathematica(overlaps, i);
     }
 }
