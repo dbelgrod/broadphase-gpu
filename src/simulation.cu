@@ -12,7 +12,7 @@ int setup_shared_memory()
     int smemSize;
     int devId = 0;
     cudaDeviceGetAttribute(&smemSize, 
-        cudaDevAttrMaxSharedMemoryPerBlock, devId);
+        cudaDevAttrMaxSharedMemoryPerBlockOptin, devId);
     printf("Shared Memory per Block: %i B\n", smemSize);
 
     return smemSize;
