@@ -1,7 +1,7 @@
 #include <gpubf/simulation.h>
 
-#define BLOCK_SIZE_1D 32 //sqrt(MAX_BLOCK_SIZE)
-#define MAX_BLOCK_SIZE 1024 //for 1080Ti, V100
+#define MAX_CONST_MEM 65536
+#define MAX_CONSTANT_BOXES MAX_CONST_MEM / sizeof(Aabb)
 
 void run_collision_counter(Aabb* boxes, int N) {
     // int N = 200000;
@@ -107,8 +107,8 @@ void run_collision_counter(Aabb* boxes, int N) {
     // printf("count: %d\n", counter);
     // return 0;
 }
-
-void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
+// __constant__ Aabb d_boxes[MAX_CONSTANT_BOXES];
+void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
 {
     finOverlaps.clear();
     cudaEvent_t start, stop;
@@ -133,7 +133,9 @@ void run_scaling(Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
     cudaMalloc((void**)&d_overlaps, sizeof(int)*(guess));
 
     dim3 block(BLOCK_SIZE_1D,BLOCK_SIZE_1D);
-    dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
+    // dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
+    int grid_dim_1d = (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D / 4;
+    dim3 grid( grid_dim_1d, grid_dim_1d );
 
     cudaEventRecord(start);
     get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, guess);
