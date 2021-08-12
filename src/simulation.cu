@@ -1,9 +1,26 @@
 #include <gpubf/simulation.h>
 
-#define MAX_CONST_MEM 65536
-#define MAX_CONSTANT_BOXES MAX_CONST_MEM / sizeof(Aabb)
+// #define MAX_CONST_MEM 65536
+// #define MAX_CONSTANT_BOXES MAX_CONST_MEM / sizeof(Aabb)
+
+int setup_shared_memory()
+{
+    // Host code
+    int maxbytes = 98304; // 96 KB
+    cudaFuncSetAttribute(get_collision_pairs, cudaFuncAttributeMaxDynamicSharedMemorySize, maxbytes);
+
+    int smemSize;
+    int devId = 0;
+    cudaDeviceGetAttribute(&smemSize, 
+        cudaDevAttrMaxSharedMemoryPerBlock, devId);
+    printf("Shared Memory per Block: %i B\n", smemSize);
+
+    return smemSize;
+}
+
 
 void run_collision_counter(Aabb* boxes, int N) {
+
     // int N = 200000;
     // Aabb boxes[N];
     // for (int i = 0; i<N; i++)
@@ -110,6 +127,10 @@ void run_collision_counter(Aabb* boxes, int N) {
 // __constant__ Aabb d_boxes[MAX_CONSTANT_BOXES];
 void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
 {
+    int smemSize = setup_shared_memory();
+    const int nBoxesPerThread = smemSize / sizeof(Aabb) / (2*BLOCK_SIZE_1D);
+    printf("Boxes per Thread: %i\n", nBoxesPerThread);
+
     finOverlaps.clear();
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
@@ -134,11 +155,11 @@ void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
 
     dim3 block(BLOCK_SIZE_1D,BLOCK_SIZE_1D);
     // dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
-    int grid_dim_1d = (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D / 4;
+    int grid_dim_1d = (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D / nBoxesPerThread;
     dim3 grid( grid_dim_1d, grid_dim_1d );
 
     cudaEventRecord(start);
-    get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, guess);
+    get_collision_pairs<<<grid, block, nBoxesPerThread*2*BLOCK_SIZE_1D*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, guess, nBoxesPerThread);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     float milliseconds = 0;
@@ -157,7 +178,7 @@ void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
         reset_counter<<<1,1>>>(d_count);
         cudaDeviceSynchronize();
         cudaEventRecord(start);
-        get_collision_pairs<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, 2*count);
+        get_collision_pairs<<<grid, block, nBoxesPerThread*2*BLOCK_SIZE_1D*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, 2*count, nBoxesPerThread);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&milliseconds, start, stop);
