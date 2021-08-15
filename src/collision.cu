@@ -48,35 +48,28 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
 
         if (threadRowId >= N || threadColId >= N || threadColId >= threadRowId) return;
 
+
         for (int shift = 0; shift < nBoxesPerThread; shift++)
         {
             int tidRow = threadRowId + shift*blockDim.x;
             int xIdx = (shift)*BLOCK_SIZE_1D + threadIdx.x;
             s_objects[xIdx] = boxes[tidRow];
-    
 
             int tidCol = threadColId + shift*blockDim.y;
             int yIdx = (shift+nBoxesPerThread)*BLOCK_SIZE_1D + threadIdx.y;
             s_objects[yIdx] = boxes[tidCol];
-
-            
         }
 
-        for (int i=0; i < 2*nBoxesPerThread; i++)
+        for (int i=0; i < nBoxesPerThread; i++)
         {
-            for (int j=i+1; j < 2*nBoxesPerThread; j++)
+            for (int j=nBoxesPerThread; j < 2*nBoxesPerThread; j++)
             {
-                int e = i < nBoxesPerThread ? threadIdx.x : threadIdx.y;
-                const Aabb& x = s_objects[i*BLOCK_SIZE_1D + e];
-                int f = j < nBoxesPerThread ? threadIdx.x : threadIdx.y;
-                const Aabb& y = s_objects[j*BLOCK_SIZE_1D + f];
+                const Aabb& x = s_objects[i*BLOCK_SIZE_1D + threadIdx.x];      
+                const Aabb& y = s_objects[j*BLOCK_SIZE_1D + threadIdx.y];
                 
-                // printf("x:%i, y%i\n", x.id, y.id);
                 bool collides = does_collide(x,y);
                 check_add_overlap(collides, x, y, count, overlaps, G);
-            
             }
-
         }
     
 }

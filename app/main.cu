@@ -89,7 +89,7 @@ int main( int argc, char **argv )
     }
 
     vector<unsigned long> overlaps;
-    int i = 1;
+    // int i = 1;
     // while (i < N)
     // {
     //     run_scaling(boxes.data(), i, overlaps);
