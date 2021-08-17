@@ -1,5 +1,18 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+#set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 project(GPUBF LANGUAGES CXX CUDA)
+
+option(LIBIGL_WITH_COMISO            "Use CoMiso"                   OFF)
+option(LIBIGL_WITH_EMBREE            "Use Embree"                   OFF)
+option(LIBIGL_WITH_OPENGL            "Use OpenGL"                   OFF)
+option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"                     OFF)
+option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"                    OFF)
+option(LIBIGL_WITH_PNG               "Use PNG"                      OFF)
+option(LIBIGL_WITH_TETGEN            "Use Tetgen"                   OFF)
+option(LIBIGL_WITH_TRIANGLE          "Use Triangle"                 OFF)
+option(LIBIGL_WITH_PREDICATES        "Use exact predicates"         OFF)
+option(LIBIGL_WITH_XML               "Use XML"                      OFF)
+option(LIBIGL_WITH_PYTHON            "Use Python"                   OFF)
 
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -38,10 +51,12 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 ##########
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
+# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --ptxas-options=-v")
 
 # We need to explicitly state that we need all CUDA files in the GPUBF
 # library to be built with -dc as the member functions could be called by
 # other libraries and executables
+
 set_target_properties( ${PROJECT_NAME}
                        PROPERTIES CUDA_SEPARABLE_COMPILATION ON
                       )
