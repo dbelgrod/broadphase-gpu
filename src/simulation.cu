@@ -124,11 +124,11 @@ void run_collision_counter(Aabb* boxes, int N) {
     // printf("count: %d\n", counter);
     // return 0;
 }
-// __constant__ Aabb d_boxes[MAX_CONSTANT_BOXES];
-void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
+
+void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<unsigned long>& finOverlaps)
 {
     int smemSize = setup_shared_memory();
-    const int nBoxesPerThread = smemSize / sizeof(Aabb) / (2*BLOCK_SIZE_1D);
+    const int nBoxesPerThread = desiredBoxesPerThread ? desiredBoxesPerThread : smemSize / sizeof(Aabb) / (2*BLOCK_SIZE_1D);
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
 
     finOverlaps.clear();
@@ -155,11 +155,15 @@ void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
 
     dim3 block(BLOCK_SIZE_1D,BLOCK_SIZE_1D);
     // dim3 grid ( (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D,  (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D );
-    int grid_dim_1d = (N+BLOCK_SIZE_1D)/BLOCK_SIZE_1D / nBoxesPerThread;
+    int grid_dim_1d = (N+BLOCK_SIZE_1D)/ BLOCK_SIZE_1D / nBoxesPerThread;
     dim3 grid( grid_dim_1d, grid_dim_1d );
+    printf("Grid dim (1D): %i\n", grid_dim_1d);
+    printf("Box size: %i\n", sizeof(Aabb));
 
+    printf("Shared mem alloc: %i B\n", nBoxesPerThread*2*BLOCK_SIZE_1D*sizeof(Aabb) );
     cudaEventRecord(start);
     get_collision_pairs<<<grid, block, nBoxesPerThread*2*BLOCK_SIZE_1D*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, guess, nBoxesPerThread);
+    // get_collision_pairs_old<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, guess);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     float milliseconds = 0;
@@ -179,6 +183,7 @@ void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
         cudaDeviceSynchronize();
         cudaEventRecord(start);
         get_collision_pairs<<<grid, block, nBoxesPerThread*2*BLOCK_SIZE_1D*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, 2*count, nBoxesPerThread);
+        // get_collision_pairs_old<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, 2*count);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&milliseconds, start, stop);
@@ -199,22 +204,23 @@ void run_scaling(const Aabb* boxes, int N, vector<unsigned long>& finOverlaps)
     {
         const Aabb& a = boxes[overlaps[2*i]];
         const Aabb& b = boxes[overlaps[2*i + 1]];
-        if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
-        {
-            finOverlaps.push_back(a.ref_id);
-            finOverlaps.push_back(b.ref_id);
-        }
-        else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
-        {
-            finOverlaps.push_back(b.ref_id);
-            finOverlaps.push_back(a.ref_id);
-        }
-        else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
-        {
-            
-            finOverlaps.push_back(b.ref_id);
-            finOverlaps.push_back(a.ref_id);
-        }
+        finOverlaps.push_back(overlaps[2*i]);
+        finOverlaps.push_back(overlaps[2*i + 1]);
+        // if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
+        // {
+        //     finOverlaps.push_back(a.ref_id);
+        //     finOverlaps.push_back(b.ref_id);
+        // }
+        // else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
+        // {
+        //     finOverlaps.push_back(b.ref_id);
+        //     finOverlaps.push_back(a.ref_id);
+        // }
+        // else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
+        // {
+        //     finOverlaps.push_back(b.ref_id);
+        //     finOverlaps.push_back(a.ref_id);
+        // }
     }
 
     printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);

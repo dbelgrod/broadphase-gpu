@@ -68,9 +68,10 @@ int main( int argc, char **argv )
     vector<Aabb> boxes;
     parseMesh(filet0, filet1, boxes);
     int N = boxes.size();
+    int nbox = 0;
     
     int o;
-    while ((o = getopt (argc, argv, "c:n:")) != -1)
+    while ((o = getopt (argc, argv, "c:n:b:")) != -1)
     {
         switch (o)
         {
@@ -85,6 +86,9 @@ int main( int argc, char **argv )
             case 'n':
                 N = atoi(optarg);
                 break;
+            case 'b':
+                nbox = atoi(optarg);
+                break;
         }
     }
 
@@ -96,7 +100,7 @@ int main( int argc, char **argv )
     //     printf("\n");
     //     i = i << 1;
     // }
-    run_scaling(boxes.data(), N, overlaps);
+    run_scaling(boxes.data(), N, nbox,  overlaps);
 
     for (auto i : compare)
     {
