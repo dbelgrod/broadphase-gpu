@@ -24,7 +24,7 @@ __device__ bool does_collide(const Aabb& x, const Aabb& y)
             x.max[2] >= y.min[2] && x.min[2] <= y.max[2];
 }
 
-__device__ void check_add_overlap(bool collides, const Aabb& x, const Aabb& y, int * count, int * overlaps, int G)
+__device__ void check_add_overlap(bool collides, int xid, int yid, int * count, int * overlaps, int G)
 {
     if (collides)
         {
@@ -32,23 +32,27 @@ __device__ void check_add_overlap(bool collides, const Aabb& x, const Aabb& y, i
 
             if (2*i + 1 < G)
             {
-                overlaps[2*i] = x.id;
-                overlaps[2*i+1] = y.id;
+                overlaps[2*i] = xid;
+                overlaps[2*i+1] = yid;
             }
         }
 
 }
 
 __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, int N, int G, const int nBoxesPerThread)
-{   
+{       
         extern __shared__ Aabb s_objects[];
-    
+
         int threadRowId = nBoxesPerThread*blockIdx.x * blockDim.x + threadIdx.x;
         int threadColId = nBoxesPerThread*blockIdx.y * blockDim.y + threadIdx.y;
 
-        if (threadRowId >= N || threadColId >= N || threadColId >= threadRowId) return;
+        // printf("threadStart: %i %i\n", threadRowId, threadColId);
+    
+        // if (threadRowId >= N || threadColId >= N || threadColId >= threadRowId) return;
+        // ex (threadRowId,threadColId) = (0,0) should not be considered but now it contains (1,0) so it must be incl.
+        if (threadRowId >= N || threadColId >= N || threadColId - nBoxesPerThread*blockDim.y >= threadRowId) return;
 
-
+        
         for (int shift = 0; shift < nBoxesPerThread; shift++)
         {
             int tidRow = threadRowId + shift*blockDim.x;
@@ -58,19 +62,31 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
             int tidCol = threadColId + shift*blockDim.y;
             int yIdx = (shift+nBoxesPerThread)*BLOCK_SIZE_1D + threadIdx.y;
             s_objects[yIdx] = boxes[tidCol];
+            // printf("threadAdd: %i %i\n", tidRow, tidCol);
         }
-
+       
         for (int i=0; i < nBoxesPerThread; i++)
         {
             for (int j=nBoxesPerThread; j < 2*nBoxesPerThread; j++)
             {
+                //reverse map to global mem
+                int g_x__id = threadRowId + i*blockDim.x; 
+                int g_y__id = threadColId + (j-nBoxesPerThread)*blockDim.y; 
+
+                // printf("threadTest: %i %i\n", g_x__id, g_y__id);
+
+                if (g_x__id >= N || g_y__id >= N || g_y__id >= g_x__id) continue;
+
                 const Aabb& x = s_objects[i*BLOCK_SIZE_1D + threadIdx.x];      
                 const Aabb& y = s_objects[j*BLOCK_SIZE_1D + threadIdx.y];
                 
                 bool collides = does_collide(x,y);
-                check_add_overlap(collides, x, y, count, overlaps, G);
+                
+
+                check_add_overlap(collides, g_x__id, g_y__id, count, overlaps, G);
             }
         }
+        // printf("\n");
     
 }
 
@@ -89,5 +105,5 @@ __global__ void get_collision_pairs_old(Aabb * boxes, int * count, int * overlap
         const Aabb& a = boxes[threadRowId];
         const Aabb& b = boxes[threadColId];
         bool collides = does_collide(a,b);
-        check_add_overlap(collides, a, b, count, overlaps, G);
+        check_add_overlap(collides, threadRowId, threadColId, count, overlaps, G);
 }

@@ -12,11 +12,11 @@ typedef enum { VERTEX, FACE, EDGE }  Simplex;
 
 __global__ class Aabb {
     public:
-        int id;
-        unsigned long ref_id;
+        // int id;
+        // unsigned long ref_id;
         float min[3]{};
         float max[3]{};
-        Simplex type;
+        // Simplex type;
 
         Aabb(int assignid)
         {
@@ -24,17 +24,17 @@ __global__ class Aabb {
             float tempmin[3] = {0,0,0};
             memcpy(max,tempmax, sizeof(float)*3);
             memcpy(min,tempmin, sizeof(float)*3);
-            id = assignid;
-            ref_id = assignid;
+            // id = assignid;
+            // ref_id = assignid;
         };
 
         Aabb(int assignid, unsigned long reference_id, Simplex assigntype, float* tempmin, float* tempmax)
         {
             memcpy(min, tempmin, sizeof(float)*3);
             memcpy(max ,tempmax, sizeof(float)*3);
-            id = assignid;
-            ref_id = reference_id;
-            type = assigntype;
+            // id = assignid;
+            // ref_id = reference_id;
+            // type = assigntype;
         };
 
         Aabb() = default;
