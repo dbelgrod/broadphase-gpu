@@ -42,6 +42,10 @@ __device__ void check_add_overlap(bool collides, int xid, int yid, int * count, 
 __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, int N, int G, const int nBoxesPerThread)
 {       
         extern __shared__ Aabb s_objects[];
+        
+        Aabb* s_x = &s_objects[0];
+        Aabb* s_y = &s_objects[nBoxesPerThread*(BLOCK_PADDED)];
+
 
         int threadRowId = nBoxesPerThread*blockIdx.x * blockDim.x + threadIdx.x;
         int threadColId = nBoxesPerThread*blockIdx.y * blockDim.y + threadIdx.y;
@@ -56,29 +60,36 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
         for (int shift = 0; shift < nBoxesPerThread; shift++)
         {
             int tidRow = threadRowId + shift*blockDim.x;
-            int xIdx = (shift)*BLOCK_SIZE_1D + threadIdx.x;
-            s_objects[xIdx] = boxes[tidRow];
+            int xIdx = (shift)*(BLOCK_PADDED) + threadIdx.x;
+            // int xIdx = nBoxesPerThread*(threadIdx.x+1) + shift;
+            s_x[xIdx]= boxes[tidRow];
 
             int tidCol = threadColId + shift*blockDim.y;
-            int yIdx = (shift+nBoxesPerThread)*BLOCK_SIZE_1D + threadIdx.y;
-            s_objects[yIdx] = boxes[tidCol];
-            // printf("threadAdd: %i %i\n", tidRow, tidCol);
+            int yIdx = (shift)*(BLOCK_PADDED) + threadIdx.y;
+            // int yIdx = nBoxesPerThread*(threadIdx.y+1) + shift;
+            s_y[yIdx] = boxes[tidCol];
         }
        
         for (int i=0; i < nBoxesPerThread; i++)
         {
-            for (int j=nBoxesPerThread; j < 2*nBoxesPerThread; j++)
+            for (int j=0; j < nBoxesPerThread; j++)
+            // for (int j=nBoxesPerThread; j < 2* nBoxesPerThread; j++)
             {
                 //reverse map to global mem
                 int g_x__id = threadRowId + i*blockDim.x; 
-                int g_y__id = threadColId + (j-nBoxesPerThread)*blockDim.y; 
+                // int g_y__id = threadColId + (j-nBoxesPerThread)*blockDim.y; 
+                int g_y__id = threadColId + j*blockDim.y; 
 
                 // printf("threadTest: %i %i\n", g_x__id, g_y__id);
 
                 if (g_x__id >= N || g_y__id >= N || g_y__id >= g_x__id) continue;
 
-                const Aabb& x = s_objects[i*BLOCK_SIZE_1D + threadIdx.x];      
-                const Aabb& y = s_objects[j*BLOCK_SIZE_1D + threadIdx.y];
+                const Aabb& x = s_x[i*(BLOCK_PADDED) + threadIdx.x];      
+                const Aabb& y = s_y[j*(BLOCK_PADDED) + threadIdx.y];
+
+                // const Aabb& x = s_x[(threadIdx.x+1)*nBoxesPerThread + i];      
+                // const Aabb& y = s_y[(threadIdx.y+1)*nBoxesPerThread + j];
+                
                 
                 bool collides = does_collide(x,y);
                 
