@@ -139,7 +139,8 @@ void run_collision_counter(Aabb* boxes, int N) {
 
 void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<unsigned long>& finOverlaps)
 {
-    
+    cudaSetDevice(0);
+
     int smemSize = setup_shared_memory();
     const int nBoxesPerThread = desiredBoxesPerThread ? desiredBoxesPerThread : smemSize / sizeof(Aabb) / (2*(BLOCK_PADDED));
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
@@ -215,10 +216,11 @@ void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<un
     cudaFree(d_overlaps);
     for (size_t i=0; i< count; i++)
     {
-        const Aabb& a = boxes[overlaps[2*i]];
-        const Aabb& b = boxes[overlaps[2*i + 1]];
         finOverlaps.push_back(overlaps[2*i]);
         finOverlaps.push_back(overlaps[2*i + 1]);
+        
+        // const Aabb& a = boxes[overlaps[2*i]];
+        // const Aabb& b = boxes[overlaps[2*i + 1]];
         // if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
         // {
         //     finOverlaps.push_back(a.ref_id);
