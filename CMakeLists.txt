@@ -51,7 +51,8 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 ##########
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
-# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --ptxas-options=-v")
+# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas -O3,-v -use_fast_math -maxrregcount 24")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math -Xptxas -O3,-v")
 
 # We need to explicitly state that we need all CUDA files in the GPUBF
 # library to be built with -dc as the member functions could be called by
