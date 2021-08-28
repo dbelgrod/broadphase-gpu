@@ -4,30 +4,36 @@
 __global__ void reverse(int* d_nums, int *d_rev, int N)
 {
     extern __shared__ int s_nums[];
-    int tid = threadIdx.x + blockIdx.x*blockDim.x;
+    int g_tid = threadIdx.x + blockIdx.x*blockDim.x;
+    int l_tid = threadIdx.x ;
 
-    if (tid >= N) return;
+    if (g_tid >= N) return;
 
     for (int i = 0; i < 1; i++)
     {
-        s_nums[N-1-tid] = d_nums[tid];
+        s_nums[l_tid] = d_nums[g_tid];
     }
-
+    
     for (int i = 0; i < 1; i++)
     {
-        d_rev[tid] = s_nums[tid];
+        d_rev[N-g_tid-1] = s_nums[l_tid];
     }
 
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop); 
 
-    const int N = 20;
+    int N;
+    if (argc == 2)
+        N = atoi(argv[argc - 1]);
+    else
+        abort();
+
     int nums[N];
     int rev[N];
         
@@ -44,13 +50,17 @@ int main()
 
     cudaMalloc((void**)&d_rev, sizeof(int)*N);
 
-    int ITER = 100;
+    int BLOCK_SIZE = 1024;
+    int grid_size = N/BLOCK_SIZE + 1;
+    printf("Grid size: %i\n", grid_size);
+
+    int ITER = 1;
     float milliseconds = 0;
     float avg_ms = 0;
     for (int i=0; i < ITER; i++)
     {
     cudaEventRecord(start);
-    reverse<<<1,N, sizeof(int)*N>>>(d_nums, d_rev, N);
+    reverse<<<grid_size, BLOCK_SIZE, 49152>>>(d_nums, d_rev, N);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&milliseconds, start, stop);
@@ -60,8 +70,13 @@ int main()
     printf("Avg. elapsed time: %.6f ms\n", avg_ms);
 
     cudaMemcpy(rev, d_rev, sizeof(int)*N, cudaMemcpyDeviceToHost);
+    long long sum = 0;
     for (int i=0; i < N; i++)
+    {
         printf("%i ", rev[i]);
-    printf("\n");
+        sum+= rev[i];
+    }
+    // printf("\n");
+    printf("sum -> %llu\n", sum);
 }
 
