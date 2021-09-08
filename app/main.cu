@@ -25,8 +25,8 @@ void constructBoxes
     vector<Aabb>& boxes
 )
 {
-    addVertices(vertices_t0, vertices_t1, boxes);
-    addEdges(vertices_t0, vertices_t1, edges, boxes);
+    // addVertices(vertices_t0, vertices_t1, boxes);
+    // addEdges(vertices_t0, vertices_t1, edges, boxes);
     addFaces(vertices_t0, vertices_t1, faces, boxes);
 }
 

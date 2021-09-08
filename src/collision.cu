@@ -28,67 +28,23 @@ __device__ bool does_collide(const Aabb& a, const Aabb& b)
             a.max.z >= b.min.z && a.min.z <= b.max.z;
 }
 
-__device__ inline int lane_id(void) { return threadIdx.x % WARP_SIZE; }
-// __device__ inline int warp_bcast(int mask, int v, int leader) { return __shfl_sync(mask, v, leader); }
-// __device__ int atomicAggInc(int *ctr) {
-// 		int mask = __ballot_sync(1), leader, res;
-// 		// select the leader
-// 		leader = __ffs(mask) - 1;
-// 		// leader does the update
-// 		if (lane_id() == leader)
-// 			res = atomicAdd(ctr, __popc(mask));
-// 		// broadcast result
-// 		res = warp_bcast(mask, res, leader);
-// 		// each thread computes its own value
-// 		return res + __popc(mask & ((1 << lane_id()) - 1));
-// 	}
-
-// increment the value at ptr by 1 and return the old value
-__device__ int atomicAggInc(int* ptr) {
-    int mask;
-#if __CUDA_ARCH__ >= 700
-    mask = __match_any_sync(__activemask(), (unsigned long long)ptr);
-#else
-    unsigned tmask = __activemask();
-    for (int i = 0; i < warpSize; i++){
-#ifdef USE_OPT
-      if ((1U<<i) & tmask){
-#endif
-        unsigned long long tptr = __shfl_sync(tmask, (unsigned long long)ptr, i);
-        unsigned my_mask = __ballot_sync(tmask, (tptr == (unsigned long long)ptr));
-        if (i == (threadIdx.x & (warpSize-1))) mask = my_mask;}
-#ifdef USE_OPT
-      }
-#endif
-#endif
-    int leader = __ffs(mask) - 1;  // select a leader
-    int res;
-    unsigned lane_id = threadIdx.x % warpSize;
-    if (lane_id == leader) {                 // leader does the update
-        res = atomicAdd(ptr, __popc(mask));
-    }
-    res = __shfl_sync(mask, res, leader);    // get leader’s old value
-    return res + __popc(mask & ((1 << lane_id) - 1)); //compute old value
+__device__ bool covertex(float3 a, float3 b) {
+    return a.x == b.x || a.x == b.y || a.x == b.z || 
+        a.y == b.x || a.y == b.y || a.y == b.z || 
+        a.z == b.x || a.z == b.y || a.z == b.z;
 }
 
-
-__device__ void check_add_overlap(bool collides, int xid, int yid, int * count, int * overlaps, int G)
+__device__ void add_overlap(int xid, int yid, int * count, int2 * overlaps, int G)
 {
-    if (collides)
-        {
-            int i = atomicAdd(count, 1);
-            // int i = atomicAggInc(count);
+    int i = atomicAdd(count, 1);
 
-            if (2*i + 1 < G)
-            {
-                overlaps[2*i] = xid;
-                overlaps[2*i+1] = yid;
-            }
-        }
-
+    if (i < G)
+    {
+        overlaps[i] = make_int2(xid, yid);
+    } 
 }
 
-__global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, int N, int G, const int nBoxesPerThread)
+__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread)
 {       
         extern __shared__ Aabb s_objects[];
         
@@ -105,7 +61,7 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
         // ex (threadRowId,threadColId) = (0,0) should not be considered but now it contains (1,0) so it must be incl.
         if (threadRowId >= N || threadColId >= N || threadColId - nBoxesPerThread*blockDim.y >= threadRowId) return;
 
-        // #pragma unroll
+        #pragma unroll
         for (int shift = 0; shift < nBoxesPerThread; shift++)
         {
             int tidRow = threadRowId + shift*blockDim.x;
@@ -122,11 +78,11 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
 
         // Aabb xboxes [30];
         // Aabb yboxes [30];
-        #pragma unroll 
-        for (int i=0; i < nBoxesPerThread; i+=2)
+        // #pragma unroll 
+        for (int i=0; i < nBoxesPerThread; i+=1)
         {
-            #pragma unroll 
-            for (int j=0; j < nBoxesPerThread; j+=2)
+            // #pragma unroll 
+            for (int j=0; j < nBoxesPerThread; j+=1)
             // for (int j=nBoxesPerThread; j < 2* nBoxesPerThread; j++)
             {
                 //reverse map to global mem
@@ -138,11 +94,14 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
 
                 if (g_x__id >= N || g_y__id >= N || g_y__id >= g_x__id) continue;
 
-                const Aabb x = s_x[i*(BLOCK_PADDED) + threadIdx.x];      
-                const Aabb y = s_y[j*(BLOCK_PADDED) + threadIdx.y];
+                const Aabb& x = s_x[i*(BLOCK_PADDED) + threadIdx.x];      
+                const Aabb& y = s_y[j*(BLOCK_PADDED) + threadIdx.y];
 
-                const Aabb w = s_x[(i+1)*(BLOCK_PADDED) + threadIdx.x];      
-                const Aabb v = s_y[(j+1)*(BLOCK_PADDED) + threadIdx.y];
+                // Aabb x = boxes[g_x__id];
+                // Aabb y = boxes[g_y__id];
+
+                // const Aabb w = s_x[(i+1)*(BLOCK_PADDED) + threadIdx.x];      
+                // const Aabb v = s_y[(j+1)*(BLOCK_PADDED) + threadIdx.y];
 
                 // const Aabb a = s_x[(i+2)*(BLOCK_PADDED) + threadIdx.x];      
                 // const Aabb b = s_y[(j+2)*(BLOCK_PADDED) + threadIdx.y];
@@ -151,10 +110,10 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
                 // const Aabb& y = s_y[(threadIdx.y+1)*nBoxesPerThread + j];
                 
                 
-                bool collides = does_collide(x,y);
-                bool collides2 = does_collide(x,v);
-                bool collides3 = does_collide(w,v);
-                bool collides4 = does_collide(w,y);
+                // bool collides = does_collide(x,y);
+                // bool collides2 = does_collide(x,v);
+                // bool collides3 = does_collide(w,v);
+                // bool collides4 = does_collide(w,y);
 
                 // bool collides5 = does_collide(a,b);
                 // bool collides6 = does_collide(a,v);
@@ -162,11 +121,11 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int * overlaps, i
 
                 // bool collides8 = does_collide(x,b);
                 // bool collides9 = does_collide(w,b);
-                
-                check_add_overlap(collides, g_x__id, g_y__id, count, overlaps, G);
-                check_add_overlap(collides2, g_x__id, g_y__id, count, overlaps, G);
-                check_add_overlap(collides3, g_x__id, g_y__id, count, overlaps, G);
-                check_add_overlap(collides4, g_x__id, g_y__id, count, overlaps, G);
+                if (!covertex(x.max, y.max) && !covertex(x.min, y.max) && !covertex(x.max, y.min) && !covertex(x.min, y.min) && does_collide(x,y))
+                    add_overlap(g_x__id, g_y__id, count, overlaps, G);
+                // check_add_overlap(collides2, g_x__id, g_y__id, count, overlaps, G);
+                // check_add_overlap(collides3, g_x__id, g_y__id, count, overlaps, G);
+                // check_add_overlap(collides4, g_x__id, g_y__id, count, overlaps, G);
                 // check_add_overlap(collides5, g_x__id, g_y__id, count, overlaps, G);
                 // check_add_overlap(collides6, g_x__id, g_y__id, count, overlaps, G);
                 // check_add_overlap(collides7, g_x__id, g_y__id, count, overlaps, G);
@@ -182,7 +141,7 @@ __global__ void reset_counter(int * counter){
     *counter = 0;
 }
 
-__global__ void get_collision_pairs_old(Aabb * boxes, int * count, int * overlaps, int N, int G)
+__global__ void get_collision_pairs_old(Aabb * boxes, int * count, int2 * overlaps, int N, int G)
 {
     
         int threadRowId = blockIdx.x * blockDim.x + threadIdx.x;
@@ -192,6 +151,6 @@ __global__ void get_collision_pairs_old(Aabb * boxes, int * count, int * overlap
     
         const Aabb& a = boxes[threadRowId];
         const Aabb& b = boxes[threadColId];
-        bool collides = does_collide(a,b);
-        check_add_overlap(collides, threadRowId, threadColId, count, overlaps, G);
+        if ( does_collide(a,b) )
+            add_overlap(threadRowId, threadColId, count, overlaps, G);
 }
