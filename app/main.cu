@@ -100,7 +100,8 @@ int main( int argc, char **argv )
     //     printf("\n");
     //     i = i << 1;
     // }
-    run_scaling(boxes.data(), N, nbox,  overlaps);
+    // run_scaling(boxes.data(), N, nbox,  overlaps);
+    run_sweep(boxes.data(), N, nbox, overlaps);
 
     for (auto i : compare)
     {

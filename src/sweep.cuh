@@ -17,6 +17,6 @@ __global__ struct SweepMarker {
     __device__ SweepMarker() = default;
 };
 
-__global__ void build_sorting_axis(Aabb * boxes, int N, SweepMarker* axis);
-__global__ void print_sort_axis(SweepMarker* axis, int C);
-__global__ void retrieve_collision_pairs(SweepMarker* axis, Aabb* boxes, int * count, int2 * overlaps, int N, int guess);
+__global__ void build_index(Aabb * boxes, int N, int* index);
+__global__ void print_sort_axis(Aabb* axis, int* index, int C);
+__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int numBoxes);

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,7 +10,6 @@
 using namespace std;
 
 typedef enum { VERTEX, FACE, EDGE }  Simplex;
-
 
 __global__ class Aabb {
     public:
@@ -64,3 +65,4 @@ void addFaces
     Eigen::MatrixXi& faces, 
     vector<Aabb>& boxes
 );
+
