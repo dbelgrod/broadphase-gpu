@@ -16,6 +16,8 @@ src/simulation.cu
 src/simulation.h
 src/groundtruth.cu
 src/groundtruth.h
+src/sweep.cu
+src/sweep.cuh
 
 PARENT_SCOPE
 )
