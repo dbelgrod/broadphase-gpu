@@ -28,6 +28,14 @@ __device__ bool does_collide(const Aabb& a, const Aabb& b)
             a.max.z >= b.min.z && a.min.z <= b.max.z;
 }
 
+__device__ bool does_collide(Aabb* a, Aabb* b)
+{
+    return 
+    //    a->max.x >= b->min.x && a->min.x <= b->max.x &&
+            a->max.y >= b->min.y && a->min.y <= b->max.y &&
+            a->max.z >= b->min.z && a->min.z <= b->max.z;
+}
+
 __device__ bool covertex(const float3& a, const float3& b) {
     return a.x == b.x || a.x == b.y || a.x == b.z || 
         a.y == b.x || a.y == b.y || a.y == b.z || 
@@ -98,16 +106,12 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, 
                 if (g_x__id >= N || g_y__id >= N || g_y__id >= g_x__id) continue;
                
 
-                Aabb& x = s_x[i*(BLOCK_PADDED) + threadIdx.x];      
-                Aabb& y = s_y[j*(BLOCK_PADDED) + threadIdx.y];
+                Aabb * x = &s_x[i*(BLOCK_PADDED) + threadIdx.x];      
+                Aabb * y = &s_y[j*(BLOCK_PADDED) + threadIdx.y];
 
                 // Aabb x = boxes[g_x__id];
                 // Aabb y = boxes[g_y__id];
-                
-                float3& xmin = x.min;
-                float3& xmax = x.max;
-                float3& ymin = y.min;
-                float3& ymax = y.max;
+            
 
                 if (
                     does_collide(x,y) //&&

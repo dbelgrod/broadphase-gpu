@@ -304,7 +304,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
 
     // int SWEEP_BLOCK_SIZE = 1024;
     dim3 block(MAX_BLOCK_SIZE);
-    int grid_dim_1d = (N / MAX_BLOCK_SIZE + 1) / nBoxesPerThread + 1;
+    int grid_dim_1d = (N / MAX_BLOCK_SIZE + 1); /// nBoxesPerThread + 1;
     dim3 grid( grid_dim_1d );
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
@@ -339,7 +339,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     cudaDeviceSynchronize();
 
     // Find overlapping pairs
-    int guess = 100*N;
+    int guess = 400*N;
     int2 * d_overlaps;
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 

@@ -17,4 +17,6 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, 
 __global__ void get_collision_pairs_old(Aabb * boxes, int * count, int2 * overlaps, int N, int G );
 
 __device__ bool does_collide(const Aabb& a, const Aabb& b);
+__device__ bool does_collide(Aabb* a, Aabb* b);
 __device__ void add_overlap(int& xid, int& yid, int * count, int2 * overlaps, int G);
+__device__ bool covertex(const float3& a, const float3& b);

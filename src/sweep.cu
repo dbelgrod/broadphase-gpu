@@ -24,7 +24,7 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
 {
     extern __shared__ Aabb s_objects[];
 
-    int tid = numBoxes*blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = 1*blockIdx.x * blockDim.x + threadIdx.x;
     int ltid = threadIdx.x;
 
     if (tid >= N) return;
@@ -39,7 +39,7 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     __syncthreads();
     
 
-    for (int i=0; i < numBoxes; i++)
+    for (int i=0; i < 1; i++)
     {
         int t = tid + i*blockDim.x;
         int l = i*blockDim.x + ltid;
@@ -53,9 +53,14 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
         Aabb* b = nltid < numBoxes*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
         
 
-        while (a->max.x  >= b->min.x)
+        while (a->max.x  > b->min.x) //>= is covertex
         {
-            if ( does_collide(*a,*b))
+            if ( does_collide(a,b) 
+                // && !covertex(a->min, b->min)
+                // && !covertex(a->min, b->max)
+                // && !covertex(a->max, b->max)
+                // && !covertex(a->max, b->min)
+                )
                 add_overlap(index[t], index[ntid], count, overlaps, guess);
             
             ntid++;
