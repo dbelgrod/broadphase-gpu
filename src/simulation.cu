@@ -276,6 +276,7 @@ struct sort_aabb_x
     return (a.min.x < b.min.x);}
 };
 
+
 void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& finOverlaps)
 {
     cudaSetDevice(1);
@@ -310,12 +311,20 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     printf("Box size: %i\n", sizeof(Aabb));
     printf("SweepMarker size: %i\n", sizeof(SweepMarker));
 
-    int* d_index;
-    cudaMalloc((void**)&d_index, sizeof(int)*(N));
+    // int* d_index;
+    // cudaMalloc((void**)&d_index, sizeof(int)*(N));
+    int* rank;
+    cudaMalloc((void**)&rank, sizeof(int)*(3*N));
+
+    int* rank_x = &rank[0];
+    int* rank_y = &rank[N];
+    int* rank_z = &rank[2*N];
 
     // Translate boxes -> SweepMarkers
     cudaEventRecord(start);
-    build_index<<<grid,block>>>(d_boxes, N, d_index);
+    build_index<<<grid,block>>>(d_boxes, N, rank_x);
+    build_index<<<grid,block>>>(d_boxes, N, rank_y);
+    build_index<<<grid,block>>>(d_boxes, N, rank_z);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     float milliseconds = 0;
@@ -326,7 +335,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     // Thrust sort (can be improved by sort_by_key)
     cudaEventRecord(start);
     // thrust::sort(thrust::device, d_axis, d_axis + N, sort_sweepmarker_x() );
-    thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, d_index, sort_aabb_x() );
+    thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     milliseconds = 0;
@@ -335,7 +344,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     printf("Elapsed time for sort: %.6f ms\n", milliseconds);
 
     // Test print some sorted output
-    print_sort_axis<<<1,1>>>(d_boxes,d_index, 5);
+    print_sort_axis<<<1,1>>>(d_boxes,rank_x, 5);
     cudaDeviceSynchronize();
 
     // Find overlapping pairs
@@ -344,7 +353,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 
     cudaEventRecord(start);
-    retrieve_collision_pairs<<<grid, block, 49152>>>(d_boxes, d_index, d_count, d_overlaps, N, guess, nBoxesPerThread);
+    retrieve_collision_pairs<<<grid, block, 49152>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nBoxesPerThread);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     milliseconds = 0;
