@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-#set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 project(GPUBF LANGUAGES CXX CUDA)
 
 option(LIBIGL_WITH_COMISO            "Use CoMiso"                   OFF)
@@ -64,13 +64,14 @@ set_target_properties( ${PROJECT_NAME}
                       
 # Nvidia RTX8000 -> compute_75
 # Nvidia V100 -> compute_70
-# Nvidia 1080/1080Ti -> compute_61                 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 61 70 75)
+# Nvidia 1080/1080Ti -> compute_61       
+# Nvidia 3080Ti -> compute_86               
+set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 61 70 75 86)
 
 # executable
 add_executable(GPUBF_bin app/main.cu)
 set_target_properties(GPUBF_bin PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-set_property(TARGET GPUBF_bin PROPERTY CUDA_ARCHITECTURES 61 70 75)
+set_property(TARGET GPUBF_bin PROPERTY CUDA_ARCHITECTURES 61 70 75 86)
 target_link_libraries(GPUBF_bin PRIVATE ${PROJECT_NAME})
                   
                   

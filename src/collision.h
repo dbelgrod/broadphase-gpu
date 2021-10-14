@@ -3,8 +3,8 @@
 #include <gpubf/aabb.h>
 
 #define BLOCK_SIZE_1D 16 //sqrt(MAX_BLOCK_SIZE)
-#define MAX_BLOCK_SIZE 1024 //for 1080Ti, V100
-#define WARP_SIZE 32
+// #define MAX_BLOCK_SIZE 1024 //for 1080Ti, V100
+// #define WARP_SIZE 32
 
 #define PADDING 0
 #define BLOCK_PADDED BLOCK_SIZE_1D + PADDING

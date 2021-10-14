@@ -4,32 +4,52 @@
 
 
 
-int setup_shared_memory()
+void setup(int devId, int& smemSize, int& threads)
 {
     // Host code
-    int maxbytes = 98304; // 96 KB
-    cudaFuncSetAttribute(get_collision_pairs, cudaFuncAttributeMaxDynamicSharedMemorySize, maxbytes);
+    // int maxbytes = 98304; // 96 KB
+    // cudaFuncSetAttribute(get_collision_pairs, cudaFuncAttributeMaxDynamicSharedMemorySize, maxbytes);
 
-    int smemSize;
-    int devId = 0;
+    // int smemSize;
+    // int devId = 0;
     cudaDeviceGetAttribute(&smemSize, 
-        cudaDevAttrMaxSharedMemoryPerBlockOptin, devId);
+        cudaDevAttrMaxSharedMemoryPerBlock, devId);
     printf("Shared Memory per Block: %i B\n", smemSize);
+
+    cudaDeviceGetAttribute(&threads, 
+        cudaDevAttrMaxThreadsPerMultiProcessor, devId);
+    printf("Max threads per Multiprocessor: %i thrds\n", threads);
+
+    int maxThreads;
+    cudaDeviceGetAttribute(&maxThreads, 
+        cudaDevAttrMaxThreadsPerBlock, devId);
+    printf("Max threads per Block: %i thrds\n", maxThreads);
+
+    // divide threads by an arbitrary number as long as its reasonable >64
+    int i = 2;
+    int tmp = threads;
+    while (tmp > maxThreads)
+    {
+        tmp = threads / i;
+        i++;
+    }
+    threads = tmp;
+    printf("Actual threads per Block: %i thrds\n", threads);
     
-    int warpSize;
-    cudaDeviceGetAttribute(&warpSize, 
-        cudaDevAttrWarpSize, devId);
-    printf("Warp Size: %i\n", warpSize);
+    // int warpSize;
+    // cudaDeviceGetAttribute(&warpSize, 
+    //     cudaDevAttrWarpSize, devId);
+    // printf("Warp Size: %i\n", warpSize);
     
     // bank conflict avoid
-    cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
+    // cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
-    cudaSharedMemConfig bankSize;
-    cudaDeviceGetSharedMemConfig(&bankSize);
-    printf("Bank size: %i\n", bankSize );
+    // cudaSharedMemConfig bankSize;
+    // cudaDeviceGetSharedMemConfig(&bankSize);
+    // printf("Bank size: %i\n", bankSize );
     
 
-    return smemSize;
+    return;
 }
 
 
@@ -141,9 +161,13 @@ void run_collision_counter(Aabb* boxes, int N) {
 
 void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<unsigned long>& finOverlaps)
 {
-    cudaSetDevice(1);
+    int devId = 1;
+    cudaSetDevice(devId);
 
-    int smemSize = setup_shared_memory();
+    int smemSize;
+    int threads;
+
+    setup(devId, smemSize, threads);
     const int nBoxesPerThread = desiredBoxesPerThread ? desiredBoxesPerThread : smemSize / sizeof(Aabb) / (2*(BLOCK_PADDED));
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
 
@@ -279,12 +303,17 @@ struct sort_aabb_x
 
 void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& finOverlaps)
 {
-    cudaSetDevice(1);
+    int devId = 0;
+    cudaSetDevice(devId);
 
-    int smemSize = setup_shared_memory();
-    const int nBoxesPerThread = numBoxes ? numBoxes : smemSize / sizeof(Aabb) / MAX_BLOCK_SIZE;
+    int smemSize;
+    int maxBlockSize;
+
+    setup(devId, smemSize, maxBlockSize );
+
+    const int nBoxesPerThread = numBoxes ? numBoxes : smemSize / sizeof(Aabb) / maxBlockSize;
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
-    printf("Shared mem alloc: %i B\n", nBoxesPerThread*MAX_BLOCK_SIZE*sizeof(Aabb) );
+    printf("Shared mem alloc: %i B\n", nBoxesPerThread*maxBlockSize*sizeof(Aabb) );
 
     finOverlaps.clear();
     cudaEvent_t start, stop;
@@ -304,8 +333,8 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
 
 
     // int SWEEP_BLOCK_SIZE = 1024;
-    dim3 block(MAX_BLOCK_SIZE);
-    int grid_dim_1d = (N / MAX_BLOCK_SIZE + 1); /// nBoxesPerThread + 1;
+    dim3 block(maxBlockSize);
+    int grid_dim_1d = (N / maxBlockSize + 1); /// nBoxesPerThread + 1;
     dim3 grid( grid_dim_1d );
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
@@ -353,7 +382,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 
     cudaEventRecord(start);
-    retrieve_collision_pairs<<<grid, block, 49152>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nBoxesPerThread);
+    retrieve_collision_pairs<<<grid, block, nBoxesPerThread*maxBlockSize*sizeof(Aabb)>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nBoxesPerThread);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     milliseconds = 0;
