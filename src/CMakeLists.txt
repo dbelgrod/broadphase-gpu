@@ -18,6 +18,9 @@ src/groundtruth.cu
 src/groundtruth.h
 src/sweep.cu
 src/sweep.cuh
+src/klee.cu
+src/klee.cuh
+src/util.cuh
 
 PARENT_SCOPE
 )

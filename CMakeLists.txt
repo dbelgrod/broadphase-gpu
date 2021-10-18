@@ -93,3 +93,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC igl::core)
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
 
 ###############################################################################
+
+target_compile_options(GPUBF_bin PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                       --generate-line-info
+                       --use_fast_math
+                       --relocatable-device-code=true
+                       --ptxas-options=-v
+                      --maxrregcount=7
+                       >)  

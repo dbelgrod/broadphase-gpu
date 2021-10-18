@@ -20,7 +20,7 @@ __global__ void print_sort_axis(Aabb* axis, int* index, int C)
         printf("id: %i, x: %.6f\n", index[i], axis[i].min.x);
 }
 
-__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int numBoxes)
+__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int * numBoxes)
 {
     extern __shared__ Aabb s_objects[];
 
@@ -29,7 +29,8 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
 
     if (tid >= N) return;
 
-    for (int i=0; i < numBoxes; i++)
+    #pragma unroll
+    for (int i=0; i < numBoxes[0]; i++)
     {
         int t = tid + i*blockDim.x;
         int l = i*blockDim.x + ltid;
@@ -39,34 +40,34 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     __syncthreads();
     
 
-    for (int i=0; i < 1; i++)
+
+    int t = tid + 0*blockDim.x;
+    int l = 0*blockDim.x + ltid;
+    // tid = tid + 1*blockDim.x;
+    // ltid = 1*blockDim.x + ltid;
+    
+    if (t >= N) return;
+
+    int ntid = t + 1;
+    int nltid = t + 1;
+
+    Aabb* a = &s_objects[l];
+    Aabb* b = nltid < numBoxes[0]*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
+    
+
+    while (a->max.x  > b->min.x) //>= is covertex
     {
-        int t = tid + i*blockDim.x;
-        int l = i*blockDim.x + ltid;
+        if ( does_collide(a,b) 
+            // && !covertex(a->min, b->min)
+            // && !covertex(a->min, b->max)
+            // && !covertex(a->max, b->max)
+            // && !covertex(a->max, b->min)
+            )
+            add_overlap(index[t], index[ntid], count, overlaps, guess);
         
-        if (t >= N) return;
-
-        int ntid = t + 1;
-        int nltid = l + 1;
-
-        Aabb* a = &s_objects[l];
-        Aabb* b = nltid < numBoxes*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
-        
-
-        while (a->max.x  > b->min.x) //>= is covertex
-        {
-            if ( does_collide(a,b) 
-                // && !covertex(a->min, b->min)
-                // && !covertex(a->min, b->max)
-                // && !covertex(a->max, b->max)
-                // && !covertex(a->max, b->min)
-                )
-                add_overlap(index[t], index[ntid], count, overlaps, guess);
-            
-            ntid++;
-            nltid++;
-            if (ntid >= N) return;
-            b = nltid < numBoxes*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
-        }
-    } //for loop
+        ntid++;
+        nltid++;
+        if (ntid >= N) return;
+        b = nltid < numBoxes[0]*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
+    }
 }

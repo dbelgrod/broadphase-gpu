@@ -13,6 +13,8 @@
 
 #include <gpubf/simulation.h>
 #include <gpubf/groundtruth.h>
+#include <gpubf/util.cuh>
+#include <gpubf/klee.cuh>
 
 using namespace std;
 
@@ -101,7 +103,8 @@ int main( int argc, char **argv )
     //     i = i << 1;
     // }
     // run_scaling(boxes.data(), N, nbox,  overlaps);
-    run_sweep(boxes.data(), N, nbox, overlaps);
+    // run_sweep(boxes.data(), N, nbox, overlaps);
+    run_klee(boxes.data(), N, nbox, overlaps);
 
     for (auto i : compare)
     {

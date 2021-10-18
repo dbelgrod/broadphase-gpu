@@ -3,54 +3,8 @@
 #include <thrust/execution_policy.h>
 
 
+void setup(int devId, int& smemSize, int& threads);
 
-void setup(int devId, int& smemSize, int& threads)
-{
-    // Host code
-    // int maxbytes = 98304; // 96 KB
-    // cudaFuncSetAttribute(get_collision_pairs, cudaFuncAttributeMaxDynamicSharedMemorySize, maxbytes);
-
-    // int smemSize;
-    // int devId = 0;
-    cudaDeviceGetAttribute(&smemSize, 
-        cudaDevAttrMaxSharedMemoryPerBlock, devId);
-    printf("Shared Memory per Block: %i B\n", smemSize);
-
-    cudaDeviceGetAttribute(&threads, 
-        cudaDevAttrMaxThreadsPerMultiProcessor, devId);
-    printf("Max threads per Multiprocessor: %i thrds\n", threads);
-
-    int maxThreads;
-    cudaDeviceGetAttribute(&maxThreads, 
-        cudaDevAttrMaxThreadsPerBlock, devId);
-    printf("Max threads per Block: %i thrds\n", maxThreads);
-
-    // divide threads by an arbitrary number as long as its reasonable >64
-    int i = 2;
-    int tmp = threads;
-    while (tmp > maxThreads)
-    {
-        tmp = threads / i;
-        i++;
-    }
-    threads = tmp;
-    printf("Actual threads per Block: %i thrds\n", threads);
-    
-    // int warpSize;
-    // cudaDeviceGetAttribute(&warpSize, 
-    //     cudaDevAttrWarpSize, devId);
-    // printf("Warp Size: %i\n", warpSize);
-    
-    // bank conflict avoid
-    // cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
-
-    // cudaSharedMemConfig bankSize;
-    // cudaDeviceGetSharedMemConfig(&bankSize);
-    // printf("Bank size: %i\n", bankSize );
-    
-
-    return;
-}
 
 
 void run_collision_counter(Aabb* boxes, int N) {
@@ -315,6 +269,10 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
     printf("Shared mem alloc: %i B\n", nBoxesPerThread*maxBlockSize*sizeof(Aabb) );
 
+    int * nbox;
+    cudaMalloc((void**)&nbox, sizeof(int));
+    cudaMemcpy(nbox, &nBoxesPerThread, sizeof(int), cudaMemcpyHostToDevice);
+
     finOverlaps.clear();
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
@@ -382,7 +340,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 
     cudaEventRecord(start);
-    retrieve_collision_pairs<<<grid, block, nBoxesPerThread*maxBlockSize*sizeof(Aabb)>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nBoxesPerThread);
+    retrieve_collision_pairs<<<grid, block, nBoxesPerThread*maxBlockSize*sizeof(Aabb)>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nbox);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     milliseconds = 0;

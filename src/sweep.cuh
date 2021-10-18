@@ -19,4 +19,4 @@ __global__ struct SweepMarker {
 
 __global__ void build_index(Aabb * boxes, int N, int* index);
 __global__ void print_sort_axis(Aabb* axis, int* index, int C);
-__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int numBoxes);
+__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int * numBoxes);
