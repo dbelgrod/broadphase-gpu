@@ -4,10 +4,10 @@
 __global__ void klee_pair_discover(Aabb* boxes__x, Aabb* boxes__y, int * count, int2 * overlaps, int N, int guess, int * numBoxes)
 {
     Cell cell0(boxes__x, boxes__y, N);
-
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+        printf("cell max x %f, cell min x %f, cell max y %f, cell min y %f, cell z %f %f\n", cell0.max.x, cell0.min.x, cell0.max.y, cell0.min.y, cell0.max.z, cell0.min.z);
+    cell0.Cut();
 }
-
-
 
 //
 struct sort_x
