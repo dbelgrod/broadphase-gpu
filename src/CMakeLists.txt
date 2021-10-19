@@ -21,6 +21,9 @@ src/sweep.cuh
 src/klee.cu
 src/klee.cuh
 src/util.cuh
+src/queue.cu
+src/queue.cuh
+src/object.cuh
 
 PARENT_SCOPE
 )

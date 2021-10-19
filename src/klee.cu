@@ -1,12 +1,40 @@
 #include <gpubf/klee.cuh>
 
 
+
 __global__ void klee_pair_discover(Aabb* boxes__x, Aabb* boxes__y, int * count, int2 * overlaps, int N, int guess, int * numBoxes)
 {
     Cell cell0(boxes__x, boxes__y, N);
-    if (threadIdx.x == 0 && blockIdx.x == 0)
-        printf("cell max x %f, cell min x %f, cell max y %f, cell min y %f, cell z %f %f\n", cell0.max.x, cell0.min.x, cell0.max.y, cell0.min.y, cell0.max.z, cell0.min.z);
-    cell0.Cut();
+    // printf("%i: cell max x %f, cell min x %f, cell max y %f, cell min y %f, cell z %f %f\n", cell0.id, cell0.max.x, cell0.min.x, cell0.max.y, cell0.min.y, cell0.max.z, cell0.min.z);
+
+    Enqueue enqueue;
+    enqueue.push(cell0);
+    int nitr = 0;
+    while (!enqueue.empty())
+    {
+        // cell0.Cut(enqueue);
+        Cell c = enqueue.pop();
+        printf("%i: cell max x %f, cell min x %f, cell max y %f, cell min y %f, boxes %i\n", c.id, c.max.x, c.min.x, c.max.y, c.min.y,  c.Nboxes);
+        printf("pop -> curr size: %i\n", enqueue.size());
+        printf("square norm -> %f\n", c.Norm());
+
+        c.Simplify(count, overlaps, guess);
+        printf("simplify -> curr size: %i\n", enqueue.size());
+        
+        Cell nextcells[2];
+        c.Cut(nextcells);
+
+        // printf("%i:\n", next[0].id);
+        // printf("%i: cell max x %f, cell min x %f, cell max y %f, cell min y %f, cell z %f %f\n", nextcells[1].id,  nextcells[1].max.x,  nextcells[1].min.x,  nextcells[1].max.y,  nextcells[1].min.y,  nextcells[1].max.z,  nextcells[1].min.z);
+        printf("cut -> curr size: %i\n", enqueue.size());
+        enqueue.push(nextcells[0]);
+        enqueue.push(nextcells[1]); 
+        printf("push -> curr size: %i\n", enqueue.size());
+        // return;
+        nitr++;
+        if (c.Nboxes < 3)
+            return;
+    }
 }
 
 //
@@ -95,7 +123,7 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 
     cudaEventRecord(start);
-    klee_pair_discover<<<grid, block, nBoxesPerThread*maxBlockSize*sizeof(Aabb)>>>(d_boxes__x, d_boxes__y, d_count, d_overlaps, N, guess, nbox);
+    klee_pair_discover<<<1, 1, 0>>>(d_boxes__x, d_boxes__y, d_count, d_overlaps, N, guess, nbox);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     milliseconds = 0;
