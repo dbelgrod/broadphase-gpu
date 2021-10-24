@@ -27,8 +27,8 @@ void constructBoxes
     vector<Aabb>& boxes
 )
 {
-    // addVertices(vertices_t0, vertices_t1, boxes);
-    // addEdges(vertices_t0, vertices_t1, edges, boxes);
+    addVertices(vertices_t0, vertices_t1, boxes);
+    addEdges(vertices_t0, vertices_t1, edges, boxes);
     addFaces(vertices_t0, vertices_t1, faces, boxes);
 }
 
@@ -102,10 +102,14 @@ int main( int argc, char **argv )
     //     printf("\n");
     //     i = i << 1;
     // }
-    run_scaling(boxes.data(), N, nbox,  overlaps);
-    // run_sweep(boxes.data(), N, nbox, overlaps);
-    // run_klee(boxes.data(), N, nbox, overlaps);
     run_sweep(boxes.data(), N, nbox, overlaps);
+    for (auto i : compare)
+    {
+        printf("%s\n", i );
+        compare_mathematica(overlaps, i);
+    }
+   
+    run_scaling(boxes.data(), N, nbox,  overlaps);
 
     for (auto i : compare)
     {

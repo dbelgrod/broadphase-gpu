@@ -65,7 +65,7 @@ __device__ void add_overlap(int& xid, int& yid, int * count, int2 * overlaps, in
     } 
 }
 
-__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread, uint * queries)
+__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread)
 {       
         extern __shared__ Aabb s_objects[];
         

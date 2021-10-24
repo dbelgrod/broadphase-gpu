@@ -2,7 +2,7 @@
 
 #include <gpubf/aabb.h>
 
-#define BLOCK_SIZE_1D 16 //sqrt(MAX_BLOCK_SIZE)
+#define BLOCK_SIZE_1D 32 //sqrt(MAX_BLOCK_SIZE)
 // #define MAX_BLOCK_SIZE 1024 //for 1080Ti, V100
 // #define WARP_SIZE 32
 
@@ -13,7 +13,7 @@
 __global__ void reset_counter(uint * counter);
 __global__ void reset_counter(int * counter);
 __global__ void count_collisions(Aabb * boxes, int * count, int N);
-__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread, uint * queries);
+__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread);
 __global__ void get_collision_pairs_old(Aabb * boxes, int * count, int2 * overlaps, int N, int G );
 
 __device__ bool does_collide(const Aabb& a, const Aabb& b);

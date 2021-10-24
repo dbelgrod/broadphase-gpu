@@ -17,8 +17,8 @@ __global__ class Aabb {
         float3 min;
         float3 max;
         int3 vertexIds;
-        // unsigned long ref_id;
-        // Simplex type;
+        unsigned long ref_id;
+        Simplex type;
         // float buffer;
        
 
@@ -38,8 +38,8 @@ __global__ class Aabb {
             // memcpy(min, 	__float2half(tempmin), sizeof(__half)*3);
             // memcpy(max ,	__float2half(tempmax), sizeof(__half)*3);
             // id = assignid;
-            // ref_id = reference_id;
-            // type = assigntype;
+            ref_id = reference_id;
+            type = assigntype;
         };
 
         Aabb() = default;
