@@ -121,7 +121,8 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, 
             
 
                 if (
-                    does_collide(x,y) //&&
+                    does_collide(x,y) &&
+                    !covertex(x->vertexIds, y->vertexIds)
                     // !covertex(xmax, ymax) &&
                     // !covertex(xmax, ymin) && 
                     // !covertex(xmin, ymin) &&

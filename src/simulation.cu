@@ -333,7 +333,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     printf("Elapsed time for sort: %.6f ms\n", milliseconds);
 
     // Test print some sorted output
-    print_sort_axis<<<1,1>>>(d_boxes,rank_x, 5);
+    // print_sort_axis<<<1,1>>>(d_boxes,rank_x, 5);
     cudaDeviceSynchronize();
 
     // Find overlapping pairs
