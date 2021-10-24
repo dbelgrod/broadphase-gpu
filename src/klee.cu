@@ -14,22 +14,22 @@ __global__ void klee_pair_discover(Aabb* boxes__x, Aabb* boxes__y, int * count, 
     {
         // cell0.Cut(enqueue);
         Cell c = enqueue.pop();
-        printf("%i: cell max x %f, cell min x %f, cell max y %f, cell min y %f, boxes %i\n", c.id, c.max.x, c.min.x, c.max.y, c.min.y,  c.Nboxes);
-        printf("pop -> curr size: %i\n", enqueue.size());
-        printf("square norm -> %f\n", c.Norm());
+        // printf("%i: cell max x %f, cell min x %f, cell max y %f, cell min y %f, boxes %i\n", c.id, c.max.x, c.min.x, c.max.y, c.min.y,  c.Nboxes);
+        // printf("pop -> curr size: %i\n", enqueue.size());
+        // printf("square norm -> %f\n", c.Norm());
 
         c.Simplify(count, overlaps, guess);
-        printf("simplify -> curr size: %i\n", enqueue.size());
+        // printf("simplify -> curr size: %i\n", enqueue.size());
         
         Cell nextcells[2];
         c.Cut(nextcells);
 
         // printf("%i:\n", next[0].id);
         // printf("%i: cell max x %f, cell min x %f, cell max y %f, cell min y %f, cell z %f %f\n", nextcells[1].id,  nextcells[1].max.x,  nextcells[1].min.x,  nextcells[1].max.y,  nextcells[1].min.y,  nextcells[1].max.z,  nextcells[1].min.z);
-        printf("cut -> curr size: %i\n", enqueue.size());
+        // printf("cut -> curr size: %i\n", enqueue.size());
         enqueue.push(nextcells[0]);
         enqueue.push(nextcells[1]); 
-        printf("push -> curr size: %i\n", enqueue.size());
+        // printf("push -> curr size: %i\n", enqueue.size());
         // return;
         nitr++;
         if (c.Nboxes < 3)
