@@ -16,6 +16,7 @@ __global__ class Aabb {
         // int id;
         float3 min;
         float3 max;
+        int3 vertexIds;
         // unsigned long ref_id;
         // Simplex type;
         // float buffer;
@@ -29,10 +30,11 @@ __global__ class Aabb {
         //     memcpy(min,tempmin, sizeof(half)*3);
         // };
 
-        Aabb(int assignid, unsigned long reference_id, Simplex assigntype, float* tempmin, float* tempmax)
+        Aabb(int assignid, unsigned long reference_id, Simplex assigntype, int * vids, float* tempmin, float* tempmax)
         {
             min = make_float3(tempmin[0], tempmin[1], tempmin[2]);
             max = make_float3(tempmax[0], tempmax[1], tempmax[2]);
+            vertexIds = make_int3(vids[0], vids[1], vids[2]);
             // memcpy(min, 	__float2half(tempmin), sizeof(__half)*3);
             // memcpy(max ,	__float2half(tempmax), sizeof(__half)*3);
             // id = assignid;

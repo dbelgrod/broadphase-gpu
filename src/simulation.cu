@@ -115,7 +115,7 @@ void run_collision_counter(Aabb* boxes, int N) {
 
 void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<unsigned long>& finOverlaps)
 {
-    int devId = 1;
+    int devId = 0;
     cudaSetDevice(devId);
 
     int smemSize;
@@ -291,8 +291,10 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
 
 
     // int SWEEP_BLOCK_SIZE = 1024;
+    // dim3 block(maxBlockSize);
     dim3 block(maxBlockSize);
-    int grid_dim_1d = (N / maxBlockSize + 1); /// nBoxesPerThread + 1;
+    // int grid_dim_1d = (N / maxBlockSize + 1); 
+    int grid_dim_1d = (N / maxBlockSize + 1); 
     dim3 grid( grid_dim_1d );
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
@@ -301,17 +303,17 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     // int* d_index;
     // cudaMalloc((void**)&d_index, sizeof(int)*(N));
     int* rank;
-    cudaMalloc((void**)&rank, sizeof(int)*(3*N));
+    cudaMalloc((void**)&rank, sizeof(int)*(1*N));
 
     int* rank_x = &rank[0];
-    int* rank_y = &rank[N];
-    int* rank_z = &rank[2*N];
+    // int* rank_y = &rank[N];
+    // int* rank_z = &rank[2*N];
 
     // Translate boxes -> SweepMarkers
     cudaEventRecord(start);
     build_index<<<grid,block>>>(d_boxes, N, rank_x);
-    build_index<<<grid,block>>>(d_boxes, N, rank_y);
-    build_index<<<grid,block>>>(d_boxes, N, rank_z);
+    // build_index<<<grid,block>>>(d_boxes, N, rank_y);
+    // build_index<<<grid,block>>>(d_boxes, N, rank_z);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     float milliseconds = 0;

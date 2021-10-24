@@ -1,5 +1,6 @@
 #include <gpubf/aabb.h>
 
+
 void addEdges
 (
     Eigen::MatrixXd& vertices_t0, 
@@ -20,9 +21,11 @@ void addEdges
         points.row(2) = edge_vertex0_t1;
         points.row(3) = edge_vertex1_t1;
 
+        int vertexIds[3] = {edges(i,0), edges(i,1), edges(i,0)};
+
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), i, Simplex::EDGE, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, Simplex::EDGE, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -41,9 +44,11 @@ void addVertices
         points.row(0) = vertex_t0;
         points.row(1) = vertex_t1;
 
+        int vertexIds[3] = {i, i, i};
+
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), i, Simplex::VERTEX, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, Simplex::VERTEX, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -71,9 +76,11 @@ void addFaces
         points.row(4) = face_vertex1_t1;
         points.row(5) = face_vertex2_t1;
 
+        int vertexIds[3] = {faces(i,0), faces(i,1), faces(i,2)};
+
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
-        boxes.emplace_back(boxes.size(), i, Simplex::FACE, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, Simplex::FACE, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 };
 

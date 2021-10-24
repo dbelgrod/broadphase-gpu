@@ -58,7 +58,7 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     while (a->max.x  > b->min.x) //>= is covertex
     {
         if ( does_collide(a,b) 
-            // && !covertex(a->min, b->min)
+            && !covertex(a->vertexIds, b->vertexIds)
             // && !covertex(a->min, b->max)
             // && !covertex(a->max, b->max)
             // && !covertex(a->max, b->min)

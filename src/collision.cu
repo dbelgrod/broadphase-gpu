@@ -36,17 +36,24 @@ __device__ bool does_collide(Aabb* a, Aabb* b)
             a->max.z >= b->min.z && a->min.z <= b->max.z;
 }
 
-__device__ bool covertex(const float3& a, const float3& b) {
+__device__ bool covertex(const int3& a, const int3& b) {
+    
     return a.x == b.x || a.x == b.y || a.x == b.z || 
         a.y == b.x || a.y == b.y || a.y == b.z || 
         a.z == b.x || a.z == b.y || a.z == b.z;
 }
 
-__device__ bool covertex_box(const Aabb a, const Aabb b) {
-    return a.max.x == b.max.x || a.max.x == b.max.y || a.max.x == b.max.z || 
-        a.max.y == b.max.x || a.max.y == b.max.y || a.max.y == b.max.z || 
-        a.max.z == b.max.x || a.max.z == b.max.y || a.max.z == b.max.z;
-}
+// __device__ bool covertex(const float3& a, const float3& b) {
+//     return a.x == b.x || a.x == b.y || a.x == b.z || 
+//         a.y == b.x || a.y == b.y || a.y == b.z || 
+//         a.z == b.x || a.z == b.y || a.z == b.z;
+// }
+
+// __device__ bool covertex_box(const Aabb a, const Aabb b) {
+//     return a.max.x == b.max.x || a.max.x == b.max.y || a.max.x == b.max.z || 
+//         a.max.y == b.max.x || a.max.y == b.max.y || a.max.y == b.max.z || 
+//         a.max.z == b.max.x || a.max.z == b.max.y || a.max.z == b.max.z;
+// }
 
 __device__ void add_overlap(int& xid, int& yid, int * count, int2 * overlaps, int G)
 {
