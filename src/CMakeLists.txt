@@ -8,7 +8,7 @@ set(GPUBF_SOURCES
 # src/body.cu
 # src/root_finder.h
 # src/root_finder.cu
-src/aabb.h
+src/aabb.cuh
 src/aabb.cu
 src/collision.cu
 src/collision.h

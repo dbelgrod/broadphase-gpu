@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gpubf/aabb.h>
+#include <gpubf/aabb.cuh>
 #include <gpubf/collision.h>
 
 __global__ struct SweepMarker {

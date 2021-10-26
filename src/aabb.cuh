@@ -11,12 +11,12 @@ using namespace std;
 
 typedef enum { VERTEX, FACE, EDGE }  Simplex;
 
-class Aabb {
+__global__ class Aabb {
     public:
         // int id;
-        float min[3];
-        float max[3];
-        int vertexIds[3];
+        float3 min;
+        float3 max;
+        int3 vertexIds;
         unsigned long ref_id;
         Simplex type;
         // float buffer;
@@ -32,12 +32,9 @@ class Aabb {
 
         Aabb(int assignid, unsigned long reference_id, Simplex assigntype, int * vids, float* tempmin, float* tempmax)
         {
-            for (size_t i = 0; i < 3; i++)
-            {
-                min[i] = tempmin[i];
-                max[i] = tempmax[i];
-                vertexIds[i] = vids[i];
-            }
+            min = make_float3(tempmin[0], tempmin[1], tempmin[2]);
+            max = make_float3(tempmax[0], tempmax[1], tempmax[2]);
+            vertexIds = make_int3(vids[0], vids[1], vids[2]);
             // memcpy(min, 	__float2half(tempmin), sizeof(__half)*3);
             // memcpy(max ,	__float2half(tempmax), sizeof(__half)*3);
             // id = assignid;
@@ -47,3 +44,27 @@ class Aabb {
 
         Aabb() = default;
 };
+
+void addEdges
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    Eigen::MatrixXi& edges, 
+    vector<Aabb>& boxes
+);
+
+void addVertices
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    vector<Aabb>& boxes
+);
+
+void addFaces
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    Eigen::MatrixXi& faces, 
+    vector<Aabb>& boxes
+);
+
