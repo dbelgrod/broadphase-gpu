@@ -34,13 +34,16 @@ void add_overlap(const int& xid, const int& yid, atomic_int& count, int * overla
     // int i = atomicAdd(count, 1); //how to do this
 
     // do x+=y and return the old value of x
-    int i = count++;
-
+    int i = count.fetch_add(1);
+    
+    // int i = count;
+    // printf("%i\n", i);
     if (i < G)
     {
         overlaps[2*i] = xid;
         overlaps[2*i+1] = yid;
     } 
+    // count++;
 }
 
 // https://stackoverflow.com/questions/3909272/sorting-two-corresponding-arrays
@@ -58,10 +61,6 @@ struct sort_boxes //sort_aabb_x
     bool operator()(const Aabb &a, const Aabb &b) const {
         return (a.min[0] < b.min[0]);}
 };
-
-// int arr[5]={4,1,3,6,2}
-// string arr1[5]={"a1","b1","c1","d1","e1"};
-// int indices[5]={0,1,2,3,4};
 
 void sort_along_xaxis(Aabb * boxes, int * box_indices, int N)
 {
@@ -109,17 +108,6 @@ void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int *
                            }
                         // }
     );
-
-
-    // box a = boxes[threadId]
-    // t = threadId + 1;
-    // box b = boxes[t]
-    
-    // while a->max.x >= b->min.x
-    // does_collide &&
-    // !covertex
-    // add_overlap
-    // b = boxes[t + 1]
 }
 
 
@@ -128,6 +116,9 @@ void run_sweep_cpu(
     int N, int numBoxes, 
     vector<unsigned long>& finOverlaps)
 {
+    Aabb og_boxes[N];
+    for(int i=0; i<N; ++i)
+        og_boxes[i] = boxes[i];
     // sort boxes by xaxis in parallel
     // we will need an index vector
     int * box_indices = new int[N];
@@ -142,13 +133,15 @@ void run_sweep_cpu(
     atomic_int count = 0;
 
     sweep(boxes, box_indices, count, overlaps, N, guess);
-    printf("Finished 1st sweep\n");
     if (count > guess) //we went over
     {
+        printf("Running again...\n");
         guess = count;
         delete[] overlaps;  //probably dont need
+        // delete overlaps;
         overlaps = new int[2*guess];
         count = 0;
+        cout << "count: " << count << ", guess: " << guess << endl;
         sweep(boxes, box_indices, count, overlaps, N, guess);
     }
 
@@ -160,8 +153,8 @@ void run_sweep_cpu(
         // finOverlaps.push_back(overlaps[i].y);
         
         // need to fetch where box is from index first
-        const Aabb& a = boxes[overlaps[2*i]];
-        const Aabb& b = boxes[overlaps[2*i+1]];
+        const Aabb& a = og_boxes[overlaps[2*i]];
+        const Aabb& b = og_boxes[overlaps[2*i+1]];
         if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
         {
             finOverlaps.push_back(a.ref_id);
