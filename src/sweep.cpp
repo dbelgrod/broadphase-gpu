@@ -1,4 +1,5 @@
 #include "aabb.h"
+#include "timer.hpp"
 
 #include <tbb/mutex.h>
 #include <tbb/parallel_for.h>
@@ -142,7 +143,13 @@ void run_sweep_cpu(
         overlaps = new int[2*guess];
         count = 0;
         cout << "count: " << count << ", guess: " << guess << endl;
+        ccd::Timer timer;
+        timer.start();
         sweep(boxes, box_indices, count, overlaps, N, guess);
+        timer.stop();
+        double total_time = 0;
+        total_time += timer.getElapsedTimeInMicroSec();
+        printf("Elapsed time: %.6f ms\n", total_time / 1000);
     }
 
     cout << "Final count: " << count << endl;

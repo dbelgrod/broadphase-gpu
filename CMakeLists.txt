@@ -106,7 +106,7 @@ target_compile_options(GPUBF_bin PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 # C++ code
 ################################################################################
 add_executable(cpusweep_bin app/main.cpp src/sweep.cpp src/aabb.cpp)
-add_library(CPUSWEEP STATIC src/sweep.cpp src/aabb.cpp src/aabb.h)
+add_library(CPUSWEEP STATIC src/sweep.cpp src/aabb.cpp src/aabb.h src/timer.hpp)
 # target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_link_libraries(CPUSWEEP PRIVATE warnings::all)
 target_compile_definitions(CPUSWEEP PUBLIC NOMINMAX)
