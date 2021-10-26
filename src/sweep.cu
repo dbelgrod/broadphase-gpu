@@ -55,7 +55,7 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     Aabb* b = nltid < numBoxes[0]*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
     
 
-    while (a->max.x  > b->min.x) //>= is covertex
+    while (a->max.x  >= b->min.x) //boxes can touch and collide
     {
         if ( does_collide(a,b) 
             && !covertex(a->vertexIds, b->vertexIds)
