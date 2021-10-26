@@ -1,8 +1,15 @@
 #include "aabb.h"
 
+#include <tbb/mutex.h>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+#include <tbb/task_scheduler_init.h>
+#include <tbb/enumerable_thread_specific.h>
+
 #include <iostream>     // std::cout
 #include <algorithm>    // std::sort
 #include <vector>       // std::vector
+#include <execution> 
 
 
 // typedef StructAlignment(32) std::array<_simd, 6> SimdObject;
@@ -22,9 +29,12 @@ bool covertex(const int* a, const int* b) {
         a[2] == b[0] || a[1] == b[1] || a[2] == b[2];
 }
 
-void add_overlap(int& xid, int& yid, int * count, int * overlaps, int G)
+void add_overlap(const int& xid, const int& yid, atomic_int& count, int * overlaps, int G)
 {
-    int i = atomicAdd(count, 1); //how to do this
+    // int i = atomicAdd(count, 1); //how to do this
+
+    // do x+=y and return the old value of x
+    int i = count++;
 
     if (i < G)
     {
@@ -40,28 +50,28 @@ class sort_indices
      Aabb* mparr;
    public:
      sort_indices(Aabb* parr) : mparr(parr) {}
-     bool operator()(int i, int j) const { return mparr[i]->min.x < mparr[j]->min.x; }
-}
+     bool operator()(int i, int j) const { return (mparr[i].min[0] < mparr[j].min[0]);}
+};
 
 struct sort_boxes //sort_aabb_x
 {
     bool operator()(const Aabb &a, const Aabb &b) const {
-        return (a.min.x < b.min.x);}
-} 
+        return (a.min[0] < b.min[0]);}
+};
 
 // int arr[5]={4,1,3,6,2}
 // string arr1[5]={"a1","b1","c1","d1","e1"};
 // int indices[5]={0,1,2,3,4};
 
-void sort_along_xaxis(Aabb * boxes, int N, int * box_indices)
+void sort_along_xaxis(Aabb * boxes, int * box_indices, int N)
 {
     // sort box indices by boxes minx val
-    std::sort(std::execution::par_unseq, box_indices.begin(), box_indices.end(), sort_indices(boxes));
+    sort(execution::par_unseq, box_indices, box_indices + N, sort_indices(boxes));
     // sort boxes by minx val
-    std::sort(std::execution::par_unseq, boxes.begin(), boxes.end(), sort_boxes());
+    sort(execution::par_unseq, boxes, boxes + N, sort_boxes());
 }
 
-void sweep(Aabb * boxes, int * box_indices, int * count, int * overlaps, int N, int guess)
+void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int * overlaps, int N, int guess)
 {
     // ask about changing number of boxes per thread !!!
     // tbb::parallel_for(0, queries.size(), 1, [&](int i){
@@ -78,14 +88,14 @@ void sweep(Aabb * boxes, int * box_indices, int * count, int * overlaps, int N, 
                                int inc = i + 1;
                                Aabb b = boxes[inc];
 
-                               while (a.max.x  >= b.min.x)
+                               while (a.max[0]  >= b.min[0])
                                {
                                    if (
                                         does_collide(a,b) &&
                                         !covertex(a.vertexIds, b.vertexIds)
                                             )
                                         {
-                                            add_overlap(index[i], index[inc], count, overlaps, guess);
+                                            add_overlap(box_indices[i], box_indices[inc], count, overlaps, guess);
                                         }
                                }
 
@@ -108,31 +118,33 @@ void sweep(Aabb * boxes, int * box_indices, int * count, int * overlaps, int N, 
 
 
 void run_sweep_cpu(
-    const Aabb* boxes, 
+    Aabb* boxes, 
     int N, int numBoxes, 
     vector<unsigned long>& finOverlaps)
 {
     // sort boxes by xaxis in parallel
     // we will need an index vector
-    sort_along_xaxis(Aabb * boxes, int * box_indices);
+    int * box_indices = new int[N];
+    for (size_t i=0;i<N;i++) {box_indices[i]=i;}
+    sort_along_xaxis(boxes, box_indices, N);
 
     int guess = 0;
     int * overlaps = new int(2*guess);
     
-    int * count = new int(1);
-    count[0] = 0;
+    atomic_int count(0);
+    // count[0] = 0;
 
-    sweep(boxes, box_indices, count, overlaps, N, guess)
+    sweep(boxes, box_indices, count, overlaps, N, guess);
     if (count > guess) //we went over
     {
-        guess = count[0];
+        guess = count;
         delete[] overlaps;  //probably dont need
         overlaps = new int(2*guess);
-        count[0] = 0;
-        sweep(boxes, box_indices, count, overlaps, N, guess)
+        count = 0;
+        sweep(boxes, box_indices, count, overlaps, N, guess);
     }
 
-    for (size_t i=0; i < count[0]; i++)
+    for (size_t i=0; i < count; i++)
     {
         // finOverlaps.push_back(overlaps[i].x);
         // finOverlaps.push_back(overlaps[i].y);
@@ -156,9 +168,10 @@ void run_sweep_cpu(
             finOverlaps.push_back(max(a.ref_id, b.ref_id));
         }
     }
+}
 
-    #pragma omp declare reduction (merge : std::vector<long> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
+    // #pragma omp declare reduction (merge : std::vector<long> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 
-    #pragma omp parallel for num_threads(num_threads),reduction(+:m_narrowPhase), reduction(merge:narrowPhaseValues)
+    // #pragma omp parallel for num_threads(num_threads),reduction(+:m_narrowPhase), reduction(merge:narrowPhaseValues)
 
     

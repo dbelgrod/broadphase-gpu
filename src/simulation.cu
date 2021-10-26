@@ -164,13 +164,13 @@ void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<un
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
 
-    // uint * d_queries;
-    // cudaMalloc((void**)&d_queries, sizeof(uint)*(1));
-    // reset_counter<<<1,1>>>(d_queries);
+    long long * d_queries;
+    cudaMalloc((void**)&d_queries, sizeof(long long)*(1));
+    reset_counter<<<1,1>>>(d_queries);
 
     printf("Shared mem alloc: %i B\n", nBoxesPerThread*2*(BLOCK_PADDED)*sizeof(Aabb) );
     cudaEventRecord(start);
-    get_collision_pairs<<<grid, block, nBoxesPerThread*2*(BLOCK_PADDED)*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, guess, nBoxesPerThread);
+    get_collision_pairs<<<grid, block, nBoxesPerThread*2*(BLOCK_PADDED)*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, guess, nBoxesPerThread, d_queries);
     // get_collision_pairs_old<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, guess);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -178,10 +178,11 @@ void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<un
     cudaEventElapsedTime(&milliseconds, start, stop);
     // cudaDeviceSynchronize();
 
-    // uint queries;
-    // cudaMemcpy(&queries, d_queries, sizeof(uint), cudaMemcpyDeviceToHost);
-    // cudaDeviceSynchronize();
-    // printf("queries: %llu\n", queries);
+    long long queries;
+    cudaMemcpy(&queries, d_queries, sizeof(long long), cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    printf("queries: %llu\n", queries);
+    printf("needed queries: %llu\n", (long long)N*(N-1)/2 );
 
     // int count;
     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
@@ -197,7 +198,7 @@ void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<un
         reset_counter<<<1,1>>>(d_count);
         cudaDeviceSynchronize();
         cudaEventRecord(start);
-        get_collision_pairs<<<grid, block, nBoxesPerThread*2*(BLOCK_PADDED)*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, count, nBoxesPerThread);
+        get_collision_pairs<<<grid, block, nBoxesPerThread*2*(BLOCK_PADDED)*sizeof(Aabb)>>>(d_boxes, d_count, d_overlaps, N, count, nBoxesPerThread, d_queries);
         // get_collision_pairs_old<<<grid, block>>>(d_boxes, d_count, d_overlaps, N, 2*count);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);

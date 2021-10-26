@@ -41,3 +41,28 @@ endif()
 #   set_property(TARGET tccd_eigen PROPERTY EXPORT_NAME Eigen3::Eigen)
 #   add_library(Eigen3::Eigen ALIAS tccd_eigen)
 # endif()
+
+# TBB
+if(NOT TARGET tbb::tbb)
+  gpubf_download_tbb()
+	set(TBB_BUILD_STATIC ON CACHE BOOL " " FORCE)
+	set(TBB_BUILD_SHARED OFF CACHE BOOL " " FORCE)
+  set(TBB_BUILD_STATIC ON CACHE BOOL " " FORCE)
+	set(TBB_BUILD_SHARED OFF CACHE BOOL " " FORCE)
+	set(TBB_BUILD_TBBMALLOC OFF CACHE BOOL " " FORCE)
+	set(TBB_BUILD_TBBMALLOC_PROXY OFF CACHE BOOL " " FORCE)
+	set(TBB_BUILD_TESTS OFF CACHE BOOL " " FORCE)
+	set(TBB_NO_DATE ON CACHE BOOL " " FORCE)
+
+	add_subdirectory(${GPUBF_EXTERNAL}/tbb tbb)
+	set_target_properties(tbb_static PROPERTIES
+		INTERFACE_INCLUDE_DIRECTORIES "${GPUBF_EXTERNAL}/tbb/include"
+	)
+	if(NOT MSVC)
+		set_target_properties(tbb_static PROPERTIES
+			COMPILE_FLAGS "-Wno-implicit-fallthrough -Wno-missing-field-initializers -Wno-unused-parameter -Wno-keyword-macro"
+		)
+		set_target_properties(tbb_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+	endif()
+	add_library(tbb::tbb ALIAS tbb_static)
+endif()

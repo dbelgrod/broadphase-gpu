@@ -65,7 +65,7 @@ __device__ void add_overlap(int& xid, int& yid, int * count, int2 * overlaps, in
     } 
 }
 
-__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread)
+__global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread, long long * queries)
 {       
         extern __shared__ Aabb s_objects[];
         
@@ -79,7 +79,7 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, 
         // ex (threadRowId,threadColId) = (0,0) should not be considered but now it contains (1,0) so it must be incl.
         
         //  atomicAdd(queries, 1);
-        if (threadRowId >= N || threadColId >= N || threadColId - nBoxesPerThread*blockDim.y >= threadRowId) return;
+        if (threadRowId >= N || threadColId >= N) return ;//||  threadColId - nBoxesPerThread*blockDim.y >= threadRowId) return;
 
 
         // #pragma unroll
@@ -119,6 +119,7 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, 
                 // Aabb x = boxes[g_x__id];
                 // Aabb y = boxes[g_y__id];
             
+                atomicAdd((uint*)queries, 1);
 
                 if (
                     does_collide(x,y) &&
@@ -136,6 +137,11 @@ __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, 
 
 // template<typename T>
 __global__ void reset_counter(uint * counter){
+    *counter = 0;
+}
+
+__global__ void reset_counter(long long * counter)
+{
     *counter = 0;
 }
 

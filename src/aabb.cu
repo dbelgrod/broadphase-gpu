@@ -1,4 +1,4 @@
-#include <gpubf/aabb.h>
+#include <gpubf/aabb.cuh>
 
 
 void addEdges

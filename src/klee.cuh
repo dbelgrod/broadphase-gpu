@@ -4,7 +4,7 @@
 #include <thrust/execution_policy.h>
 
 
-#include <gpubf/aabb.h>
+#include <gpubf/aabb.cuh>
 #include <gpubf/collision.h>
 #include <gpubf/queue.cuh>
 // #include <gpubf/util.cuh>

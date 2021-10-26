@@ -51,3 +51,11 @@ endfunction()
 #     GIT_TAG        4d6cce33477d8d5c666c31c8ea23e1aea97be371
 #   )
 # endfunction()
+
+## tbb
+function(gpubf_download_tbb)
+    gpubf_download_project(tbb
+      GIT_REPOSITORY https://github.com/wjakob/tbb.git
+      GIT_TAG        ddbe45cd3ad89df9a84cd77013d5898fc48b8e89
+    )
+endfunction()

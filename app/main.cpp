@@ -11,6 +11,9 @@
 #include <igl/readPLY.h>
 #include <igl/edges.h>
 
+#include "../src/aabb.h"
+#include "../src/sweep.h"
+
 // #include <gpubf/simulation.h>
 // #include <gpubf/groundtruth.h>
 // #include <gpubf/util.cuh>
@@ -95,25 +98,11 @@ int main( int argc, char **argv )
     }
 
     vector<unsigned long> overlaps;
-    // int i = 1;
-    // while (i < N)
-    // {
-    //     run_scaling(boxes.data(), i, overlaps);
-    //     printf("\n");
-    //     i = i << 1;
-    // }
-    run_sweep(boxes.data(), N, nbox, overlaps);
+    run_sweep_cpu(boxes.data(), N, nbox, overlaps);
     for (auto i : compare)
     {
         printf("%s\n", i );
-        compare_mathematica(overlaps, i);
+        // compare_mathematica(overlaps, i);
     }
    
-    run_scaling(boxes.data(), N, nbox,  overlaps);
-
-    for (auto i : compare)
-    {
-        printf("%s\n", i );
-        compare_mathematica(overlaps, i);
-    }
 }

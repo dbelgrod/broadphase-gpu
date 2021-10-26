@@ -108,13 +108,18 @@ target_compile_options(GPUBF_bin PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 add_executable(cpusweep_bin app/main.cpp src/sweep.cpp src/aabb.cpp)
 add_library(CPUSWEEP STATIC src/sweep.cpp src/aabb.cpp src/aabb.h)
 # target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
-target_link_libraries(GPUBF PRIVATE warnings::all)
+target_link_libraries(CPUSWEEP PRIVATE warnings::all)
 target_compile_definitions(CPUSWEEP PUBLIC NOMINMAX)
 
 # Request that GPUBF be built with -std=c++11
 # As this is a public compile feature anything that links to GPUBF
 # will also build with -std=c++11
 target_compile_features(CPUSWEEP PUBLIC cxx_std_17)
+
+# TBB
+# include(tbb)
+target_link_libraries(CPUSWEEP PUBLIC tbb::tbb)
+
 
 target_link_libraries(CPUSWEEP PUBLIC igl::core)
 

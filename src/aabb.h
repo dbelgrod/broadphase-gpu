@@ -47,3 +47,26 @@ class Aabb {
 
         Aabb() = default;
 };
+
+void addEdges
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    Eigen::MatrixXi& edges, 
+    vector<Aabb>& boxes
+);
+
+void addVertices
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    vector<Aabb>& boxes
+);
+
+void addFaces
+(
+    Eigen::MatrixXd& vertices_t0, 
+    Eigen::MatrixXd& vertices_t1, 
+    Eigen::MatrixXi& faces, 
+    vector<Aabb>& boxes
+);
