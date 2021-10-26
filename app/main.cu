@@ -109,11 +109,11 @@ int main( int argc, char **argv )
         compare_mathematica(overlaps, i);
     }
    
-    run_scaling(boxes.data(), N, nbox,  overlaps);
+    // run_scaling(boxes.data(), N, nbox,  overlaps);
 
-    for (auto i : compare)
-    {
-        printf("%s\n", i );
-        compare_mathematica(overlaps, i);
-    }
+    // for (auto i : compare)
+    // {
+    //     printf("%s\n", i );
+    //     compare_mathematica(overlaps, i);
+    // }
 }

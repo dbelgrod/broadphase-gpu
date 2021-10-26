@@ -6,6 +6,13 @@
 #include <unistd.h>
 // #include <cuda.h>
 // #include <cuda_runtime.h>
+#include <vector>
+#include <set>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+// for convenience
+using json = nlohmann::json;
 
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
@@ -62,6 +69,41 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
     constructBoxes(V0, V1, F, E, boxes);
 }
 
+// https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
+unsigned long cantor(unsigned long x, unsigned long y)
+{
+    return (x + y)*(x + y + 1) / 2 + y;
+}
+
+
+void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
+{
+    // Get from file
+    ifstream in(jsonPath);
+    if(in.fail()) abort();
+
+    json j_vec = json::parse(in);
+    
+    set<unsigned long> truePositives = j_vec.get<std::set<unsigned long>>();
+
+    // Transform data to cantor
+    set<unsigned long> algoBroadPhase;
+    for (size_t i=0; i < overlaps.size(); i+=2)
+    {
+        algoBroadPhase.emplace(cantor(overlaps[i], overlaps[i+1]));
+    }
+                                               
+    // Get intersection of true positive
+    vector<unsigned long> algotruePositives(truePositives.size());
+    vector<unsigned long>::iterator it=std::set_intersection (
+        truePositives.begin(), truePositives.end(), 
+        algoBroadPhase.begin(), algoBroadPhase.end(), algotruePositives.begin());
+    algotruePositives.resize(it-algotruePositives.begin());
+    
+    printf("Contains %lu/%lu TP\n", algotruePositives.size(), truePositives.size());
+    return;
+}
+
 
 int main( int argc, char **argv )
 {
@@ -98,11 +140,12 @@ int main( int argc, char **argv )
     }
 
     vector<unsigned long> overlaps;
+    printf("Running sweep\n");
     run_sweep_cpu(boxes.data(), N, nbox, overlaps);
     for (auto i : compare)
     {
         printf("%s\n", i );
-        // compare_mathematica(overlaps, i);
+        compare_mathematica(overlaps, i);
     }
-   
+    exit(0);
 }

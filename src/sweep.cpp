@@ -26,7 +26,7 @@ bool covertex(const int* a, const int* b) {
     
     return a[0] == b[0] || a[0] == b[1] || a[0] == b[2] || 
         a[1] == b[0] || a[1] == b[1] || a[1] == b[2] || 
-        a[2] == b[0] || a[1] == b[1] || a[2] == b[2];
+        a[2] == b[0] || a[2] == b[1] || a[2] == b[2];
 }
 
 void add_overlap(const int& xid, const int& yid, atomic_int& count, int * overlaps, int G)
@@ -39,7 +39,7 @@ void add_overlap(const int& xid, const int& yid, atomic_int& count, int * overla
     if (i < G)
     {
         overlaps[2*i] = xid;
-        overlaps[2*i+1] = xid;
+        overlaps[2*i+1] = yid;
     } 
 }
 
@@ -78,30 +78,36 @@ void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int *
     // // body of the for loop using index i
     //     }); 
 
-    tbb::parallel_for( tbb::blocked_range<int>(0, N),
-                       [&](tbb::blocked_range<int> r)
-                        {
-                             for (int i=r.begin(); i<r.end(); i++)
+    // tbb::parallel_for( tbb::blocked_range<int>(0, N),
+    //                    [&](tbb::blocked_range<int> r)
+    
+                        // {
+                            //  for (int i=r.begin(); i<r.end(); i++)
+    tbb::parallel_for(0, N, 1, [&](int i)                        
                            {
-                               const Aabb a = boxes[i];
+                                const Aabb a = boxes[i];
 
-                               int inc = i + 1;
-                               Aabb b = boxes[inc];
+                                int inc = i + 1;
+                                if (inc >= N) return;
+                                Aabb b = boxes[inc];
 
                                while (a.max[0]  >= b.min[0])
                                {
                                    if (
                                         does_collide(a,b) &&
                                         !covertex(a.vertexIds, b.vertexIds)
-                                            )
+                                        )
                                         {
                                             add_overlap(box_indices[i], box_indices[inc], count, overlaps, guess);
                                         }
+                                    inc++;
+                                    if (inc >= N) return;
+                                    b = boxes[inc];
                                }
 
                             //    Eigen::Matrix<double, 8, 3> V=queries[i];
                            }
-                        }
+                        // }
     );
 
 
@@ -125,24 +131,28 @@ void run_sweep_cpu(
     // sort boxes by xaxis in parallel
     // we will need an index vector
     int * box_indices = new int[N];
-    for (size_t i=0;i<N;i++) {box_indices[i]=i;}
+    for (int i=0;i<N;i++) {box_indices[i]=i;}
+    printf("Running sort\n");
     sort_along_xaxis(boxes, box_indices, N);
+    printf("Finished sort\n");
 
     int guess = 0;
-    int * overlaps = new int(2*guess);
+    int * overlaps = new int[2*guess];
     
-    atomic_int count(0);
-    // count[0] = 0;
+    atomic_int count = 0;
 
     sweep(boxes, box_indices, count, overlaps, N, guess);
+    printf("Finished 1st sweep\n");
     if (count > guess) //we went over
     {
         guess = count;
         delete[] overlaps;  //probably dont need
-        overlaps = new int(2*guess);
+        overlaps = new int[2*guess];
         count = 0;
         sweep(boxes, box_indices, count, overlaps, N, guess);
     }
+
+    cout << "Final count: " << count << endl;
 
     for (size_t i=0; i < count; i++)
     {
@@ -150,8 +160,8 @@ void run_sweep_cpu(
         // finOverlaps.push_back(overlaps[i].y);
         
         // need to fetch where box is from index first
-        const Aabb& a = boxes[box_indices[overlaps[2*i]]];
-        const Aabb& b = boxes[box_indices[overlaps[2*i+1]]];
+        const Aabb& a = boxes[overlaps[2*i]];
+        const Aabb& b = boxes[overlaps[2*i+1]];
         if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
         {
             finOverlaps.push_back(a.ref_id);
@@ -168,6 +178,9 @@ void run_sweep_cpu(
             finOverlaps.push_back(max(a.ref_id, b.ref_id));
         }
     }
+    printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
+    delete[] overlaps; 
+    delete[] box_indices; 
 }
 
     // #pragma omp declare reduction (merge : std::vector<long> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
