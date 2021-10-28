@@ -116,7 +116,7 @@ void run_collision_counter(Aabb* boxes, int N) {
 void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<unsigned long>& finOverlaps)
 {
 
-    int devId = 1;
+    int devId = 0;
     cudaSetDevice(devId);
 
     int smemSize;
@@ -269,7 +269,7 @@ struct sort_aabb_x
 
 void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& finOverlaps)
 {
-    int devId = 1;
+    int devId = 0;
     cudaSetDevice(devId);
 
     int smemSize;

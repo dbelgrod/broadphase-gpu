@@ -105,15 +105,9 @@ int main( int argc, char **argv )
     run_sweep(boxes.data(), N, nbox, overlaps);
     for (auto i : compare)
     {
-        printf("%s\n", i );
+        // printf("%s\n", i );
         compare_mathematica(overlaps, i);
     }
-   
-    // run_scaling(boxes.data(), N, nbox,  overlaps);
+    cout << endl;
 
-    // for (auto i : compare)
-    // {
-    //     printf("%s\n", i );
-    //     compare_mathematica(overlaps, i);
-    // }
 }

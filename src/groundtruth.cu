@@ -12,7 +12,11 @@ void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
 {
     // Get from file
     ifstream in(jsonPath);
-    if(in.fail()) abort();
+    if(in.fail()) 
+    {
+        printf("%s does not exist\n", jsonPath);
+        return;
+    }
 
     json j_vec = json::parse(in);
     
