@@ -117,7 +117,7 @@ void run_sweep_cpu(
     int N, int numBoxes, 
     vector<unsigned long>& finOverlaps)
 {
-    Aabb og_boxes[N];
+    Aabb * og_boxes = new Aabb[N];
     for(int i=0; i<N; ++i)
         og_boxes[i] = boxes[i];
     // sort boxes by xaxis in parallel
@@ -181,6 +181,7 @@ void run_sweep_cpu(
     printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
     delete[] overlaps; 
     delete[] box_indices; 
+    delete[] og_boxes; 
 }
 
     // #pragma omp declare reduction (merge : std::vector<long> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
