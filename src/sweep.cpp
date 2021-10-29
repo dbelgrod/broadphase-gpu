@@ -30,12 +30,12 @@ bool covertex(const int* a, const int* b) {
         a[2] == b[0] || a[2] == b[1] || a[2] == b[2];
 }
 
-void add_overlap(const int& xid, const int& yid, atomic_int& count, int * overlaps, int G)
+void add_overlap(const int& xid, const int& yid, atomic<long long>& count, int * overlaps, long long G)
 {
     // int i = atomicAdd(count, 1); //how to do this
 
     // do x+=y and return the old value of x
-    int i = count.fetch_add(1);
+    long long i = count.fetch_add(1);
     
     // int i = count;
     // printf("%i\n", i);
@@ -71,7 +71,7 @@ void sort_along_xaxis(Aabb * boxes, int * box_indices, int N)
     sort(execution::par_unseq, boxes, boxes + N, sort_boxes());
 }
 
-void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int * overlaps, int N, int guess)
+void sweep(const Aabb * boxes, const int * box_indices, atomic<long long>& count, int * overlaps, int N, long long guess)
 {
     // ask about changing number of boxes per thread !!!
     // tbb::parallel_for(0, queries.size(), 1, [&](int i){
@@ -83,11 +83,13 @@ void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int *
     
                         // {
                             //  for (int i=r.begin(); i<r.end(); i++)
-    tbb::parallel_for(0, N, 1, [&](int i)                        
+    tbb::parallel_for(tbb::blocked_range<int>(0,200000000), [&](tbb::blocked_range<int> r)                        
                            {
-                                const Aabb a = boxes[i];
-
-                                int inc = i + 1;
+                               for (int 
+                               =r.begin(); i<r.end(); i++)
+        {
+                                const Aabb a = boxes[0];
+                                int inc = 1;
                                 if (inc >= N) return;
                                 Aabb b = boxes[inc];
 
@@ -98,7 +100,7 @@ void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int *
                                         !covertex(a.vertexIds, b.vertexIds)
                                         )
                                         {
-                                            add_overlap(box_indices[i], box_indices[inc], count, overlaps, guess);
+                                            add_overlap(box_indices[0], box_indices[inc], count, overlaps, guess);
                                         }
                                     inc++;
                                     if (inc >= N) return;
@@ -106,6 +108,7 @@ void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int *
                                }
 
                             //    Eigen::Matrix<double, 8, 3> V=queries[i];
+                           }
                            }
                         // }
     );
@@ -124,25 +127,25 @@ void run_sweep_cpu(
     // we will need an index vector
     int * box_indices = new int[N];
     for (int i=0;i<N;i++) {box_indices[i]=i;}
-    printf("Running sort\n");
+    // printf("Running sort\n");
     sort_along_xaxis(boxes, box_indices, N);
-    printf("Finished sort\n");
+    // printf("Finished sort\n");
 
-    int guess = 0;
+    long long guess = 0;
     int * overlaps = new int[2*guess];
     
-    atomic_int count = 0;
+    atomic<long long> count = 0;
 
     sweep(boxes, box_indices, count, overlaps, N, guess);
     if (count > guess) //we went over
     {
-        printf("Running again...\n");
+        // printf("Running again...\n");
         guess = count;
         delete[] overlaps;  //probably dont need
         // delete overlaps;
         overlaps = new int[2*guess];
         count = 0;
-        cout << "count: " << count << ", guess: " << guess << endl;
+        // cout << "count: " << count << ", guess: " << guess << endl;
         ccd::Timer timer;
         timer.start();
         sweep(boxes, box_indices, count, overlaps, N, guess);
@@ -178,7 +181,7 @@ void run_sweep_cpu(
             finOverlaps.push_back(max(a.ref_id, b.ref_id));
         }
     }
-    printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
+    // printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
     delete[] overlaps; 
     delete[] box_indices; 
     delete[] og_boxes; 

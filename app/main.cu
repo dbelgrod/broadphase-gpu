@@ -12,7 +12,7 @@
 #include <igl/edges.h>
 
 #include <gpubf/simulation.h>
-#include <gpubf/groundtruth.h>
+// #include <gpubf/groundtruth.h>
 #include <gpubf/util.cuh>
 #include <gpubf/klee.cuh>
 
@@ -106,7 +106,7 @@ int main( int argc, char **argv )
     for (auto i : compare)
     {
         // printf("%s\n", i );
-        compare_mathematica(overlaps, i);
+        // compare_mathematica(overlaps, i);
     }
     cout << endl;
 

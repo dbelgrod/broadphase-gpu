@@ -10,10 +10,11 @@
 #include <set>
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json.hpp>
+#include "../src/timer.hpp"
+// #include <nlohmann/json.hpp>
 
 // for convenience
-using json = nlohmann::json;
+// using json = nlohmann::json;
 
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
@@ -83,40 +84,42 @@ unsigned long cantor(unsigned long x, unsigned long y)
 }
 
 
-void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
-{
-    // Get from file
-    ifstream in(jsonPath);
-    if(in.fail()) 
-    {
-        printf("%s does not exist", jsonPath);
-        return;
-    }
-    json j_vec = json::parse(in);
+// void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
+// {
+//     // Get from file
+//     ifstream in(jsonPath);
+//     if(in.fail()) 
+//     {
+//         printf("%s does not exist", jsonPath);
+//         return;
+//     }
+//     json j_vec = json::parse(in);
     
-    set<unsigned long> truePositives = j_vec.get<std::set<unsigned long>>();
+//     set<unsigned long> truePositives = j_vec.get<std::set<unsigned long>>();
 
-    // Transform data to cantor
-    set<unsigned long> algoBroadPhase;
-    for (size_t i=0; i < overlaps.size(); i+=2)
-    {
-        algoBroadPhase.emplace(cantor(overlaps[i], overlaps[i+1]));
-    }
+//     // Transform data to cantor
+//     set<unsigned long> algoBroadPhase;
+//     for (size_t i=0; i < overlaps.size(); i+=2)
+//     {
+//         algoBroadPhase.emplace(cantor(overlaps[i], overlaps[i+1]));
+//     }
                                                
-    // Get intersection of true positive
-    vector<unsigned long> algotruePositives(truePositives.size());
-    vector<unsigned long>::iterator it=std::set_intersection (
-        truePositives.begin(), truePositives.end(), 
-        algoBroadPhase.begin(), algoBroadPhase.end(), algotruePositives.begin());
-    algotruePositives.resize(it-algotruePositives.begin());
+//     // Get intersection of true positive
+//     vector<unsigned long> algotruePositives(truePositives.size());
+//     vector<unsigned long>::iterator it=std::set_intersection (
+//         truePositives.begin(), truePositives.end(), 
+//         algoBroadPhase.begin(), algoBroadPhase.end(), algotruePositives.begin());
+//     algotruePositives.resize(it-algotruePositives.begin());
     
-    printf("Contains %lu/%lu TP\n", algotruePositives.size(), truePositives.size());
-    return;
-}
+//     printf("Contains %lu/%lu TP\n", algotruePositives.size(), truePositives.size());
+//     return;
+// }
 
 
 int main( int argc, char **argv )
 {
+    ccd::Timer timer;
+    timer.start();
     vector<char*> compare;
 
     const char* filet0 = argv[1];
@@ -152,16 +155,23 @@ int main( int argc, char **argv )
                 break;
         }
     }
-    cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
+    // cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
     tbb::task_scheduler_init init(parallel);
+    printf("Running with %i threads\n", parallel);
 
     vector<unsigned long> overlaps;
-    printf("Running sweep\n");
+    // printf("Running sweep\n");
     run_sweep_cpu(boxes.data(), N, nbox, overlaps);
+    timer.stop();
+    double total_time = 0;
+    total_time += timer.getElapsedTimeInMicroSec();
+    printf("Total executable time: %.6f ms\n", total_time / 1000);
+    
+    
     for (auto i : compare)
     {
         printf("%s\n", i );
-        compare_mathematica(overlaps, i);
+        // compare_mathematica(overlaps, i);
     }
     exit(0);
 }
