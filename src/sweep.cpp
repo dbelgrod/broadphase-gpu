@@ -85,8 +85,7 @@ void sweep(const Aabb * boxes, const int * box_indices, atomic<long long>& count
                             //  for (int i=r.begin(); i<r.end(); i++)
     tbb::parallel_for(tbb::blocked_range<int>(0,200000000), [&](tbb::blocked_range<int> r)                        
                            {
-                               for (int 
-                               =r.begin(); i<r.end(); i++)
+                               for (int i=r.begin(); i<r.end(); i++)
         {
                                 const Aabb a = boxes[0];
                                 int inc = 1;
