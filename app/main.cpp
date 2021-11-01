@@ -154,9 +154,10 @@ int main( int argc, char **argv )
     }
     cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
     tbb::task_scheduler_init init(parallel);
+    printf("Running with %i threads\n", parallel);
 
     vector<unsigned long> overlaps;
-    printf("Running sweep\n");
+    // printf("Running sweep\n");
     run_sweep_cpu(boxes.data(), N, nbox, overlaps);
     for (auto i : compare)
     {
