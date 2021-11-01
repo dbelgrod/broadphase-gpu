@@ -36,7 +36,7 @@ add_subdirectory(src)
 prepend_current_path(GPUBF_SOURCES)
 gpubf_copy_headers(${GPUBF_SOURCES})
 GPUBF_set_source_group(${GPUBF_SOURCES})
-add_library(GPUBF STATIC ${GPUBF_SOURCES})
+add_library(GPUBF STATIC ${GPUBF_SOURCES} ALIAS broadphase)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR}/include)
 # target_link_libraries(GPUBF PRIVATE warnings::all)
 target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
@@ -47,10 +47,10 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 
 # include directory
-target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
-  $<BUILD_INTERFACE:${GPUBF_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+# target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
+#   $<BUILD_INTERFACE:${GPUBF_SOURCE_DIR}>
+#   $<INSTALL_INTERFACE:include>
+# )
 
 
 ################################################################################
