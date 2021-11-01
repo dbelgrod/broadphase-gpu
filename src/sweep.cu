@@ -46,10 +46,10 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     // tid = tid + 1*blockDim.x;
     // ltid = 1*blockDim.x + ltid;
     
-    if (t >= N) return;
-
     int ntid = t + 1;
-    int nltid = t + 1;
+    int nltid = l + 1;
+
+    if (ntid >= N) return;
 
     Aabb* a = &s_objects[l];
     Aabb* b = nltid < numBoxes[0]*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
@@ -59,9 +59,6 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     {
         if ( does_collide(a,b) 
             && !covertex(a->vertexIds, b->vertexIds)
-            // && !covertex(a->min, b->max)
-            // && !covertex(a->max, b->max)
-            // && !covertex(a->max, b->min)
             )
             add_overlap(index[t], index[ntid], count, overlaps, guess);
         

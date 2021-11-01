@@ -308,7 +308,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
 
     // int SWEEP_BLOCK_SIZE = 1024;
     
-    maxBlockSize = 512;
+    // maxBlockSize = 512;
     dim3 block(maxBlockSize);
     int grid_dim_1d = (N / maxBlockSize + 1); 
     dim3 grid( grid_dim_1d );
