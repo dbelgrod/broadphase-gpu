@@ -340,7 +340,12 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     // Thrust sort (can be improved by sort_by_key)
     cudaEventRecord(start);
     // thrust::sort(thrust::device, d_axis, d_axis + N, sort_sweepmarker_x() );
-    thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
+    try{
+        thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
+        }
+    catch (thrust::system_error &e){
+        printf("Error: %s \n",e.what());}
+    
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     milliseconds = 0;
