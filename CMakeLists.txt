@@ -22,6 +22,7 @@ else()
 endif()
 
 ### Configuration
+set(GPUBF_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(GPUBF_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/external")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(Warnings)
@@ -44,6 +45,12 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
 # As this is a public compile feature anything that links to GPUBF
 # will also build with -std=c++11
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
+
+# include directory
+target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE
+  $<BUILD_INTERFACE:${GPUBF_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
+)
 
 
 ################################################################################
