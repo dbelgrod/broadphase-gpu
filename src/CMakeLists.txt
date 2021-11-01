@@ -24,6 +24,7 @@ src/util.cuh
 src/queue.cu
 src/queue.cuh
 src/object.cuh
+src/io.cuh
 
 PARENT_SCOPE
 )
