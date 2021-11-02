@@ -158,7 +158,7 @@ int main( int argc, char **argv )
 
     vector<unsigned long> overlaps;
     // printf("Running sweep\n");
-    run_sweep_cpu(boxes.data(), N, nbox, overlaps);
+    run_sweep_cpu(boxes, N, nbox, overlaps);
     for (auto i : compare)
     {
         printf("%s\n", i );

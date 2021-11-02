@@ -6,6 +6,7 @@
 #include <tbb/blocked_range.h>
 #include <tbb/task_scheduler_init.h>
 #include <tbb/enumerable_thread_specific.h>
+#include <tbb/combinable.h>
 
 #include <iostream>     // std::cout
 #include <algorithm>    // std::sort
@@ -30,23 +31,6 @@ bool covertex(const int* a, const int* b) {
         a[2] == b[0] || a[2] == b[1] || a[2] == b[2];
 }
 
-void add_overlap(const int& xid, const int& yid, atomic_int& count, int * overlaps, int G)
-{
-    // int i = atomicAdd(count, 1); //how to do this
-
-    // do x+=y and return the old value of x
-    int i = count.fetch_add(1);
-    
-    // int i = count;
-    // printf("%i\n", i);
-    if (i < G)
-    {
-        overlaps[2*i] = xid;
-        overlaps[2*i+1] = yid;
-    } 
-    // count++;
-}
-
 // https://stackoverflow.com/questions/3909272/sorting-two-corresponding-arrays
 class sort_indices
 {
@@ -57,111 +41,123 @@ class sort_indices
      bool operator()(int i, int j) const { return (mparr[i].min[0] < mparr[j].min[0]);}
 };
 
-struct sort_boxes //sort_aabb_x
+struct //sort_aabb_x
 {
-    bool operator()(const Aabb &a, const Aabb &b) const {
+    bool operator()(Aabb a,Aabb b) const {
         return (a.min[0] < b.min[0]);}
-};
+} sort_boxes;
 
-void sort_along_xaxis(Aabb * boxes, int * box_indices, int N)
+void sort_along_xaxis(vector<Aabb>& boxes, vector<int>& box_indices, int N)
 {
     // sort box indices by boxes minx val
-    sort(execution::par_unseq, box_indices, box_indices + N, sort_indices(boxes));
+    sort(execution::par_unseq, box_indices.begin(), box_indices.end(), sort_indices(boxes.data()));
     // sort boxes by minx val
-    sort(execution::par_unseq, boxes, boxes + N, sort_boxes());
+    sort(execution::par_unseq, boxes.begin(), boxes.end(), sort_boxes);
 }
 
-void sweep(const Aabb * boxes, const int * box_indices, atomic_int& count, int * overlaps, int N, int guess)
+void merge_local_overlaps(
+    const tbb::enumerable_thread_specific<std::vector<std::pair<int,int>>>& storages,
+    std::vector<std::pair<int,int>>& overlaps)
 {
+    overlaps.clear();
     // ask about changing number of boxes per thread !!!
     // tbb::parallel_for(0, queries.size(), 1, [&](int i){
     // // body of the for loop using index i
     //     }); 
+    // size up the overlaps
+    size_t num_overlaps = overlaps.size();
+    for (const auto& local_overlaps : storages) {
+        num_overlaps += local_overlaps.size();
+    }
+    // serial merge!
+    overlaps.reserve(num_overlaps);
+    for (const auto& local_overlaps : storages) {
+        overlaps.insert(
+            overlaps.end(), local_overlaps.begin(), local_overlaps.end());
+    }
+}
 
-    // tbb::parallel_for( tbb::blocked_range<int>(0, N),
-    //                    [&](tbb::blocked_range<int> r)
+void sweep(const vector<Aabb> &boxes, const vector<int>& box_indices, vector<std::pair<int,int>>& overlaps, int N)
+{
+    tbb::enumerable_thread_specific<std::vector<std::pair<int,int>>> storages;
+    tbb::combinable<int> incrementer;
+    tbb::combinable<Aabb> boxer;
+    // tbb::enumerable_thread_specific<std::vector<int>> increments;
+
+    // tbb::parallel_for(tbb::blocked_range<int>(0,N), [&](const tbb::blocked_range<int>& r){
+        
     
-                        // {
-                            //  for (int i=r.begin(); i<r.end(); i++)
-    tbb::parallel_for(0, N, 1, [&](int i)                        
-                           {
-                                const Aabb a = boxes[i];
+        // for (int i=r.begin(); i<r.end(); i++){
+            
+    tbb::parallel_for(0, N, 1, [&](int & i)    {
+            const Aabb a = boxes[i];
+            int inc = i+1;
+            if (inc >= N) return;
+            Aabb b = boxes[inc];
 
-                                int inc = i + 1;
-                                if (inc >= N) return;
-                                Aabb b = boxes[inc];
+            // local_overlaps.emplace_back(1, 2);
+            while (a.max[0]  >= b.min[0] ) //&& inc-i <=1)
+            {
+                if (
+                    does_collide(a,b) &&
+                    !covertex(a.vertexIds, b.vertexIds)
+                    )
+                    {
+                        auto& local_overlaps = storages.local();
+                        local_overlaps.emplace_back(box_indices[i], box_indices[inc]);
+                        // sleep(1);
+                    }
+                inc++;
+                if (inc >= N) return;
+                b = boxes[inc];
+            }
+        // }
+    });
 
-                               while (a.max[0]  >= b.min[0])
-                               {
-                                   if (
-                                        does_collide(a,b) &&
-                                        !covertex(a.vertexIds, b.vertexIds)
-                                        )
-                                        {
-                                            add_overlap(box_indices[i], box_indices[inc], count, overlaps, guess);
-                                        }
-                                    inc++;
-                                    if (inc >= N) return;
-                                    b = boxes[inc];
-                               }
-
-                            //    Eigen::Matrix<double, 8, 3> V=queries[i];
-                           }
-                        // }
-    );
+     merge_local_overlaps(storages, overlaps);
 }
 
 
 void run_sweep_cpu(
-    Aabb* boxes, 
+    vector<Aabb>& boxes, 
     int N, int numBoxes, 
     vector<unsigned long>& finOverlaps)
 {
-    Aabb * og_boxes = new Aabb[N];
-    for(int i=0; i<N; ++i)
-        og_boxes[i] = boxes[i];
+    vector<Aabb> og_boxes;
+    og_boxes.reserve(N);
+    copy(boxes.begin(), boxes.end(), og_boxes.begin());
+    // for(int i=0; i<N; ++i)
+    //     og_boxes[i] = boxes[i];
     // sort boxes by xaxis in parallel
     // we will need an index vector
-    int * box_indices = new int[N];
-    for (int i=0;i<N;i++) {box_indices[i]=i;}
+    vector<int> box_indices;
+    box_indices.reserve(N);
+    for (int i=0;i<N;i++) {box_indices.push_back(i);}
+
     printf("Running sort\n");
     sort_along_xaxis(boxes, box_indices, N);
     printf("Finished sort\n");
 
-    int guess = 0;
-    int * overlaps = new int[2*guess];
+    std::vector<std::pair<int,int>> overlaps;
+      
+    ccd::Timer timer;
+    timer.start();
+    sweep(boxes, box_indices, overlaps, N);
+    timer.stop();
+    double total_time = 0;
+    total_time += timer.getElapsedTimeInMicroSec();
+    printf("Elapsed time: %.6f ms\n", total_time / 1000);
+    printf("Final count: %i\n", overlaps.size() );
     
-    atomic_int count = 0;
 
-    sweep(boxes, box_indices, count, overlaps, N, guess);
-    if (count > guess) //we went over
-    {
-        printf("Running again...\n");
-        guess = count;
-        delete[] overlaps;  //probably dont need
-        // delete overlaps;
-        overlaps = new int[2*guess];
-        count = 0;
-        cout << "count: " << count << ", guess: " << guess << endl;
-        ccd::Timer timer;
-        timer.start();
-        sweep(boxes, box_indices, count, overlaps, N, guess);
-        timer.stop();
-        double total_time = 0;
-        total_time += timer.getElapsedTimeInMicroSec();
-        printf("Elapsed time: %.6f ms\n", total_time / 1000);
-    }
-
-    cout << "Final count: " << count << endl;
-
-    for (size_t i=0; i < count; i++)
+    for (size_t i=0; i < overlaps.size(); i++)
     {
         // finOverlaps.push_back(overlaps[i].x);
         // finOverlaps.push_back(overlaps[i].y);
         
         // need to fetch where box is from index first
-        const Aabb& a = og_boxes[overlaps[2*i]];
-        const Aabb& b = og_boxes[overlaps[2*i+1]];
+        const Aabb& a = og_boxes[overlaps[i].first];
+        const Aabb& b = og_boxes[overlaps[i].second];
         if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
         {
             finOverlaps.push_back(a.ref_id);
@@ -179,9 +175,8 @@ void run_sweep_cpu(
         }
     }
     printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
-    delete[] overlaps; 
-    delete[] box_indices; 
-    delete[] og_boxes; 
+    // delete[] box_indices; 
+    // delete[] og_boxes; 
 }
 
     // #pragma omp declare reduction (merge : std::vector<long> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))

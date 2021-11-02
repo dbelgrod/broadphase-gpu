@@ -55,7 +55,9 @@ endfunction()
 ## tbb
 function(gpubf_download_tbb)
     gpubf_download_project(tbb
-      GIT_REPOSITORY https://github.com/wjakob/tbb.git
-      GIT_TAG        ddbe45cd3ad89df9a84cd77013d5898fc48b8e89
+    # GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
+    # GIT_TAG v2021.4.0
+    GIT_REPOSITORY https://github.com/wjakob/tbb.git
+      GIT_TAG        9e219e24fe223b299783200f217e9d27790a87b0 #ddbe45cd3ad89df9a84cd77013d5898fc48b8e89
     )
 endfunction()
