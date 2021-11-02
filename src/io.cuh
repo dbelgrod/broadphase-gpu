@@ -14,11 +14,17 @@ void constructBoxes
     addFaces(vertices_t0, vertices_t1, faces, boxes);
 }
 
-void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
+void parseMesh(
+    const char* filet0, 
+    const char* filet1, 
+    Eigen::MatrixXd& V0, 
+    Eigen::MatrixXd& V1, 
+    Eigen::MatrixXi& F, 
+    Eigen::MatrixXi& E)
 {
-    Eigen::MatrixXd V0;
-    Eigen::MatrixXd V1;
-    Eigen::MatrixXi F;
+    // Eigen::MatrixXd V0;
+    // Eigen::MatrixXd V1;
+    // Eigen::MatrixXi F;
 
     string fn = string(filet0);
     string ext = fn.substr(fn.rfind('.') + 1);
@@ -35,8 +41,8 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
     }
 
     
-    Eigen::MatrixXi E;
+    // Eigen::MatrixXi E;
     igl::edges(F,E);
     // faces should be same F^{t=0} = F^{t=1}
-    constructBoxes(V0, V1, F, E, boxes);
+    // constructBoxes(V0, V1, F, E, boxes);
 }

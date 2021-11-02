@@ -22,7 +22,7 @@ else()
 endif()
 
 ### Configuration
-set(GPUBF_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+# set(GPUBF_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(GPUBF_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/external")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(Warnings)

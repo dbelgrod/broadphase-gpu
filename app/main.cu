@@ -27,7 +27,13 @@ int main( int argc, char **argv )
     const char* filet1 = argv[2];
     
     vector<Aabb> boxes;
-    parseMesh(filet0, filet1, boxes);
+    Eigen::MatrixXd vertices_t0;
+    Eigen::MatrixXd vertices_t1;
+    Eigen::MatrixXi faces; 
+    Eigen::MatrixXi edges;
+
+    parseMesh(filet0, filet1, vertices_t0, vertices_t1, faces, edges);
+    constructBoxes(vertices_t0, vertices_t1, faces, edges, boxes);
     int N = boxes.size();
     int nbox = 0;
     
