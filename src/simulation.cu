@@ -2,6 +2,12 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 
+#include <tbb/mutex.h>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+#include <tbb/task_scheduler_init.h>
+#include <tbb/enumerable_thread_specific.h>
+
 
 void setup(int devId, int& smemSize, int& threads, int& nboxes);
 
@@ -421,4 +427,192 @@ void run_sweep(const Aabb* boxes, int N, int nbox, vector<unsigned long>& finOve
     cudaFree(d_count); 
 
     cudaDeviceReset();
+}
+
+// 
+// 
+// 
+// MULTI GPU SWEEP SUPPORT
+void merge_local_overlaps(
+    const tbb::enumerable_thread_specific<std::vector<std::pair<int,int>>>& storages,
+    std::vector<std::pair<int,int>>& overlaps)
+{
+    overlaps.clear();
+    size_t num_overlaps = overlaps.size();
+    for (const auto& local_overlaps : storages) {
+        num_overlaps += local_overlaps.size();
+    }
+    // serial merge!
+    overlaps.reserve(num_overlaps);
+    for (const auto& local_overlaps : storages) {
+        overlaps.insert(
+            overlaps.end(), local_overlaps.begin(), local_overlaps.end());
+    }
+}
+
+void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<unsigned long>& finOverlaps, int& threads)
+{
+    // cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
+    // tbb::task_scheduler_init init(parallel);
+    // int devId = 0;
+    tbb::enumerable_thread_specific<vector<unsigned long>> storages;
+
+    // std::vector<std::thread> threads;
+    int devices_count;
+    cudaGetDeviceCount(&devices_count);
+
+    tbb::parallel_for(0, devices_count, 1, [&](int & device_id)    {
+        auto& local_overlaps = storages.local();
+        
+        cudaSetDevice(device_id);
+
+        int smemSize;
+
+        setup(device_id, smemSize, threads, nbox);
+    
+
+        int * d_nbox;
+        cudaMalloc((void**)&d_nbox, sizeof(int));
+        cudaMemcpy(d_nbox, &nbox, sizeof(int), cudaMemcpyHostToDevice);
+
+        finOverlaps.clear();
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop); 
+
+        // Allocate boxes to GPU 
+        Aabb * d_boxes;
+        cudaMalloc((void**)&d_boxes, sizeof(Aabb)*N);
+        cudaMemcpy(d_boxes, boxes, sizeof(Aabb)*N, cudaMemcpyHostToDevice);
+
+        // Allocate counter to GPU + set to 0 collisions
+        int * d_count;
+        cudaMalloc((void**)&d_count, sizeof(int));
+        reset_counter<<<1,1>>>(d_count);
+        cudaDeviceSynchronize();
+
+
+        // int SWEEP_BLOCK_SIZE = 1024;
+        
+        // maxBlockSize = 512;
+        dim3 block(threads);
+        int grid_dim_1d = (N / threads + 1); 
+        dim3 grid( grid_dim_1d );
+        printf("Grid dim (1D): %i\n", grid_dim_1d);
+        printf("Box size: %i\n", sizeof(Aabb));
+        printf("SweepMarker size: %i\n", sizeof(SweepMarker));
+
+        // int* d_index;
+        // cudaMalloc((void**)&d_index, sizeof(int)*(N));
+        int* rank;
+        cudaMalloc((void**)&rank, sizeof(int)*(1*N));
+
+        int* rank_x = &rank[0];
+        // int* rank_y = &rank[N];
+        // int* rank_z = &rank[2*N];
+
+        // Translate boxes -> SweepMarkers
+        cudaEventRecord(start);
+        build_index<<<grid,block>>>(d_boxes, N, rank_x);
+        // build_index<<<grid,block>>>(d_boxes, N, rank_y);
+        // build_index<<<grid,block>>>(d_boxes, N, rank_z);
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        float milliseconds = 0;
+        cudaEventElapsedTime(&milliseconds, start, stop);
+
+        printf("Elapsed time for build: %.6f ms\n", milliseconds);
+
+        // Thrust sort (can be improved by sort_by_key)
+        cudaEventRecord(start);
+        // thrust::sort(thrust::device, d_axis, d_axis + N, sort_sweepmarker_x() );
+        try{
+            thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
+            }
+        catch (thrust::system_error &e){
+            printf("Error: %s \n",e.what());}
+        
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        milliseconds = 0;
+        cudaEventElapsedTime(&milliseconds, start, stop);
+
+        printf("Elapsed time for sort: %.6f ms\n", milliseconds);
+
+        // Test print some sorted output
+        // print_sort_axis<<<1,1>>>(d_boxes,rank_x, 5);
+        cudaDeviceSynchronize();
+
+        // Find overlapping pairs
+        int guess = 0;
+        int2 * d_overlaps;
+        cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
+
+        int count;
+        retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, d_nbox);
+        cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+
+        if (count > guess) //we went over
+        {
+            printf("Running again\n");
+            cudaFree(d_overlaps);
+            cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count));
+            reset_counter<<<1,1>>>(d_count);
+            cudaDeviceSynchronize();
+            cudaEventRecord(start);
+            retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, count, d_nbox);
+            cudaEventRecord(stop);
+            cudaEventSynchronize(stop);
+            milliseconds = 0;
+            cudaEventElapsedTime(&milliseconds, start, stop);
+            printf("Elapsed time for findoverlaps: %.6f ms\n", milliseconds);
+        }
+        // int count;
+        cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+
+        printf("Elapsed time: %.6f ms\n", milliseconds);
+        printf("Collisions: %i\n", count);
+        printf("Elapsed time: %.9f ms/collision\n", milliseconds/count);
+        printf("Boxes: %i\n", N);
+        printf("Elapsed time: %.9f ms/box\n", milliseconds/N);
+
+        int2 * overlaps =  (int2*)malloc(sizeof(int2) * (count));
+        cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost);
+
+        printf("Final count: %i\n", count);
+
+        cudaFree(d_overlaps);
+        for (size_t i=0; i< count; i++)
+        {
+            // finOverlaps.push_back(overlaps[i].x);
+            // finOverlaps.push_back(overlaps[i].y);
+            
+            const Aabb& a = boxes[overlaps[i].x];
+            const Aabb& b = boxes[overlaps[i].y];
+            if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
+            {
+                finOverlaps.push_back(a.ref_id);
+                finOverlaps.push_back(b.ref_id);
+            }
+            else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
+            {
+                finOverlaps.push_back(b.ref_id);
+                finOverlaps.push_back(a.ref_id);
+            }
+            else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
+            {
+                finOverlaps.push_back(min(a.ref_id, b.ref_id));
+                finOverlaps.push_back(max(a.ref_id, b.ref_id));
+            }
+        }
+
+        printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
+        free(overlaps);
+        // free(counter);
+        // free(counter);
+        cudaFree(d_count); 
+
+    }); //end tbb for loop
 }

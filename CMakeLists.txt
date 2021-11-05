@@ -97,6 +97,9 @@ endif()
 # libigl
 target_link_libraries(${PROJECT_NAME} PUBLIC igl::core)
 
+# tbb (for multiGPU)
+target_link_libraries(${PROJECT_NAME}  PUBLIC tbb::tbb)
+
 # JSON
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
 
