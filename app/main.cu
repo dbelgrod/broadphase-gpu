@@ -36,9 +36,10 @@ int main( int argc, char **argv )
     constructBoxes(vertices_t0, vertices_t1, faces, edges, boxes);
     int N = boxes.size();
     int nbox = 0;
-    
+    int parallel = 0;
+
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:")) != -1)
+    while ((o = getopt (argc, argv, "c:n:b:p:")) != -1)
     {
         switch (o)
         {
@@ -56,6 +57,9 @@ int main( int argc, char **argv )
             case 'b':
                 nbox = atoi(optarg);
                 break;
+            case 'p':
+                parallel = stoi(optarg);
+                break;
         }
     }
 
@@ -67,7 +71,7 @@ int main( int argc, char **argv )
     //     printf("\n");
     //     i = i << 1;
     // }
-    run_sweep(boxes.data(), N, nbox, overlaps);
+    run_sweep(boxes.data(), N, nbox, overlaps, parallel);
     for (auto i : compare)
     {
         // printf("%s\n", i );

@@ -3,7 +3,7 @@
 #include <thrust/execution_policy.h>
 
 
-void setup(int devId, int& smemSize, int& threads);
+void setup(int devId, int& smemSize, int& threads, int& nboxes);
 
 
 
@@ -122,7 +122,7 @@ void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<un
     int smemSize;
     int threads;
 
-    setup(devId, smemSize, threads);
+    setup(devId, smemSize, threads, desiredBoxesPerThread);
     const int nBoxesPerThread = desiredBoxesPerThread ? desiredBoxesPerThread : smemSize / sizeof(Aabb) / (2*(BLOCK_PADDED));
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
 
@@ -267,27 +267,19 @@ struct sort_aabb_x
 };
 
 
-void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& finOverlaps)
+void run_sweep(const Aabb* boxes, int N, int nbox, vector<unsigned long>& finOverlaps, int& threads)
 {
     int devId = 0;
     cudaSetDevice(devId);
 
     int smemSize;
-    int maxBlockSize;
 
-    setup(devId, smemSize, maxBlockSize );
+    setup(devId, smemSize, threads, nbox);
 
-    const int nBoxesPerThread = numBoxes ? numBoxes : std::max((int)(smemSize / sizeof(Aabb) ) / maxBlockSize,1);
-    printf("Boxes per Thread: %i\n", nBoxesPerThread);
-    printf("Shared mem alloc: %i B\n", nBoxesPerThread*maxBlockSize*sizeof(Aabb) );
 
-    // Set shared memory per block to min of recommended and available
-    smemSize = std::min(smemSize, (int)(nBoxesPerThread*maxBlockSize*sizeof(Aabb)) );
-    printf("Actual shared mem alloc: %i B\n", smemSize);
-
-    int * nbox;
-    cudaMalloc((void**)&nbox, sizeof(int));
-    cudaMemcpy(nbox, &nBoxesPerThread, sizeof(int), cudaMemcpyHostToDevice);
+    int * d_nbox;
+    cudaMalloc((void**)&d_nbox, sizeof(int));
+    cudaMemcpy(d_nbox, &nbox, sizeof(int), cudaMemcpyHostToDevice);
 
     finOverlaps.clear();
     cudaEvent_t start, stop;
@@ -309,8 +301,8 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     // int SWEEP_BLOCK_SIZE = 1024;
     
     // maxBlockSize = 512;
-    dim3 block(maxBlockSize);
-    int grid_dim_1d = (N / maxBlockSize + 1); 
+    dim3 block(threads);
+    int grid_dim_1d = (N / threads + 1); 
     dim3 grid( grid_dim_1d );
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
@@ -363,7 +355,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 
     int count;
-    retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nbox);
+    retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, d_nbox);
     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
@@ -375,7 +367,7 @@ void run_sweep(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fi
         reset_counter<<<1,1>>>(d_count);
         cudaDeviceSynchronize();
         cudaEventRecord(start);
-        retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, count, nbox);
+        retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, count, d_nbox);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         milliseconds = 0;

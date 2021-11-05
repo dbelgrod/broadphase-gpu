@@ -12,37 +12,44 @@
         } \
     } while (0)
 
-void setup(int devId, int& smemSize, int& threads)
+void setup(int devId, int& smemSize, int& threads, int& nbox)
 {
     // Host code
     // int maxbytes = 98304; // 96 KB
     // cudaFuncSetAttribute(get_collision_pairs, cudaFuncAttributeMaxDynamicSharedMemorySize, maxbytes);
 
-    // int smemSize;
-    // int devId = 0;
-    cudaDeviceGetAttribute(&smemSize, 
+    int maxSmem;
+    cudaDeviceGetAttribute(&maxSmem, 
         cudaDevAttrMaxSharedMemoryPerBlock, devId);
-    printf("Shared Memory per Block: %i B\n", smemSize);
-
-    cudaDeviceGetAttribute(&threads, 
-        cudaDevAttrMaxThreadsPerMultiProcessor, devId);
-    printf("Max threads per Multiprocessor: %i thrds\n", threads);
+    printf("Max shared Memory per Block: %i B\n", maxSmem);
 
     int maxThreads;
     cudaDeviceGetAttribute(&maxThreads, 
         cudaDevAttrMaxThreadsPerBlock, devId);
     printf("Max threads per Block: %i thrds\n", maxThreads);
 
+    nbox = nbox ? nbox : std::max((int)(smemSize / sizeof(Aabb) ) / maxThreads, 1);
+    printf("Boxes per Thread: %i\n", nbox);
+
+    
+
     // divide threads by an arbitrary number as long as its reasonable >64
-    int i = 2;
-    int tmp = threads;
-    while (tmp > maxThreads)
+    if (!threads)
     {
-        tmp = threads / i;
-        i++;
+        cudaDeviceGetAttribute(&threads, 
+            cudaDevAttrMaxThreadsPerMultiProcessor, devId);
+        
+        printf("Max threads per Multiprocessor: %i thrds\n", threads);
     }
-    threads = tmp;
+    smemSize = nbox*threads*sizeof(Aabb);
+
+    while (smemSize > maxSmem || threads > maxThreads)
+    {
+        threads--;
+        smemSize = nbox*threads*sizeof(Aabb);
+    }
     printf("Actual threads per Block: %i thrds\n", threads);
+    printf("Shared mem alloc: %i B\n", smemSize);
     
     // int warpSize;
     // cudaDeviceGetAttribute(&warpSize, 

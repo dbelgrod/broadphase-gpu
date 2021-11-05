@@ -9,7 +9,7 @@
 #include <gpubf/queue.cuh>
 // #include <gpubf/util.cuh>
 
-void setup(int devId, int& smemSize, int& threads);
+void setup(int devId, int& smemSize, int& threads, int& nboxes);
 
 
 void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& finOverlaps);

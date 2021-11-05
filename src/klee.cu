@@ -61,7 +61,7 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
     int smemSize;
     int maxBlockSize;
 
-    setup(devId, smemSize, maxBlockSize );
+    setup(devId, smemSize, maxBlockSize, numBoxes);
 
     const int nBoxesPerThread = numBoxes ? numBoxes : smemSize / sizeof(Aabb) / maxBlockSize;
     printf("Boxes per Thread: %i\n", nBoxesPerThread);
