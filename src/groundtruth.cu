@@ -8,7 +8,7 @@ unsigned long cantor(unsigned long x, unsigned long y)
 }
 
 
-void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
+void compare_mathematica(vector<pair<int,int>> overlaps, const char* jsonPath)
 {
     // Get from file
     ifstream in(jsonPath);
@@ -24,9 +24,9 @@ void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
 
     // Transform data to cantor
     set<unsigned long> algoBroadPhase;
-    for (size_t i=0; i < overlaps.size(); i+=2)
+    for (size_t i=0; i < overlaps.size(); i+=1)
     {
-        algoBroadPhase.emplace(cantor(overlaps[i], overlaps[i+1]));
+        algoBroadPhase.emplace(cantor(overlaps[i].first, overlaps[i].second));
     }
                                                
     // Get intersection of true positive

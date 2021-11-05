@@ -20,11 +20,11 @@ __global__ void print_sort_axis(Aabb* axis, int* index, int C)
         printf("id: %i, x: %.6f\n", index[i], axis[i].min.x);
 }
 
-__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int * numBoxes)
+__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int * numBoxes, int start)
 {
     extern __shared__ Aabb s_objects[];
 
-    int tid = 1*blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = start + 1*blockIdx.x * blockDim.x + threadIdx.x;
     int ltid = threadIdx.x;
 
     if (tid >= N) return;
