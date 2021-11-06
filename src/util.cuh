@@ -28,7 +28,7 @@ void setup(int devId, int& smemSize, int& threads, int& nbox)
         cudaDevAttrMaxThreadsPerBlock, devId);
     printf("Max threads per Block: %i thrds\n", maxThreads);
 
-    nbox = nbox ? nbox : std::max((int)(smemSize / sizeof(Aabb) ) / maxThreads, 1);
+    nbox = nbox ? nbox : std::max((int)(maxSmem / sizeof(Aabb) ) / maxThreads, 1);
     printf("Boxes per Thread: %i\n", nbox);
 
     
