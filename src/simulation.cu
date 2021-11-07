@@ -443,7 +443,7 @@ void run_sweep(const Aabb* boxes, int N, int nbox, vector<pair<int,int>>& finOve
 // 
 // MULTI GPU SWEEP SUPPORT
 void merge_local_overlaps(
-    const tbb::enumerable_thread_specific<vector<std::pair<int,int>>>& storages,
+    const tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int,int>>>& storages,
     std::vector<std::pair<int,int>>& overlaps)
 {
     overlaps.clear();
@@ -462,9 +462,9 @@ void merge_local_overlaps(
 void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads)
 {
     cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
-    tbb::task_scheduler_init init(2);
-    tbb::enumerable_thread_specific<vector<pair<int,int>>> storages;
-    tbb::enumerable_thread_specific<vector<int2>> storages2;
+    // tbb::task_scheduler_init init(2);
+    tbb::enumerable_thread_specific<tbb::concurrent_vector<pair<int,int>>> storages;
+    // tbb::enumerable_thread_specific<vector<int2>> storages2;
 
 
     float milliseconds = 0;
@@ -543,10 +543,21 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
     tbb::parallel_for(0, devices_count, 1, [&](int & device_id)    {
         
         cudaSetDevice(device_id);
+        int is_able;
 
-        if (device_id != device_init_id)
-            cudaDeviceEnablePeerAccess(device_init_id, 0);
-        gpuErrchk( cudaGetLastError() );   
+        for (int i=0; i<devices_count; i++)
+        {
+            cudaDeviceCanAccessPeer(&is_able, device_id, i);
+            if (is_able)
+            { 
+                cudaDeviceEnablePeerAccess(i, 0);  
+            }
+            else if (i != device_id)
+                printf("Device %i cant access Device %i\n", device_id, i);
+        }
+        
+
+        // gpuErrchk( cudaGetLastError() );   
         // gpuErrchk( cudaGetLastError() );
         // int canAccessPeer = 0;
         // cudaDeviceCanAccessPeer(&accessPair, device_id, device_init_id);
@@ -560,19 +571,19 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         printf("device_id: %i [%i, %i)\n", device_id, range_start, range_end);
         
 
-        Aabb * d_b;
-        cudaMalloc((void**)&d_b, sizeof(Aabb)*N);
-        if (device_id == device_init_id )
-            cudaMemcpy(d_b, d_boxes, sizeof(Aabb)*N, cudaMemcpyDeviceToDevice);
-        else
-            cudaMemcpyPeer ( d_b, device_id, d_boxes, device_init_id, sizeof(Aabb)*N);
+        // Aabb * d_b;
+        // cudaMalloc((void**)&d_b, sizeof(Aabb)*N);
+        // if (device_id == device_init_id )
+        //     cudaMemcpy(d_b, d_boxes, sizeof(Aabb)*N, cudaMemcpyDeviceToDevice);
+        // else
+        //     cudaMemcpyPeer ( d_b, device_id, d_boxes, device_init_id, sizeof(Aabb)*N);
 
-        int * d_r;
-        cudaMalloc((void**)&d_r, sizeof(int)*(1*N));
-        if (device_id == device_init_id )
-            cudaMemcpy(d_r, rank, sizeof(int)*N, cudaMemcpyDeviceToDevice);
-        else
-            cudaMemcpyPeer( d_r, device_id, rank, device_init_id, sizeof(int)*N);
+        // int * d_r;
+        // cudaMalloc((void**)&d_r, sizeof(int)*(1*N));
+        // if (device_id == device_init_id )
+        //     cudaMemcpy(d_r, rank, sizeof(int)*N, cudaMemcpyDeviceToDevice);
+        // else
+        //     cudaMemcpyPeer( d_r, device_id, rank, device_init_id, sizeof(int)*N);
         
 
         
@@ -588,7 +599,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         cudaMalloc((void**)&d_overlaps, sizeof(int2)*(guess));
 
         int count;
-        retrieve_collision_pairs<<<grid, block, smemSize>>>(d_b, d_r, d_count, d_overlaps, N, guess, nbox, range_start, range_end);
+        retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, guess, nbox, range_start, range_end);
         cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
         printf("Count for 1st run %i for device %i\n", count, device_id);
@@ -596,15 +607,15 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         if (count > guess) //we went over
         {
             printf("Running again\n");
-            gpuErrchk(cudaFree(d_overlaps));
-            gpuErrchk(cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)));
+            cudaFree(d_overlaps);
+            cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count));
             reset_counter<<<1,1>>>(d_count);
             cudaDeviceSynchronize();
             cudaEventRecord(start);
 
-            retrieve_collision_pairs<<<grid, block, smemSize>>>(d_b, d_r, d_count, d_overlaps, N, count, nbox, range_start, range_end);
-            gpuErrchk( cudaGetLastError() );
-            gpuErrchk( cudaDeviceSynchronize() );
+            retrieve_collision_pairs<<<grid, block, smemSize>>>(d_boxes, rank_x, d_count, d_overlaps, N, count, nbox, range_start, range_end);
+            // gpuErrchk( cudaGetLastError() );
+            // gpuErrchk( cudaDeviceSynchronize() );
             
             cudaEventRecord(stop);
             cudaEventSynchronize(stop);
@@ -612,7 +623,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
             cudaEventElapsedTime(&milliseconds, start, stop);
         }
         // int count;
-        gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
+        cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
 
         
@@ -624,7 +635,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         int2 * overlaps =  (int2*)malloc(sizeof(int2) * (count));
         // auto& local_overlaps2 = storages2.local();
         // local_overlaps2.resize(count);
-        gpuErrchk(cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost));
+        cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
 
         printf("Final count for device %i:  %i\n", device_id, count);
@@ -664,8 +675,8 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         // // free(counter);
         cudaFree(d_overlaps);
         cudaFree(d_count); 
-        cudaFree(d_b);
-        cudaFree(d_r);
+        // cudaFree(d_b);
+        // cudaFree(d_r);
         cudaDeviceReset();
 
     }); //end tbb for loop
