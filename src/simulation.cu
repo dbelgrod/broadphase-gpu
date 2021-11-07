@@ -542,6 +542,10 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
 
     tbb::parallel_for(0, devices_count, 1, [&](int & device_id)    {
         
+        cudaDeviceProp prop;
+        cudaGetDeviceProperties(&prop, device_id);
+        printf("%s -> unifiedAddressing = %d\n", prop.name, prop.unifiedAddressing);
+
         cudaSetDevice(device_id);
         int is_able;
 
