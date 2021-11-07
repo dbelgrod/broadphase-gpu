@@ -20,17 +20,17 @@ __global__ void print_sort_axis(Aabb* axis, int* index, int C)
         printf("id: %i, x: %.6f\n", index[i], axis[i].min.x);
 }
 
-__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int * numBoxes, int start)
+__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int nbox, int start, int end)
 {
     extern __shared__ Aabb s_objects[];
 
     int tid = start + 1*blockIdx.x * blockDim.x + threadIdx.x;
     int ltid = threadIdx.x;
 
-    if (tid >= N) return;
+    if (tid >= N || tid >= end) return;
 
     #pragma unroll
-    for (int i=0; i < numBoxes[0]; i++)
+    for (int i=0; i < nbox; i++)
     {
         int t = tid + i*blockDim.x;
         int l = i*blockDim.x + ltid;
@@ -52,7 +52,7 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
     if (ntid >= N) return;
 
     Aabb* a = &s_objects[l];
-    Aabb* b = nltid < numBoxes[0]*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
+    Aabb* b = nltid < nbox*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
     
 
     while (a->max.x  >= b->min.x) //boxes can touch and collide
@@ -65,6 +65,6 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
         ntid++;
         nltid++;
         if (ntid >= N) return;
-        b = nltid < numBoxes[0]*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
+        b = nltid < nbox*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
     }
 }

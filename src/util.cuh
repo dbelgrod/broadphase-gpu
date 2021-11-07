@@ -12,6 +12,8 @@
         } \
     } while (0)
 
+
+
 void setup(int devId, int& smemSize, int& threads, int& nbox)
 {
     // Host code
