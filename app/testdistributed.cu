@@ -101,7 +101,7 @@ void run_sweep_multigpu(int N)
 
     int devices_count;
     cudaGetDeviceCount(&devices_count);
-    devices_count-=2;
+    devices_count-=3;
     int range = ceil( N / devices_count); 
 
     tbb::parallel_for(0, devices_count, 1, [&](int & device_id)    {
@@ -141,6 +141,7 @@ void run_sweep_multigpu(int N)
 
         int * d_out;
         cudaMalloc((void**)&d_out, sizeof(int)*N);
+        cudaMemset(d_out, 0, sizeof(int)*N);
 
         // // turn off peer access for write variables
         sleep(1);
@@ -161,7 +162,7 @@ void run_sweep_multigpu(int N)
         gpuErrchk(cudaDeviceSynchronize());
 
         int * out = (int*)malloc(sizeof(int)*N);
-        gpuErrchk(cudaMemcpy(out, d_out, sizeof(int), cudaMemcpyDeviceToHost));
+        gpuErrchk(cudaMemcpy(out, d_out, sizeof(int)*N, cudaMemcpyDeviceToHost));
        
         auto& local_overlaps = storages.local();
         
