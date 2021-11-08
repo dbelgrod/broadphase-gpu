@@ -35,13 +35,24 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 using namespace std;
 
-__global__ void square_sum(int * d_in, int * d_out, int start, int end)
+__global__ void square_sum(int * d_in, int * d_out, int * d_count, int N, int start, int end)
 {
     int tid = start + threadIdx.x + blockIdx.x*blockDim.x;
     int gid = threadIdx.x + blockIdx.x*blockDim.x;
     
-    if (tid >= end) return;
-    d_out[gid] = d_in[tid] * d_in[tid];
+    if (tid >= end || tid >= N) return;
+
+    if (d_in[tid] % 5 == 0)
+    {
+        // d_out[gid] = d_in[tid] * d_in[tid];
+        int i = atomicAdd(d_count, 1);
+        d_out[i] = d_in[tid] * d_in[tid];
+    }
+    else
+    {
+        // int i = atomicAdd(d_count, 1);
+        // d_out[i] = 5;
+    }
 }
 
 void merge_local(
@@ -104,7 +115,8 @@ void run_sweep_multigpu(int N, int devcount)
     cudaGetDeviceCount(&devices_count);
     // devices_count-=2;
     devices_count = devcount ? devcount : devices_count;
-    int range = ceil( N / devices_count); 
+    int range = ceil( (float)N / devices_count); 
+    printf("range: %i\n", range);
 
     tbb::parallel_for(0, devices_count, 1, [&](int & device_id)    {
 
@@ -158,16 +170,36 @@ void run_sweep_multigpu(int N, int devcount)
         cudaMalloc((void**)&d_out, sizeof(int)*range);
         cudaMemset(d_out, 0, sizeof(int)*range);
 
+        int * d_count;
+        cudaMalloc((void**)&d_count, sizeof(int)*1);
+        cudaMemset(d_count, 0, sizeof(int)*1);
+
     
-        square_sum<<<grid, block>>>(d_in_solo, d_out, range_start, range_end);
+        square_sum<<<grid, block>>>(d_in_solo, d_out, d_count, N, range_start, range_end);
         gpuErrchk(cudaDeviceSynchronize());
 
-        int * out = (int*)malloc(sizeof(int)*range);
-        gpuErrchk(cudaMemcpy(out, d_out, sizeof(int)*range, cudaMemcpyDeviceToHost));
+        
+
+        int count;
+        gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
+        printf("count for device %i : %i\n", device_id, count);
+        cudaFree(d_out);
+        cudaMalloc((void**)&d_out, sizeof(int)*count);
+        cudaMemset(d_out, -1, sizeof(int)*count);
+
+        cudaMemset(d_count, 0, sizeof(int)*1);
+
+        square_sum<<<grid, block>>>(d_in_solo, d_out, d_count, N, range_start, range_end);
+        gpuErrchk(cudaDeviceSynchronize());
+        gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
+        printf("count2 for device %i : %i\n", device_id, count);
+
+        int * out = (int*)malloc(sizeof(int)*count);
+        gpuErrchk(cudaMemcpy(out, d_out, sizeof(int)*count, cudaMemcpyDeviceToHost));
        
         auto& local_overlaps = storages.local();
         
-        for (size_t i=0; i < range; i++)
+        for (size_t i=0; i < count; i++)
         {
            local_overlaps.emplace_back(out[i]);
         }
@@ -192,7 +224,7 @@ void run_sweep_multigpu(int N, int devcount)
     printf("\nFinal result: %i\n", sum);
     printf("Final result size: %i\n", squareSums.size());
     printf("\n");
-    for (int i=0;i < N; i++)
+    for (int i=0;i < squareSums.size(); i++)
     {
         printf("%i ", squareSums[i]);
     }
