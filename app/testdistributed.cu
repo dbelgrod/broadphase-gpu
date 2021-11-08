@@ -38,9 +38,10 @@ using namespace std;
 __global__ void square_sum(int * d_in, int * d_out, int start, int end)
 {
     int tid = start + threadIdx.x + blockIdx.x*blockDim.x;
+    int gid = threadIdx.x + blockIdx.x*blockDim.x;
     
     if (tid >= end) return;
-    d_out[tid] = d_in[tid] * d_in[tid];
+    d_out[gid] = d_in[tid] * d_in[tid];
 }
 
 void merge_local(
@@ -61,7 +62,7 @@ void merge_local(
 }
 
 
-void run_sweep_multigpu(int N)
+void run_sweep_multigpu(int N, int devcount)
 {
     vector<int> squareSums;
 
@@ -101,7 +102,8 @@ void run_sweep_multigpu(int N)
 
     int devices_count;
     cudaGetDeviceCount(&devices_count);
-    devices_count-=3;
+    // devices_count-=2;
+    devices_count = devcount ? devcount : devices_count;
     int range = ceil( N / devices_count); 
 
     tbb::parallel_for(0, devices_count, 1, [&](int & device_id)    {
@@ -138,11 +140,6 @@ void run_sweep_multigpu(int N)
         // if (device_id == device_init_id )
             cudaMemcpy(d_in_solo, d_in, sizeof(int)*N, cudaMemcpyDefault);
         
-
-        int * d_out;
-        cudaMalloc((void**)&d_out, sizeof(int)*N);
-        cudaMemset(d_out, 0, sizeof(int)*N);
-
         // // turn off peer access for write variables
         sleep(1);
         for (int i=0; i<devices_count; i++)
@@ -157,16 +154,20 @@ void run_sweep_multigpu(int N)
         }
         sleep(1);
 
+        int * d_out;
+        cudaMalloc((void**)&d_out, sizeof(int)*range);
+        cudaMemset(d_out, 0, sizeof(int)*range);
+
     
         square_sum<<<grid, block>>>(d_in_solo, d_out, range_start, range_end);
         gpuErrchk(cudaDeviceSynchronize());
 
-        int * out = (int*)malloc(sizeof(int)*N);
-        gpuErrchk(cudaMemcpy(out, d_out, sizeof(int)*N, cudaMemcpyDeviceToHost));
+        int * out = (int*)malloc(sizeof(int)*range);
+        gpuErrchk(cudaMemcpy(out, d_out, sizeof(int)*range, cudaMemcpyDeviceToHost));
        
         auto& local_overlaps = storages.local();
         
-        for (size_t i=0; i < N; i++)
+        for (size_t i=0; i < range; i++)
         {
            local_overlaps.emplace_back(out[i]);
         }
@@ -201,19 +202,23 @@ void run_sweep_multigpu(int N)
 
 int main( int argc, char **argv )
 {
-    int N;
+    int N = 1;
+    int devcount = 0;
 
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:p:d")) != -1)
+    while ((o = getopt (argc, argv, "n:d:")) != -1)
     {
         switch (o)
         {
             case 'n':
                 N = atoi(optarg);
                 break;
+            case 'd':
+                devcount = atoi(optarg);
+                break;
         }
     }
 
-    run_sweep_multigpu(N);
+    run_sweep_multigpu(N, devcount);
 
 }
