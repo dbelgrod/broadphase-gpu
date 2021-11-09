@@ -20,22 +20,32 @@ __global__ void print_sort_axis(Aabb* axis, int* index, int C)
         printf("id: %i, x: %.6f\n", index[i], axis[i].min.x);
 }
 
-__global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, int2 * overlaps, int N, int guess, int nbox, int start, int end)
+__global__ void print_overlap_start(int2 * overlaps)
+{
+    printf("overlap[0].x %d\n", overlaps[0].x);
+}
+
+__global__ void retrieve_collision_pairs(const Aabb* const boxes, const int* const index, int * count, int2 * overlaps, int N, int guess, int nbox, int start, int end)
 {
     extern __shared__ Aabb s_objects[];
 
-    int tid = start + 1*blockIdx.x * blockDim.x + threadIdx.x;
+    // int gid = blockIdx.x * blockDim.x + threadIdx.x;
+    // if (gid == 0)
+    //     printf("index[0]-> %i\n", index[0]);
+
+    int tid = start + threadIdx.x + blockIdx.x*blockDim.x;
     int ltid = threadIdx.x;
 
     if (tid >= N || tid >= end) return;
 
-    #pragma unroll
-    for (int i=0; i < nbox; i++)
-    {
-        int t = tid + i*blockDim.x;
-        int l = i*blockDim.x + ltid;
-        s_objects[l]= boxes[t];
-    }
+    // #pragma unroll
+    // for (int i=0; i < nbox; i++)
+    // {
+    //     int t = tid + i*blockDim.x;
+    //     int l = i*blockDim.x + ltid;
+    //     s_objects[l]= boxes[t];
+    // }
+    s_objects[ltid] = boxes[tid];
     
     __syncthreads();
     
@@ -51,20 +61,20 @@ __global__ void retrieve_collision_pairs(Aabb* boxes, int* index, int * count, i
 
     if (ntid >= N) return;
 
-    Aabb* a = &s_objects[l];
-    Aabb* b = nltid < nbox*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
+    const Aabb& a = s_objects[l];
+    Aabb b = nltid < blockDim.x ? s_objects[nltid] : boxes[ntid];
     
 
-    while (a->max.x  >= b->min.x) //boxes can touch and collide
+    while (a.max.x  >= b.min.x) //boxes can touch and collide
     {
         if ( does_collide(a,b) 
-            && !covertex(a->vertexIds, b->vertexIds)
+            && !covertex(a.vertexIds, b.vertexIds)
             )
             add_overlap(index[t], index[ntid], count, overlaps, guess);
         
         ntid++;
         nltid++;
         if (ntid >= N) return;
-        b = nltid < nbox*blockDim.x ? &s_objects[nltid] : &boxes[ntid];
+        b = boxes[ntid]; //nltid < blockDim.x ? s_objects[nltid] : boxes[ntid];
     }
 }

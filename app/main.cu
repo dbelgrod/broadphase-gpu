@@ -38,9 +38,10 @@ int main( int argc, char **argv )
     int nbox = 0;
     int parallel = 0;
     bool distributed = false;
+    int devcount = 1;
 
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:p:d")) != -1)
+    while ((o = getopt (argc, argv, "i:c:n:b:p:d")) != -1)
     {
         switch (o)
         {
@@ -64,12 +65,15 @@ int main( int argc, char **argv )
             case 'd':
                 distributed = true;
                 break;
+            case 'i':
+                devcount = atoi(optarg);
+                break;
         }
     }
 
     vector<pair<int,int>> overlaps;
     if (distributed)
-        run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel);
+        run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
     else
         run_sweep(boxes.data(), N, nbox, overlaps, parallel);
     for (auto i : compare)

@@ -23,7 +23,7 @@ __global__ void count_collisions(Aabb * boxes, int * count, int N){
 __device__ bool does_collide(const Aabb& a, const Aabb& b)
 {
     return 
-       a.max.x >= b.min.x && a.min.x <= b.max.x &&
+    //    a.max.x >= b.min.x && a.min.x <= b.max.x &&
             a.max.y >= b.min.y && a.min.y <= b.max.y &&
             a.max.z >= b.min.z && a.min.z <= b.max.z;
 }
@@ -55,7 +55,7 @@ __device__ bool covertex(const int3& a, const int3& b) {
 //         a.max.z == b.max.x || a.max.z == b.max.y || a.max.z == b.max.z;
 // }
 
-__device__ void add_overlap(int& xid, int& yid, int * count, int2 * overlaps, int G)
+__device__ void add_overlap(const int& xid, const int& yid, int * count, int2 * overlaps, int G)
 {
     int i = atomicAdd(count, 1);
 
@@ -146,6 +146,7 @@ __global__ void reset_counter(long long * counter)
 }
 
 __global__ void reset_counter(int * counter){
+    printf("Old counter value: %i\n", *counter);
     *counter = 0;
 }
 
