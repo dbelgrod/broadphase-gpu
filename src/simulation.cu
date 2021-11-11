@@ -516,7 +516,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
 
 
     // Test print some sorted output
-    print_sort_axis<<<1,1>>>(d_boxes, 5);
+    // print_sort_axis<<<1,1>>>(d_boxes, 5);
     cudaDeviceSynchronize();
     
 
@@ -570,12 +570,6 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         cudaMemcpy(d_b, d_boxes, sizeof(Aabb)*N, cudaMemcpyDefault);
         cudaDeviceSynchronize();  
        
-        // int * d_r;
-        // cudaMalloc((void**)&d_r, sizeof(int)*N);
-        // cudaMemcpy(d_r, rank_x, sizeof(int)*N, cudaMemcpyDefault);
-        // cudaDeviceSynchronize();  
-        
-       
         cudaDeviceCanAccessPeer(&is_able, device_id, device_init_id);
         cudaDeviceSynchronize();
         if (is_able)
@@ -589,11 +583,8 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         
         // Allocate counter to GPU + set to 0 collisions
         int * d_count;
-        // cudaMalloc((void**)&d_count, sizeof(int*)*sizeof(int)*devices_count);
         gpuErrchk(cudaMalloc((void**)&d_count, sizeof(int)));
         gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
-        // reset_counter<<<1,1>>>(d_count);
-        // cudaDeviceSynchronize();
         gpuErrchk( cudaGetLastError() );   
 
         // Find overlapping pairs
@@ -640,39 +631,39 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
 
         // int2 * overlaps = new int2[count];
         int2* overlaps =  (int2*)malloc(sizeof(int2) * count);
-        // int2 overlaps[count];
-        // vector<int2> overlaps;
-        // overlaps.reserve(count);
         gpuErrchk(cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost));
         gpuErrchk( cudaGetLastError() ); 
 
         printf("Final count for device %i:  %i\n", device_id, count);
-        // printf("overlaps.x for dev: %i %i\n", device_id, overlaps[0].x);
 
         auto& local_overlaps = storages.local();
         // local_overlaps.reserve(local_overlaps.size() + count);
         
+        auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
+        auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
+        auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
+        
+        
         for (size_t i=0; i < count; i++)
         {
-            local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
+            // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
             // finOverlaps.push_back();
             
-            // Aabb a = boxes[overlaps[i].x];
-            // Aabb b = boxes[overlaps[i].y];
+            Aabb a = boxes[overlaps[i].x];
+            Aabb b = boxes[overlaps[i].y];
             
-        
-            // if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
-            // {
-            //     local_overlaps.emplace_back(a.ref_id, b.ref_id);
-            // }
-            // else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
-            // {
-            //     local_overlaps.emplace_back(b.ref_id, a.ref_id);
-            // }
-            // else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
-            // {
-            //     local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
-            // }
+            if (is_vertex(a) && is_face(b)) //vertex, face
+            {
+                local_overlaps.emplace_back(a.ref_id, b.ref_id);
+            }
+            else if (is_face(a) && is_vertex(b))
+            {
+                local_overlaps.emplace_back(b.ref_id, a.ref_id);
+            }
+            else if (is_edge(a) && is_edge(b))
+            {
+                local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
+            }
         }
         
         printf("Total(filt.) overlaps for devid %i: %i\n", device_id, local_overlaps.size());
