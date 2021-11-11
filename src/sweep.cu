@@ -14,10 +14,10 @@ __global__ void build_index(Aabb * boxes, int N, int* index)
 
 // }
 
-__global__ void print_sort_axis(Aabb* axis, int* index, int C)
+__global__ void print_sort_axis(Aabb* axis, int C)
 {
     for (uint i = 0; i < C; i++)
-        printf("id: %i, x: %.6f\n", index[i], axis[i].min.x);
+        printf("id: %i, x: %.6f\n", axis[i].id, axis[i].min.x);
 }
 
 __global__ void print_overlap_start(int2 * overlaps)
@@ -25,7 +25,7 @@ __global__ void print_overlap_start(int2 * overlaps)
     printf("overlap[0].x %d\n", overlaps[0].x);
 }
 
-__global__ void retrieve_collision_pairs(const Aabb* const boxes, const int* const index, int * count, int2 * overlaps, int N, int guess, int nbox, int start, int end)
+__global__ void retrieve_collision_pairs(const Aabb* const boxes, int * count, int2 * overlaps, int N, int guess, int nbox, int start, int end)
 {
     extern __shared__ Aabb s_objects[];
 
@@ -70,7 +70,7 @@ __global__ void retrieve_collision_pairs(const Aabb* const boxes, const int* con
         if ( does_collide(a,b) 
             && !covertex(a.vertexIds, b.vertexIds)
             )
-            add_overlap(index[t], index[ntid], count, overlaps, guess);
+            add_overlap(a.id, b.id, count, overlaps, guess);
         
         ntid++;
         nltid++;

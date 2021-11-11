@@ -13,7 +13,7 @@ typedef enum { VERTEX, FACE, EDGE }  Simplex;
 
 __global__ class Aabb {
     public:
-        // int id;
+        int id;
         float3 min;
         float3 max;
         int3 vertexIds;
@@ -37,7 +37,7 @@ __global__ class Aabb {
             vertexIds = make_int3(vids[0], vids[1], vids[2]);
             // memcpy(min, 	__float2half(tempmin), sizeof(__half)*3);
             // memcpy(max ,	__float2half(tempmax), sizeof(__half)*3);
-            // id = assignid;
+            id = assignid;
             // ref_id = reference_id;
             // type = assigntype;
         };
