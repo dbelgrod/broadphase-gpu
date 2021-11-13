@@ -73,7 +73,7 @@ int main( int argc, char **argv )
 
     vector<pair<int,int>> overlaps;
     // if (distributed)
-        run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
+        run_sweep_pieces(boxes.data(), N, nbox, overlaps, parallel, devcount);
     // else
     //     run_sweep(boxes.data(), N, nbox, overlaps, parallel);
     for (auto i : compare)

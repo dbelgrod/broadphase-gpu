@@ -750,6 +750,18 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     cudaMalloc((void**)&outpair, sizeof(int2)*count);
     cudaMemset(d_count, 0, sizeof(int));
     build_checker<<<grid, block, smemSize>>>(d_sortedmin, outpair, N, d_count, count);
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+
+    // next step is to run so
+    int2 * d_overlaps;
+    cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); //big enough
+    cudaMemset(d_count, 0, sizeof(int));
+    retrieve_collision_pairs2<<<grid, block, 49152>>>(d_boxes, d_count, outpair, d_overlaps, count);
+
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("Final count for device %i:  %i\n", device_init_id, count);
+    
+
 }
 
 

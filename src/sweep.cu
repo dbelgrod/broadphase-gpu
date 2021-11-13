@@ -139,3 +139,25 @@ __global__ void build_checker(float3 * sortedmin, int2 * out, int N, int * count
 
 
 }
+
+__global__ void retrieve_collision_pairs2(const Aabb* const boxes, int * count, int2 * inpairs, int2 * overlaps, int N)
+{
+    extern __shared__ Aabb s_objects[];
+
+    int tid = threadIdx.x + blockIdx.x*blockDim.x;
+    int ltid = threadIdx.x;
+
+    if (tid >= N) return;
+
+    s_objects[2*ltid] = boxes[inpairs[tid].x];
+    s_objects[2*ltid+1] = boxes[inpairs[tid].y];
+
+    const Aabb& a = s_objects[2*ltid];
+    const Aabb& b = s_objects[2*ltid+1];
+    
+    if ( does_collide(a,b) 
+            && !covertex(a.vertexIds, b.vertexIds)
+    )
+        add_overlap(a.id, b.id, count, overlaps, N);
+    
+}
