@@ -69,12 +69,73 @@ __global__ void retrieve_collision_pairs(const Aabb* const boxes, int * count, i
     {
         if ( does_collide(a,b) 
             && !covertex(a.vertexIds, b.vertexIds)
-            )
+        // if (tid % 100 == 0
+        )
             add_overlap(a.id, b.id, count, overlaps, guess);
         
         ntid++;
         nltid++;
         if (ntid >= N) return;
-        b = boxes[ntid]; //nltid < blockDim.x ? s_objects[nltid] : boxes[ntid];
+        b = nltid < blockDim.x ? s_objects[nltid] : boxes[ntid];
     }
+}
+
+
+__device__ void consider_pair(const int& xid, const int& yid, int * count, int2 * out, int guess)
+{
+    int i = atomicAdd(count, 1);
+
+    if (i < guess)
+    {
+        out[i] = make_int2(xid, yid);
+    } 
+}
+
+__global__ void create_sortedmin(Aabb * boxes, float3 * sortedmin, int N)
+{
+
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tid >= N) return;
+
+    sortedmin[tid] = make_float3(boxes[tid].min.x, boxes[tid].max.x, float(boxes[tid].id));
+}
+
+__global__ void build_checker(float3 * sortedmin, int2 * out, int N, int * count, int guess)
+{
+    // float3 x -> min, y -> max, z-> boxid
+    extern __shared__ float3 s_sortedmin[];
+
+
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tid >= N) return;
+
+    int ltid = threadIdx.x;
+
+    s_sortedmin[ltid] = sortedmin[tid];
+    
+    __syncthreads();
+
+    int ntid = tid + 1;
+    int nltid = ltid + 1;
+
+    if (ntid >= N) return;
+
+    const float3& a = s_sortedmin[ltid];
+    float3 b = nltid < blockDim.x ? s_sortedmin[nltid] : sortedmin[ntid];
+    
+
+    while (a.y  >= b.x) // curr max > following min
+    {
+        
+        consider_pair(int(a.z), int(b.z), count, out, guess);
+        
+        ntid++;
+        nltid++;
+        if (ntid >= N) return;
+        b = nltid < blockDim.x ? s_sortedmin[nltid] : sortedmin[ntid];
+    }
+
+
 }

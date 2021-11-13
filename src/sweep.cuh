@@ -23,3 +23,7 @@ __global__ void build_index(Aabb * boxes, int N, int* index);
 __global__ void print_sort_axis(Aabb* axis, int C);
 __global__ void retrieve_collision_pairs(const Aabb* const boxes, int * count, int2 * overlaps, int N, int guess, int nbox, int start = 0, int end = INT_MAX);
 __global__ void print_overlap_start(int2 * overlaps);
+
+__global__ void build_checker(float3 * sortedmin, int2 * out, int N, int * count, int guess);
+__global__ void create_sortedmin(Aabb * boxes, float3 * sortedmin, int N);
+// void consider_pair(const int& xid, const int& yid, int * count, int2 * out, int guess);

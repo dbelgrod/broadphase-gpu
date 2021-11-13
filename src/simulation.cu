@@ -273,17 +273,22 @@ void run_scaling(const Aabb* boxes,  int N, int desiredBoxesPerThread, vector<un
 
 struct sort_sweepmarker_x
 {
-  __host__ __device__
-  bool operator()(const SweepMarker &a, const SweepMarker &b) const {
+    __host__ __device__
+    bool operator()(const SweepMarker &a, const SweepMarker &b) const {
     return (a.x < b.x);}
 };
 
 struct sort_aabb_x
 {
-  __host__ __device__
-  bool operator()(const Aabb &a, const Aabb &b) const {
+    __host__ __device__
+    bool operator()(const Aabb &a, const Aabb &b) const {
     return (a.min.x < b.min.x);}
+
+    __host__ __device__
+    bool operator()(const float3 &a, const float3 &b) const {
+        return (a.x < b.x);}
 };
+
 
 // DEPRECATED
 // void run_sweep(const Aabb* boxes, int N, int nbox, vector<pair<int,int>>& finOverlaps, int& threads)
@@ -698,3 +703,80 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
     printf("\n");
 
 }
+
+void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads, int & devcount)
+{
+ 
+    int device_init_id = 0;
+
+    int smemSize;
+    setup(device_init_id, smemSize, threads, nbox);
+
+    cudaSetDevice(device_init_id);
+
+    // Allocate boxes to GPU 
+    Aabb * d_boxes;
+    cudaMalloc((void**)&d_boxes, sizeof(Aabb)*N);
+    cudaMemcpy(d_boxes, boxes, sizeof(Aabb)*N, cudaMemcpyHostToDevice);
+
+    dim3 block(threads);
+    int grid_dim_1d = (N / threads + 1); 
+    dim3 grid( grid_dim_1d );
+    printf("Grid dim (1D): %i\n", grid_dim_1d);
+    printf("Box size: %i\n", sizeof(Aabb));
+    
+    float3 * d_sortedmin;
+    cudaMalloc((void**)&d_sortedmin, sizeof(float3)*N);
+
+    create_sortedmin<<<grid, block, smemSize>>>(d_boxes, d_sortedmin, N);
+
+    try{
+        thrust::sort(thrust::device, d_sortedmin, d_sortedmin + N, sort_aabb_x() );
+        }
+    catch (thrust::system_error &e){
+        printf("Error: %s \n",e.what());}
+
+    int count = 0;
+
+    int * d_count;
+    cudaMalloc((void**)&d_count, sizeof(int));
+    cudaMemset(d_count, 0, sizeof(int));
+    
+    int2 * outpair;
+    cudaMalloc((void**)&outpair, sizeof(int2)*count);
+    build_checker<<<grid, block, smemSize>>>(d_sortedmin, outpair, N, d_count, count);
+    
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMalloc((void**)&outpair, sizeof(int2)*count);
+    cudaMemset(d_count, 0, sizeof(int));
+    build_checker<<<grid, block, smemSize>>>(d_sortedmin, outpair, N, d_count, count);
+}
+
+
+//     // int* rank_x = &rank[0];
+//     // int* rank_y = &rank[N];
+//     // int* rank_z = &rank[2*N];
+
+//     // Translate boxes -> SweepMarkers
+
+//     // cudaEventRecord(start);
+//     // build_index<<<grid,block>>>(d_boxes, N, rank_x);
+//     // cudaEventRecord(stop);
+//     // cudaEventSynchronize(stop);
+    
+//     // cudaEventElapsedTime(&milliseconds, start, stop);
+
+//     // printf("Elapsed time for build: %.6f ms\n", milliseconds);
+
+//     // Thrust sort (can be improved by sort_by_key)
+//     // cudaEventRecord(start);
+//     try{
+//         // thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
+//         thrust::sort(thrust::device, d_boxes, d_boxes + N, sort_aabb_x() );
+//         }
+//     catch (thrust::system_error &e){
+//         printf("Error: %s \n",e.what());}
+    
+//     // Test print some sorted output
+//     // print_sort_axis<<<1,1>>>(d_boxes, 5);
+// }
