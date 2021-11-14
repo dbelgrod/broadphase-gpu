@@ -1,4 +1,6 @@
 #include <gpubf/simulation.h>
+#include <gpubf/timer.cuh>
+
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 
@@ -728,13 +730,17 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     float3 * d_sortedmin;
     cudaMalloc((void**)&d_sortedmin, sizeof(float3)*N);
 
-    create_sortedmin<<<grid, block, smemSize>>>(d_boxes, d_sortedmin, N);
+    // create_sortedmin<<<grid, block, smemSize>>>(d_boxes, d_sortedmin, N);
+    recordLaunch("create_sortedmin", grid_dim_1d, threads, smemSize, create_sortedmin, d_boxes, d_sortedmin, N);
 
     try{
         thrust::sort(thrust::device, d_sortedmin, d_sortedmin + N, sort_aabb_x() );
         }
     catch (thrust::system_error &e){
         printf("Error: %s \n",e.what());}
+    
+    gpuErrchk( cudaGetLastError() );
+
 
     int count = 0;
 
@@ -744,23 +750,44 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     
     int2 * outpair;
     cudaMalloc((void**)&outpair, sizeof(int2)*count);
-    build_checker<<<grid, block, smemSize>>>(d_sortedmin, outpair, N, d_count, count);
+    build_checker<<<grid, block, 49152>>>(d_sortedmin, outpair, N, d_count, count);
+    gpuErrchk( cudaGetLastError() );
+
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("First count from building all overlapping x: %i\n", count);
+    // count /= 10;
+    cudaFree(outpair);
+    gpuErrchk(cudaMalloc((void**)&outpair, sizeof(int2)*count));
+    gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
+
+    recordLaunch("build_checker", grid_dim_1d, threads, 49152, build_checker, d_sortedmin, outpair, N, d_count, count);
+
+    // build_checker<<<grid, block, 49152>>>(d_sortedmin, outpair, N, d_count, count);
+    gpuErrchk( cudaDeviceSynchronize());
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("Second count from building all overlapping x: %i\n", count);
+    gpuErrchk( cudaGetLastError() ); 
     
-    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMalloc((void**)&outpair, sizeof(int2)*count);
-    cudaMemset(d_count, 0, sizeof(int));
-    build_checker<<<grid, block, smemSize>>>(d_sortedmin, outpair, N, d_count, count);
-    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    // count /= 10;
+    N = count;
+    grid_dim_1d = (N / threads + 1); 
+    dim3 grid2( grid_dim_1d );
+    printf("Grid dim (1D): %i\n", grid_dim_1d);
+    printf("Box size: %i\n", sizeof(Aabb));
 
     // next step is to run so
     int2 * d_overlaps;
-    cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); //big enough
-    cudaMemset(d_count, 0, sizeof(int));
-    retrieve_collision_pairs2<<<grid, block, 49152>>>(d_boxes, d_count, outpair, d_overlaps, count);
+    gpuErrchk(cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count))); //big enough
+    gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
+    // retrieve_collision_pairs2<<<grid2, block, 49152>>>(d_boxes, d_count, outpair, d_overlaps, N, count);
+    recordLaunch<const Aabb *, int *, int2 *, int2 *, int, int>("retrieve_collision_pairs2", grid_dim_1d, threads, 49152, retrieve_collision_pairs2, d_boxes, d_count, outpair, d_overlaps, N, count);
 
-    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    gpuErrchk(cudaDeviceSynchronize());
+    gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
     printf("Final count for device %i:  %i\n", device_init_id, count);
-    
+    // cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); //big enough
+    // cudaMemset(d_count, 0, sizeof(int));
+    // retrieve_collision_pairs2<<<grid2, block, 49152>>>(d_boxes, d_count, outpair, d_overlaps, N, count);
 
 }
 

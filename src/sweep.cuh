@@ -27,4 +27,4 @@ __global__ void print_overlap_start(int2 * overlaps);
 __global__ void build_checker(float3 * sortedmin, int2 * outpairs, int N, int * count, int guess);
 __global__ void create_sortedmin(Aabb * boxes, float3 * sortedmin, int N);
 // void consider_pair(const int& xid, const int& yid, int * count, int2 * out, int guess);
-__global__ void retrieve_collision_pairs2(const Aabb* const boxes, int * count, int2 * inpairs, int2 * overlaps, int N);
+__global__ void retrieve_collision_pairs2(const Aabb* const boxes, int * count, int2 * inpairs, int2 * overlaps, int N, int guess);

@@ -37,11 +37,11 @@ int main( int argc, char **argv )
     int N = boxes.size();
     int nbox = 0;
     int parallel = 0;
-    // bool distributed = false;
+    bool evenworkload = false;
     int devcount = 1;
 
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:p:d:")) != -1)
+    while ((o = getopt (argc, argv, "c:n:b:p:d:W")) != -1)
     {
         switch (o)
         {
@@ -65,17 +65,17 @@ int main( int argc, char **argv )
             case 'd':
                 devcount = atoi(optarg);
                 break;
-            // case 'i':
-            //     devcount = atoi(optarg);
-            //     break;
+            case 'W':
+                evenworkload = true;
+                break;
         }
     }
 
     vector<pair<int,int>> overlaps;
-    // if (distributed)
+    if (evenworkload)
         run_sweep_pieces(boxes.data(), N, nbox, overlaps, parallel, devcount);
-    // else
-    //     run_sweep(boxes.data(), N, nbox, overlaps, parallel);
+    else
+        run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
     for (auto i : compare)
     {
         // printf("%s\n", i );

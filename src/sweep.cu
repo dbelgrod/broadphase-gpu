@@ -106,25 +106,25 @@ __global__ void build_checker(float3 * sortedmin, int2 * out, int N, int * count
     // float3 x -> min, y -> max, z-> boxid
     extern __shared__ float3 s_sortedmin[];
 
-
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid >= N) return;
 
     int ltid = threadIdx.x;
 
-    s_sortedmin[ltid] = sortedmin[tid];
+    // s_sortedmin[ltid] = sortedmin[tid];
     
-    __syncthreads();
+    // __syncthreads();
 
     int ntid = tid + 1;
     int nltid = ltid + 1;
 
     if (ntid >= N) return;
 
-    const float3& a = s_sortedmin[ltid];
-    float3 b = nltid < blockDim.x ? s_sortedmin[nltid] : sortedmin[ntid];
-    
+    // const float3& a = s_sortedmin[ltid];
+    // float3 b = nltid < blockDim.x ? s_sortedmin[nltid] : sortedmin[ntid];
+    const float3& a = sortedmin[tid];
+    float3 b = sortedmin[ntid];
 
     while (a.y  >= b.x) // curr max > following min
     {
@@ -134,30 +134,37 @@ __global__ void build_checker(float3 * sortedmin, int2 * out, int N, int * count
         ntid++;
         nltid++;
         if (ntid >= N) return;
-        b = nltid < blockDim.x ? s_sortedmin[nltid] : sortedmin[ntid];
+        // b = nltid < blockDim.x ? s_sortedmin[nltid] : sortedmin[ntid];
+        b = sortedmin[ntid];
     }
 
 
 }
 
-__global__ void retrieve_collision_pairs2(const Aabb* const boxes, int * count, int2 * inpairs, int2 * overlaps, int N)
+__global__ void retrieve_collision_pairs2(const Aabb* const boxes, int * count, int2 * inpairs, int2 * overlaps, int N, int guess)
 {
     extern __shared__ Aabb s_objects[];
 
-    int tid = threadIdx.x + blockIdx.x*blockDim.x;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int ltid = threadIdx.x;
+    if (tid == 0)
+        printf("N -> %i\n", N);
 
     if (tid >= N) return;
 
-    s_objects[2*ltid] = boxes[inpairs[tid].x];
-    s_objects[2*ltid+1] = boxes[inpairs[tid].y];
+    // s_objects[2*ltid] = boxes[inpairs[tid].x];
+    // s_objects[2*ltid+1] = boxes[inpairs[tid].y];
 
-    const Aabb& a = s_objects[2*ltid];
-    const Aabb& b = s_objects[2*ltid+1];
+    // const Aabb& a = s_objects[2*ltid];
+    // const Aabb& b = s_objects[2*ltid+1];
+
+    const Aabb& a = boxes[inpairs[tid].x];;
+    const Aabb& b = boxes[inpairs[tid].y];
     
     if ( does_collide(a,b) 
             && !covertex(a.vertexIds, b.vertexIds)
-    )
-        add_overlap(a.id, b.id, count, overlaps, N);
+    ){
+        add_overlap(a.id, b.id, count, overlaps, guess);
+    }
     
 }
