@@ -68,3 +68,42 @@ void addFaces
     vector<Aabb>& boxes
 );
 
+__global__ class MiniBox  {
+    public:
+        float2 min; //only y,z coord
+        float2 max;
+
+    __device__ MiniBox(float* tempmin, float* tempmax)
+        {
+            min = make_float2(tempmin[0], tempmin[1]);
+            max = make_float2(tempmax[0], tempmax[1]);
+        };
+
+        MiniBox() = default;
+};
+
+__global__ class SortedMin {
+    public:
+        float min;
+        float max;
+        int id;
+        int3 vertexIds;
+
+    __device__ SortedMin(float _min, float _max, int assignid, int * vids)
+        {
+            min = _min;
+            max = _max;
+            vertexIds = make_int3(vids[0], vids[1], vids[2]);
+            id = assignid;
+        };
+
+    __device__ SortedMin(float _min, float _max, int assignid, int3 vids)
+    {
+        min = _min;
+        max = _max;
+        vertexIds = vids;
+        id = assignid;
+    };
+
+        SortedMin() = default;
+};
