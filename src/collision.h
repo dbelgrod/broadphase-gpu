@@ -22,3 +22,4 @@ __device__ bool does_collide(const Aabb& a, const Aabb& b);
 __device__ bool does_collide(Aabb* a, Aabb* b);
 __device__ void add_overlap(const int& xid, const int& yid, int * count, int2 * overlaps, int G);
 __device__ bool covertex(const int3& a, const int3& b);
+__device__ bool does_collide(const MiniBox& a, const MiniBox& b);

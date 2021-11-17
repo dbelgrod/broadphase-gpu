@@ -7,9 +7,11 @@
 #include <vector>
 #include <Eigen/Core>
 
+
 using namespace std;
 
 typedef enum { VERTEX, FACE, EDGE }  Simplex;
+typedef unsigned long long int ull;
 
 __global__ class Aabb {
     public:
@@ -70,40 +72,52 @@ void addFaces
 
 __global__ class MiniBox  {
     public:
-        float2 min; //only y,z coord
-        float2 max;
+        // float2 min; //only y,z coord
+        // float2 max;
+        float4 vertices;
+        int3 vertexIds;
 
-    __device__ MiniBox(float* tempmin, float* tempmax)
+    __device__ MiniBox(float* vs, int3 vids)
         {
-            min = make_float2(tempmin[0], tempmin[1]);
-            max = make_float2(tempmax[0], tempmax[1]);
+            // min = make_float2(tempmin[0], tempmin[1]);
+            // max = make_float2(tempmax[0], tempmax[1]);
+            vertices = make_float4(vs[0], vs[1], vs[2], vs[3]);
+            vertexIds = vids;
         };
 
         MiniBox() = default;
 };
 
-__global__ class SortedMin {
-    public:
-        float min;
-        float max;
-        int id;
-        int3 vertexIds;
+// __global__ class SortedMin {
+//     public:
+//         float min;
+//         float max;
+//         int id;
+//         int3 vertexIds;
 
-    __device__ SortedMin(float _min, float _max, int assignid, int * vids)
-        {
-            min = _min;
-            max = _max;
-            vertexIds = make_int3(vids[0], vids[1], vids[2]);
-            id = assignid;
-        };
+//     __device__ SortedMin(float _min, float _max, int assignid, int * vids)
+//         {
+//             min = _min;
+//             max = _max;
+//             vertexIds = make_int3(vids[0], vids[1], vids[2]);
+//             id = assignid;
+//         };
 
-    __device__ SortedMin(float _min, float _max, int assignid, int3 vids)
-    {
-        min = _min;
-        max = _max;
-        vertexIds = vids;
-        id = assignid;
-    };
+//     __device__ SortedMin(float _min, float _max, int assignid, int3 vids)
+//     {
+//         min = _min;
+//         max = _max;
+//         vertexIds = vids;
+//         id = assignid;
+//     };
 
-        SortedMin() = default;
+//         SortedMin() = default;
+// };
+
+__global__ class RankBox {
+public:
+    Aabb * aabb;
+    ull rank_x;
+    ull rank_y;
+    ull rank_c;
 };

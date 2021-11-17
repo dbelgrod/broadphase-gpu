@@ -1,5 +1,5 @@
 // #include <gpubf/simulation.h>
-#include <gpubf/simulation.h>
+#include <gpubf/simulation.cuh>
 #include <gpubf/groundtruth.h>
 #include <gpubf/util.cuh>
 

@@ -13,7 +13,7 @@ src/aabb.cu
 src/collision.cu
 src/collision.h
 src/simulation.cu
-src/simulation.h
+src/simulation.cuh
 src/groundtruth.cu
 src/groundtruth.h
 src/sweep.cu

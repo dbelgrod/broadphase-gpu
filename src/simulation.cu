@@ -1,5 +1,5 @@
-#include <gpubf/simulation.h>
-#include <gpubf/timer.cuh>
+#include <gpubf/simulation.cuh>
+
 
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
@@ -289,6 +289,29 @@ struct sort_aabb_x
     __host__ __device__
     bool operator()(const float3 &a, const float3 &b) const {
         return (a.x < b.x);}
+
+    // __host__ __device__
+    // bool operator()(const SortedMin &a, const SortedMin &b) const {
+    //     return (a.min < b.min);}
+    
+    __host__ __device__
+    bool operator()(const RankBox &a, const RankBox &b) const {
+        return (a.aabb->min.x < b.aabb->min.x);}
+
+};
+
+struct sort_aabb_y
+{
+    __host__ __device__
+    bool operator()(const RankBox &a, const RankBox &b) const {
+        return (a.aabb->min.y < b.aabb->min.y);}
+};
+
+struct sort_cantor
+{
+    __host__ __device__
+    bool operator()(const RankBox &a, const RankBox &b) const {
+        return (a.rank_c < b.rank_c);}
 };
 
 
@@ -727,14 +750,21 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
     
-    float3 * d_sortedmin;
-    cudaMalloc((void**)&d_sortedmin, sizeof(float3)*N);
+    // float3 * d_sortedmin;
+    // cudaMalloc((void**)&d_sortedmin, sizeof(float3)*N);
+    float3 * d_sm;
+    cudaMalloc((void**)&d_sm, sizeof(float3)*N);
+
+    MiniBox * d_mini;
+    cudaMalloc((void**)&d_mini, sizeof(MiniBox)*N);
 
     // create_sortedmin<<<grid, block, smemSize>>>(d_boxes, d_sortedmin, N);
-    recordLaunch("create_sortedmin", grid_dim_1d, threads, smemSize, create_sortedmin, d_boxes, d_sortedmin, N);
+    // recordLaunch("create_sortedmin", grid_dim_1d, threads, smemSize, create_sortedmin, d_boxes, d_sortedmin, N);
+    recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm, d_mini, N);
 
     try{
-        thrust::sort(thrust::device, d_sortedmin, d_sortedmin + N, sort_aabb_x() );
+        // thrust::sort(thrust::device, d_sortedmin, d_sortedmin + N, sort_aabb_x() );
+        thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_x() );
         }
     catch (thrust::system_error &e){
         printf("Error: %s \n",e.what());}
@@ -750,7 +780,8 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     
     int2 * outpair;
     cudaMalloc((void**)&outpair, sizeof(int2)*count);
-    build_checker<<<grid, block, 49152>>>(d_sortedmin, outpair, N, d_count, count);
+    build_checker<<<grid, block, 49152>>>(d_sm, outpair, N, d_count, count);
+    cudaDeviceSynchronize();
     gpuErrchk( cudaGetLastError() );
 
     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
@@ -760,7 +791,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     gpuErrchk(cudaMalloc((void**)&outpair, sizeof(int2)*count));
     gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
 
-    recordLaunch("build_checker", grid_dim_1d, threads, 49152, build_checker, d_sortedmin, outpair, N, d_count, count);
+    recordLaunch("build_checker", grid_dim_1d, threads, 49152, build_checker, d_sm, outpair, N, d_count, count);
 
     // build_checker<<<grid, block, 49152>>>(d_sortedmin, outpair, N, d_count, count);
     gpuErrchk( cudaDeviceSynchronize());
@@ -774,13 +805,15 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     dim3 grid2( grid_dim_1d );
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
+    printf("MiniBox size: %i\n", sizeof(MiniBox));
 
     // next step is to run so
+    grid_dim_1d = (N / threads / 1 + 1); 
     int2 * d_overlaps;
     gpuErrchk(cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count))); //big enough
     gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
     // retrieve_collision_pairs2<<<grid2, block, 49152>>>(d_boxes, d_count, outpair, d_overlaps, N, count);
-    recordLaunch<const Aabb *, int *, int2 *, int2 *, int, int>("retrieve_collision_pairs2", grid_dim_1d, threads, 49152, retrieve_collision_pairs2, d_boxes, d_count, outpair, d_overlaps, N, count);
+    recordLaunch<const MiniBox *, int *, int2 *, int2 *, int, int>("retrieve_collision_pairs2", grid_dim_1d, threads, 49152, retrieve_collision_pairs2, d_mini, d_count, outpair, d_overlaps, N, count);
 
     gpuErrchk(cudaDeviceSynchronize());
     gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
@@ -792,30 +825,108 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
 }
 
 
-//     // int* rank_x = &rank[0];
-//     // int* rank_y = &rank[N];
-//     // int* rank_z = &rank[2*N];
+void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads, int & devcount)
+{
+ 
+    int device_init_id = 0;
 
-//     // Translate boxes -> SweepMarkers
+    int smemSize;
+    setup(device_init_id, smemSize, threads, nbox);
 
-//     // cudaEventRecord(start);
-//     // build_index<<<grid,block>>>(d_boxes, N, rank_x);
-//     // cudaEventRecord(stop);
-//     // cudaEventSynchronize(stop);
+    cudaSetDevice(device_init_id);
+
+    // Allocate boxes to GPU 
+    Aabb * d_boxes;
+    cudaMalloc((void**)&d_boxes, sizeof(Aabb)*N);
+    cudaMemcpy(d_boxes, boxes, sizeof(Aabb)*N, cudaMemcpyHostToDevice);
+
+    int block= threads;
+    int grid = (N / threads + 1); 
+
+    RankBox * d_rankboxes;
+    cudaMalloc((void**)&d_rankboxes, sizeof(RankBox)*N);
+
+    create_rankbox<<<grid, block>>>(d_boxes, d_rankboxes, N);
     
-//     // cudaEventElapsedTime(&milliseconds, start, stop);
+    thrust::sort(thrust::device, d_rankboxes, d_rankboxes + N, sort_aabb_x() );
+    register_rank_x<<<grid, block>>>(d_rankboxes, N);
 
-//     // printf("Elapsed time for build: %.6f ms\n", milliseconds);
+    thrust::sort(thrust::device, d_rankboxes, d_rankboxes + N, sort_aabb_y() );
+    register_rank_y<<<grid, block>>>(d_rankboxes, N);
 
-//     // Thrust sort (can be improved by sort_by_key)
-//     // cudaEventRecord(start);
-//     try{
-//         // thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
-//         thrust::sort(thrust::device, d_boxes, d_boxes + N, sort_aabb_x() );
-//         }
-//     catch (thrust::system_error &e){
-//         printf("Error: %s \n",e.what());}
+    assign_rank_c<<<grid, block>>>(d_rankboxes, N);
+    thrust::sort(thrust::device, d_rankboxes, d_rankboxes + N, sort_cantor() );
+
+    // print_stats<<<1,1>>>(d_rankboxes, N);
+
+    int count = 0;
+
+    int * d_count;
+    cudaMalloc((void**)&d_count, sizeof(int));
+    cudaMemset(d_count, 0, sizeof(int));
     
-//     // Test print some sorted output
-//     // print_sort_axis<<<1,1>>>(d_boxes, 5);
-// }
+    int2 * d_overlaps;
+    cudaMalloc((void**)&d_overlaps, sizeof(int2)*count);
+    printf("sizeof(RankBox): %i\n", sizeof(RankBox));
+    printf("sharedMem: %i\n", sizeof(RankBox)*block);
+    build_checker2<<<grid, block, 49152>>>(d_rankboxes, d_overlaps, N, d_count, count);
+    gpuErrchk(cudaDeviceSynchronize());
+    gpuErrchk( cudaGetLastError() );
+
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("First count from building all overlapping x: %i\n", count);
+    cudaFree(d_overlaps);
+    gpuErrchk(cudaMalloc((void**)&d_overlaps, sizeof(int2)*count));
+    gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
+    gpuErrchk( cudaGetLastError() ); 
+    recordLaunch<const RankBox *, int2 *, int, int *, int>("build_checker2", grid, block, 49152, build_checker2, d_rankboxes, d_overlaps, N, d_count, count);
+    // build_checker2<<<grid, block>>>(d_rankboxes, d_overlaps, N, d_count, count);
+
+    // build_checker<<<grid, block, 49152>>>(d_sortedmin, outpair, N, d_count, count);
+    gpuErrchk( cudaDeviceSynchronize());
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("Second count from building all overlapping x: %i\n", count);
+    gpuErrchk( cudaGetLastError() ); 
+    
+    printf("Final count for device %i:  %i\n", device_init_id, count);
+
+     // int2 * overlaps = new int2[count];
+     int2* overlaps =  (int2*)malloc(sizeof(int2) * count);
+     gpuErrchk(cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost));
+     gpuErrchk( cudaGetLastError() ); 
+
+     printf("Final count for device %i:  %i\n", 0, count);
+
+     auto& local_overlaps = finOverlaps;
+     // local_overlaps.reserve(local_overlaps.size() + count);
+     
+     auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
+     auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
+     auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
+     
+     
+     for (size_t i=0; i < count; i++)
+     {
+         // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
+         // finOverlaps.push_back();
+         
+         Aabb a = boxes[overlaps[i].x];
+         Aabb b = boxes[overlaps[i].y];
+         
+         if (is_vertex(a) && is_face(b)) //vertex, face
+         {
+             local_overlaps.emplace_back(a.ref_id, b.ref_id);
+         }
+         else if (is_face(a) && is_vertex(b))
+         {
+             local_overlaps.emplace_back(b.ref_id, a.ref_id);
+         }
+         else if (is_edge(a) && is_edge(b))
+         {
+             local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
+         }
+     }
+     
+     printf("Total(filt.) overlaps for devid %i: %i\n", 0, local_overlaps.size());
+}
+

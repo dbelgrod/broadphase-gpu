@@ -36,6 +36,15 @@ __device__ bool does_collide(Aabb* a, Aabb* b)
             a->max.z >= b->min.z && a->min.z <= b->max.z;
 }
 
+__device__ bool does_collide(const MiniBox& a, const MiniBox& b)
+{
+    return  //min x,y  max z,w
+    //      a.max.x >= b.min.x && a.min.x <= b.max.x &&
+    //   a.max.y >= b.min.y && a.min.y <= b.max.y;
+       a.vertices.z >= b.vertices.x && a.vertices.x <= b.vertices.z &&
+      a.vertices.w >= b.vertices.y && a.vertices.y <= b.vertices.w;
+}
+
 __device__ bool covertex(const int3& a, const int3& b) {
     
     return a.x == b.x || a.x == b.y || a.x == b.z || 

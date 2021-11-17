@@ -4,14 +4,14 @@
 #include <assert.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
+// #include <cuda.h>
+// #include <cuda_runtime.h>
 
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
 #include <igl/edges.h>
 
-#include <gpubf/simulation.h>
+#include <gpubf/simulation.cuh>
 #include <gpubf/groundtruth.h>
 #include <gpubf/util.cuh>
 #include <gpubf/klee.cuh>
@@ -39,9 +39,10 @@ int main( int argc, char **argv )
     int parallel = 0;
     bool evenworkload = false;
     int devcount = 1;
+    bool pairing = false;
 
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:p:d:W")) != -1)
+    while ((o = getopt (argc, argv, "c:n:b:p:d:WP")) != -1)
     {
         switch (o)
         {
@@ -68,12 +69,17 @@ int main( int argc, char **argv )
             case 'W':
                 evenworkload = true;
                 break;
+            case 'P':
+                pairing = true;
+                break;
         }
     }
-
+    printf("Boxes (N): %i\n", N);
     vector<pair<int,int>> overlaps;
     if (evenworkload)
         run_sweep_pieces(boxes.data(), N, nbox, overlaps, parallel, devcount);
+    else if (pairing)
+        run_sweep_pairing(boxes.data(), N, nbox, overlaps, parallel, devcount);
     else
         run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
     for (auto i : compare)
