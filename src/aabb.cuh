@@ -11,6 +11,7 @@
 using namespace std;
 
 typedef enum { VERTEX, FACE, EDGE }  Simplex;
+typedef enum { x, y, z }  Dimension;
 typedef unsigned long long int ull;
 
 __global__ class Aabb {
@@ -72,16 +73,14 @@ void addFaces
 
 __global__ class MiniBox  {
     public:
-        // float2 min; //only y,z coord
-        // float2 max;
-        float4 vertices;
+        float2 min; //only y,z coord
+        float2 max;
         int3 vertexIds;
 
-    __device__ MiniBox(float* vs, int3 vids)
+    __device__ MiniBox(float* tempmin, float* tempmax, int3 vids)
         {
-            // min = make_float2(tempmin[0], tempmin[1]);
-            // max = make_float2(tempmax[0], tempmax[1]);
-            vertices = make_float4(vs[0], vs[1], vs[2], vs[3]);
+            min = make_float2(tempmin[0], tempmin[1]);
+            max = make_float2(tempmax[0], tempmax[1]);
             vertexIds = vids;
         };
 

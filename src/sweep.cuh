@@ -28,12 +28,15 @@ __global__ void print_sort_axis(Aabb* axis, int C);
 __global__ void retrieve_collision_pairs(const Aabb* const boxes, int * count, int2 * overlaps, int N, int guess, int nbox, int start = 0, int end = INT_MAX);
 __global__ void print_overlap_start(int2 * overlaps);
 
+// for balancing
 __global__ void build_checker(float3 * sortedmin, int2 * outpairs, int N, int * count, int guess);
-__global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N);
-// void consider_pair(const int& xid, const int& yid, int * count, int2 * out, int guess);
+__global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N, Dimension axis);
 __global__ void retrieve_collision_pairs2(const MiniBox* const mini, int * count, int2 * inpairs, int2 * overlaps, int N, int guess);
+__global__ void calc_variance(Aabb * boxes, float3 * var, int N, float3 * mean);
+__global__ void calc_mean(Aabb * boxes, float3 * mean, int N);
 
 // for pairing
+__global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N, float3 * mean);
 __global__ void assign_rank_c(RankBox * rankboxes, int N);
 __global__ void register_rank_y(RankBox * rankboxes, int N);
 __global__ void register_rank_x(RankBox * rankboxes, int N);

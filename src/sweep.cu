@@ -94,25 +94,75 @@ __device__ void consider_pair(const int& xid, const int& yid, int * count, int2 
 }
 
 // __global__ void create_sortedmin(Aabb * boxes, float3 * sortedmin, int N)
-__global__ void create_ds(Aabb * boxes, float3 * sm, MiniBox * mini, int N, float3 * mean)
+// __global__ void average(Aabb * boxes, float3 * sm, MiniBox * mini, int N,  float3 * mean)
+__global__ void calc_mean(Aabb * boxes, float3 * mean, int N)
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid >= N) return;
 
-    sm[tid] = make_float3(boxes[tid].min.x, boxes[tid].max.x, float(tid));
+    // sm[tid] = make_float3(boxes[tid].min.x, boxes[tid].max.x, float(tid));
     // sm[tid] = SortedMin(boxes[tid].min.x, boxes[tid].max.x, tid, boxes[tid].vertexIds);
     
     // float min[2] = {boxes[tid].min.y, boxes[tid].min.z};
     // float max[2] = {boxes[tid].max.y, boxes[tid].max.z};
-    float vertices[4] = {boxes[tid].min.y, boxes[tid].min.z, boxes[tid].max.y, boxes[tid].max.z};
-    mini[tid] = MiniBox(vertices, boxes[tid].vertexIds);
+    // float vertices[4] = {boxes[tid].min.y, boxes[tid].min.z, boxes[tid].max.y, boxes[tid].max.z};
+    // mini[tid] = MiniBox(vertices, boxes[tid].vertexIds);
 
-    // if (tid < 5)
-    // {
-    //     printf("mini %.6f\n", mini[tid].min.x);
-    //     printf("sm %i\n", sm[tid].id);
-    // }
+    // add to mean
+    atomicAdd(&mean[0].x, __fdividef((boxes[tid].min.x + boxes[tid].max.x), 2*N));
+    atomicAdd(&mean[0].y, __fdividef((boxes[tid].min.y + boxes[tid].max.y), 2*N));
+    atomicAdd(&mean[0].z, __fdividef((boxes[tid].min.z + boxes[tid].max.z), 2*N));
+}
+
+// #include <math.h>
+__global__ void calc_variance(Aabb * boxes, float3 * var, int N, float3 * mean)
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= N) return;
+
+    // atomicAdd(&var[0].x, __powf(boxes[tid].min.x-mean[0].x, 2));
+    // atomicAdd(&var[0].x,__powf(boxes[tid].max.x-mean[0].x, 2));
+
+    // atomicAdd(&var[0].y, __powf(boxes[tid].min.y-mean[0].y, 2));
+    // atomicAdd(&var[0].y, __powf(boxes[tid].max.y-mean[0].y, 2));
+
+    // atomicAdd(&var[0].z, __powf(boxes[tid].min.z-mean[0].z, 2));
+    // atomicAdd(&var[0].z, __powf(boxes[tid].max.z-mean[0].z, 2));
+}
+
+__global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N, Dimension axis)
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tid >= N) return;
+    float* min;
+    float* max;
+
+    if (axis == x)
+    {
+        sortedmin[tid] = make_float3(boxes[tid].min.x, boxes[tid].max.x, float(tid));
+        min = (float[2]){boxes[tid].min.y, boxes[tid].min.z};
+        max = (float[2]){boxes[tid].max.y, boxes[tid].max.z};
+    }
+    else if (axis == y)
+    {
+        sortedmin[tid] = make_float3(boxes[tid].min.y, boxes[tid].max.y, float(tid));
+        min = (float[2]){boxes[tid].min.x, boxes[tid].min.z};
+        max = (float[2]){boxes[tid].max.x, boxes[tid].max.z};
+    }
+    else 
+    {
+        sortedmin[tid] = make_float3(boxes[tid].min.z, boxes[tid].max.z, float(tid));
+        min = (float[2]){boxes[tid].min.x, boxes[tid].min.y};
+        max = (float[2]){boxes[tid].max.x, boxes[tid].max.y};
+    }
+    // sm[tid] = SortedMin(boxes[tid].min.x, boxes[tid].max.x, tid, boxes[tid].vertexIds);
+    
+    // float min[2] = {boxes[tid].min.y, boxes[tid].min.z};
+    // float max[2] = {boxes[tid].max.y, boxes[tid].max.z};
+    
+    mini[tid] = MiniBox(min, max, boxes[tid].vertexIds);
 }
 
 // __global__ void build_checker(float3 * sortedmin, int2 * out, int N, int * count, int guess)
@@ -210,12 +260,7 @@ __global__ void retrieve_collision_pairs2(const MiniBox* const mini, int * count
     
 }
 
-// #include <math.h>
-//     __global__ void var(float *input, float *output, unsigned N, float mean){
 
-//       unsigned idx=threadIdx.x+(blockDim.x*blockIdx.x);
-//       if (idx < N) output[idx] = __powf(input[idx]-mean, 2);
-//     }
 
 //////////////
 __global__ void create_rankbox(Aabb * boxes, RankBox * rankboxes, int N)

@@ -280,7 +280,10 @@ struct sort_sweepmarker_x
     return (a.x < b.x);}
 };
 
-struct sort_aabb_x
+
+struct sorter{};
+
+struct sort_aabb_x : sorter 
 {
     __host__ __device__
     bool operator()(const Aabb &a, const Aabb &b) const {
@@ -300,11 +303,28 @@ struct sort_aabb_x
 
 };
 
-struct sort_aabb_y
+struct sort_aabb_y : sorter 
 {
+    __host__ __device__
+    bool operator()(const float3 &a, const float3 &b) const {
+        return (a.y < b.y);}
+    
     __host__ __device__
     bool operator()(const RankBox &a, const RankBox &b) const {
         return (a.aabb->min.y < b.aabb->min.y);}
+
+};
+
+struct sort_aabb_z : sorter
+{
+    __host__ __device__
+    bool operator()(const float3 &a, const float3 &b) const {
+        return (a.z < b.z);}
+
+    __host__ __device__
+    bool operator()(const RankBox &a, const RankBox &b) const {
+        return (a.aabb->min.z < b.aabb->min.z);}
+    
 };
 
 struct sort_cantor
@@ -749,6 +769,8 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     dim3 grid( grid_dim_1d );
     printf("Grid dim (1D): %i\n", grid_dim_1d);
     printf("Box size: %i\n", sizeof(Aabb));
+    // printf("MiniBox size: %i\n", sizeof(MiniBox));
+    printf("float3 size: %i\n", sizeof(float3));
     
     // float3 * d_sortedmin;
     // cudaMalloc((void**)&d_sortedmin, sizeof(float3)*N);
@@ -758,13 +780,51 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     MiniBox * d_mini;
     cudaMalloc((void**)&d_mini, sizeof(MiniBox)*N);
 
-    // create_sortedmin<<<grid, block, smemSize>>>(d_boxes, d_sortedmin, N);
-    // recordLaunch("create_sortedmin", grid_dim_1d, threads, smemSize, create_sortedmin, d_boxes, d_sortedmin, N);
-    recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm, d_mini, N);
+    // mean of all box points (used to find best axis)
+    float3 * d_mean;
+    cudaMalloc((void**)&d_mean, sizeof(float3));
+    cudaMemset(d_mean, 0, sizeof(float3));
+
+    // recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm, d_mini, N, d_mean);
+    recordLaunch("calc_mean", grid_dim_1d, threads, smemSize, calc_mean, d_boxes, d_mean, N);
+
+    // temporary
+    float3 mean;
+    cudaMemcpy(&mean, d_mean, sizeof(float3), cudaMemcpyDeviceToHost);
+    printf("mean: x %.6f y %.6f z %.6f\n", mean.x, mean.y, mean.z);
+
+    // calculate variance and determine which axis to sort on
+    float3 * d_var; //2 vertices per box
+    cudaMalloc((void**)&d_var, sizeof(float3));
+    cudaMemset(d_var, 0, sizeof(float3));
+    // calc_variance(boxes, d_var, N, d_mean);
+    recordLaunch("calc_variance", grid_dim_1d, threads, smemSize, calc_variance, d_boxes, d_var, N, d_mean);
+    cudaDeviceSynchronize();
+
+    float3 var3d;
+    cudaMemcpy(&var3d, d_var, sizeof(float3), cudaMemcpyDeviceToHost);
+    float maxVar = max(max(var3d.x, var3d.y), var3d.z);
+
+    printf("var: x %.6f y %.6f z %.6f\n", var3d.x, var3d.y, var3d.z);
+
+    Dimension axis;
+    if (maxVar == var3d.x)
+        axis = x;
+    else if (maxVar == var3d.y)
+        axis = y;
+    else 
+        axis = z;
+
+    printf("Axis: %s\n", axis == x ? "x" : (axis == y ? "y" : "z"));
+
+    recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm, d_mini, N, axis);
+
 
     try{
         // thrust::sort(thrust::device, d_sortedmin, d_sortedmin + N, sort_aabb_x() );
-        thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_x() );
+        if (axis == x) thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_x() );
+        if (axis == y) thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_y() );
+        if (axis == z) thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_z() );
         }
     catch (thrust::system_error &e){
         printf("Error: %s \n",e.what());}
@@ -821,6 +881,44 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     // cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); //big enough
     // cudaMemset(d_count, 0, sizeof(int));
     // retrieve_collision_pairs2<<<grid2, block, 49152>>>(d_boxes, d_count, outpair, d_overlaps, N, count);
+    
+    int2* overlaps =  (int2*)malloc(sizeof(int2) * count);
+    gpuErrchk(cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost));
+    gpuErrchk( cudaGetLastError() ); 
+
+    printf("Final count for device %i:  %i\n", 0, count);
+
+    auto& local_overlaps = finOverlaps;
+    // local_overlaps.reserve(local_overlaps.size() + count);
+    
+    auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
+    auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
+    auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
+    
+    
+    for (size_t i=0; i < count; i++)
+    {
+        // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
+        // finOverlaps.push_back();
+        
+        Aabb a = boxes[overlaps[i].x];
+        Aabb b = boxes[overlaps[i].y];
+        
+        if (is_vertex(a) && is_face(b)) //vertex, face
+        {
+            local_overlaps.emplace_back(a.ref_id, b.ref_id);
+        }
+        else if (is_face(a) && is_vertex(b))
+        {
+            local_overlaps.emplace_back(b.ref_id, a.ref_id);
+        }
+        else if (is_edge(a) && is_edge(b))
+        {
+            local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
+        }
+    }
+    
+    printf("Total(filt.) overlaps for devid %i: %i\n", 0, local_overlaps.size());
 
 }
 
