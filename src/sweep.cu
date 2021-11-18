@@ -93,6 +93,17 @@ __device__ void consider_pair(const int& xid, const int& yid, int * count, int2 
     } 
 }
 
+__device__ float3 operator+(const float3 &a, const float3 &b) {
+
+    return make_float3(__fadd_rz(a.x,b.x), __fadd_rz(a.y,b.y), __fadd_rz(a.z,b.z));
+}
+
+__device__ float3 __fdividef(const float3 &a, const float &b) {
+
+    return make_float3(__fdividef(a.x,b), __fdividef(a.y,b), __fdividef(a.z,b));
+}
+
+
 // __global__ void create_sortedmin(Aabb * boxes, float3 * sortedmin, int N)
 // __global__ void average(Aabb * boxes, float3 * sm, MiniBox * mini, int N,  float3 * mean)
 __global__ void calc_mean(Aabb * boxes, float3 * mean, int N)
@@ -110,25 +121,54 @@ __global__ void calc_mean(Aabb * boxes, float3 * mean, int N)
     // mini[tid] = MiniBox(vertices, boxes[tid].vertexIds);
 
     // add to mean
-    atomicAdd(&mean[0].x, __fdividef((boxes[tid].min.x + boxes[tid].max.x), 2*N));
-    atomicAdd(&mean[0].y, __fdividef((boxes[tid].min.y + boxes[tid].max.y), 2*N));
-    atomicAdd(&mean[0].z, __fdividef((boxes[tid].min.z + boxes[tid].max.z), 2*N));
+    float3 mx = __fdividef((boxes[tid].min + boxes[tid].max), 2*N);
+    atomicAdd(&mean[0].x, mx.x);
+    atomicAdd(&mean[0].y, mx.y);
+    atomicAdd(&mean[0].z, mx.z);
+    
+    // atomicAdd(&mean[0].x, __fdividef((boxes[tid].min.x + boxes[tid].max.x), 2*N));
+    // atomicAdd(&mean[0].y, __fdividef((boxes[tid].min.y + boxes[tid].max.y), 2*N));
+    // atomicAdd(&mean[0].z, __fdividef((boxes[tid].min.z + boxes[tid].max.z), 2*N));
 }
 
 // #include <math.h>
+
+__device__ float3 operator-(const float3 &a, const float3 &b) {
+
+    return make_float3(__fsub_rz(a.x,b.x), __fsub_rz(a.y,b.y), __fsub_rz(a.z,b.z));
+  
+}
+
+
+
+__device__ float3 __powf(const float3 &a, const float &b) {
+    return make_float3(__powf(a.x,b), __powf(a.y,b), __powf(a.z,b));
+}
+
+__device__ float3 abs(const float3 &a) {
+    return make_float3(abs(a.x), abs(a.y), abs(a.z));
+}
+
 __global__ void calc_variance(Aabb * boxes, float3 * var, int N, float3 * mean)
 {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= N) return;
 
-    atomicAdd(&var[0].x, pow(boxes[tid].min.x-mean[0].x, 2));
-    atomicAdd(&var[0].x, pow(boxes[tid].max.x-mean[0].x, 2));
+    // atomicAdd(&var[0].x, pow(boxes[tid].min.x-mean[0].x, 2));
+    // atomicAdd(&var[0].x, pow(boxes[tid].max.x-mean[0].x, 2));
 
-    atomicAdd(&var[0].y, pow(boxes[tid].min.y-mean[0].y, 2));
-    atomicAdd(&var[0].y, pow(boxes[tid].max.y-mean[0].y, 2));
+    // atomicAdd(&var[0].y, pow(boxes[tid].min.y-mean[0].y, 2));
+    // atomicAdd(&var[0].y, pow(boxes[tid].max.y-mean[0].y, 2));
 
-    atomicAdd(&var[0].z, pow(boxes[tid].min.z-mean[0].z, 2));
-    atomicAdd(&var[0].z, pow(boxes[tid].max.z-mean[0].z, 2));
+    // atomicAdd(&var[0].z, pow(boxes[tid].min.z-mean[0].z, 2));
+    // atomicAdd(&var[0].z, pow(boxes[tid].max.z-mean[0].z, 2));
+
+    float3 fx = __powf(abs(boxes[tid].min-mean[0]), 2.0) +  __powf(abs(boxes[tid].max-mean[0]), 2.0);
+    // float3 fx = __powf(abs(boxes[tid].min-mean[0]), 2.0);
+    // if (tid == 0) printf("%.6f %.6f %.6f\n", fx.x, fx.y, fx.z);
+    atomicAdd(&var[0].x, fx.x);
+    atomicAdd(&var[0].y, fx.y);
+    atomicAdd(&var[0].z, fx.z);
 }
 
 __global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N, Dimension axis)
