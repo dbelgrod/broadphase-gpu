@@ -19,12 +19,24 @@
 
 using namespace std;
 
+bool is_file_exist(const char *fileName)
+{
+    ifstream infile(fileName);
+    return infile.good();
+}
+
 int main( int argc, char **argv )
 {
     vector<char*> compare;
 
-    const char* filet0 = argv[1];
-    const char* filet1 = argv[2];
+    char* filet0;
+    char* filet1;
+
+    filet0 = argv[1];
+    if (is_file_exist(argv[2]))
+        filet1 = argv[2];
+    else 
+        filet1 = argv[1];
     
     vector<Aabb> boxes;
     Eigen::MatrixXd vertices_t0;
