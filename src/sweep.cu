@@ -138,7 +138,8 @@ __global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int 
     if (tid >= N) return;
     float* min;
     float* max;
-
+    
+    
     if (axis == x)
     {
         sortedmin[tid] = make_float3(boxes[tid].min.x, boxes[tid].max.x, float(tid));
@@ -147,6 +148,7 @@ __global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int 
     }
     else if (axis == y)
     {
+        
         sortedmin[tid] = make_float3(boxes[tid].min.y, boxes[tid].max.y, float(tid));
         min = (float[2]){boxes[tid].min.x, boxes[tid].min.z};
         max = (float[2]){boxes[tid].max.x, boxes[tid].max.z};
