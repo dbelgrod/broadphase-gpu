@@ -121,14 +121,14 @@ __global__ void calc_variance(Aabb * boxes, float3 * var, int N, float3 * mean)
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= N) return;
 
-    // atomicAdd(&var[0].x, __powf(boxes[tid].min.x-mean[0].x, 2));
-    // atomicAdd(&var[0].x,__powf(boxes[tid].max.x-mean[0].x, 2));
+    atomicAdd(&var[0].x, pow(boxes[tid].min.x-mean[0].x, 2));
+    atomicAdd(&var[0].x, pow(boxes[tid].max.x-mean[0].x, 2));
 
-    // atomicAdd(&var[0].y, __powf(boxes[tid].min.y-mean[0].y, 2));
-    // atomicAdd(&var[0].y, __powf(boxes[tid].max.y-mean[0].y, 2));
+    atomicAdd(&var[0].y, pow(boxes[tid].min.y-mean[0].y, 2));
+    atomicAdd(&var[0].y, pow(boxes[tid].max.y-mean[0].y, 2));
 
-    // atomicAdd(&var[0].z, __powf(boxes[tid].min.z-mean[0].z, 2));
-    // atomicAdd(&var[0].z, __powf(boxes[tid].max.z-mean[0].z, 2));
+    atomicAdd(&var[0].z, pow(boxes[tid].min.z-mean[0].z, 2));
+    atomicAdd(&var[0].z, pow(boxes[tid].max.z-mean[0].z, 2));
 }
 
 __global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N, Dimension axis)
