@@ -305,9 +305,10 @@ struct sort_aabb_x : sorter
 
 struct sort_aabb_y : sorter 
 {
-    __host__ __device__
-    bool operator()(const float3 &a, const float3 &b) const {
-        return (a.y < b.y);}
+     // useless bc x is alays the min
+    // __host__ __device__
+    // bool operator()(const float3 &a, const float3 &b) const {
+    //     return (a.y < b.y);}
     
     __host__ __device__
     bool operator()(const RankBox &a, const RankBox &b) const {
@@ -317,9 +318,10 @@ struct sort_aabb_y : sorter
 
 struct sort_aabb_z : sorter
 {
-    __host__ __device__
-    bool operator()(const float3 &a, const float3 &b) const {
-        return (a.z < b.z);}
+    // useless bc x is alays the min
+    // __host__ __device__
+    // bool operator()(const float3 &a, const float3 &b) const {
+    //     return (a.z < b.z);}
 
     __host__ __device__
     bool operator()(const RankBox &a, const RankBox &b) const {
@@ -822,9 +824,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
 
     try{
         // thrust::sort(thrust::device, d_sortedmin, d_sortedmin + N, sort_aabb_x() );
-        if (axis == x) thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_x() );
-        if (axis == y) thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_y() );
-        if (axis == z) thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_z() );
+        thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_x());
         }
     catch (thrust::system_error &e){
         printf("Error: %s \n",e.what());}
