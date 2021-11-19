@@ -827,7 +827,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
         thrust::sort(thrust::device, d_sm, d_sm + N, sort_aabb_x());
         }
     catch (thrust::system_error &e){
-        printf("Error: %s \n",e.what());}
+        printf("Thrust error: %s \n",e.what());}
     
     gpuErrchk( cudaGetLastError() );
 
