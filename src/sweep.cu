@@ -139,8 +139,6 @@ __device__ float3 operator-(const float3 &a, const float3 &b) {
   
 }
 
-
-
 __device__ float3 __powf(const float3 &a, const float &b) {
     return make_float3(__powf(a.x,b), __powf(a.y,b), __powf(a.z,b));
 }
@@ -154,17 +152,7 @@ __global__ void calc_variance(Aabb * boxes, float3 * var, int N, float3 * mean)
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= N) return;
 
-    // atomicAdd(&var[0].x, pow(boxes[tid].min.x-mean[0].x, 2));
-    // atomicAdd(&var[0].x, pow(boxes[tid].max.x-mean[0].x, 2));
-
-    // atomicAdd(&var[0].y, pow(boxes[tid].min.y-mean[0].y, 2));
-    // atomicAdd(&var[0].y, pow(boxes[tid].max.y-mean[0].y, 2));
-
-    // atomicAdd(&var[0].z, pow(boxes[tid].min.z-mean[0].z, 2));
-    // atomicAdd(&var[0].z, pow(boxes[tid].max.z-mean[0].z, 2));
-
     float3 fx = __powf(abs(boxes[tid].min-mean[0]), 2.0) +  __powf(abs(boxes[tid].max-mean[0]), 2.0);
-    // float3 fx = __powf(abs(boxes[tid].min-mean[0]), 2.0);
     // if (tid == 0) printf("%.6f %.6f %.6f\n", fx.x, fx.y, fx.z);
     atomicAdd(&var[0].x, fx.x);
     atomicAdd(&var[0].y, fx.y);

@@ -14,6 +14,7 @@ typedef enum { VERTEX, FACE, EDGE }  Simplex;
 typedef enum { x, y, z }  Dimension;
 typedef unsigned long long int ull;
 
+
 __global__ class Aabb {
     public:
         int id;
@@ -70,6 +71,15 @@ void addFaces
     Eigen::MatrixXi& faces, 
     vector<Aabb>& boxes
 );
+
+// bool is_face = [](Aabb& x)
+// bool is_edge = [](Aabb& x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
+// bool is_vertex = [](Aabb& x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
+
+__host__ __device__ bool is_face(Aabb& x);
+__host__ __device__ bool is_edge(Aabb& x);
+__host__ __device__ bool is_vertex(Aabb& x);
+__host__ __device__ bool is_valid_pair(Aabb& x, Aabb& y);
 
 __global__ class MiniBox  {
     public:

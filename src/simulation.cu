@@ -691,9 +691,9 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         auto& local_overlaps = storages.local();
         // local_overlaps.reserve(local_overlaps.size() + count);
         
-        auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
-        auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
-        auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
+        // auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
+        // auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
+        // auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
         
         
         for (size_t i=0; i < count; i++)
@@ -891,9 +891,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     auto& local_overlaps = finOverlaps;
     // local_overlaps.reserve(local_overlaps.size() + count);
     
-    auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
-    auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
-    auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
+    
     
     
     for (size_t i=0; i < count; i++)
