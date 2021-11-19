@@ -898,12 +898,19 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     
     for (size_t i=0; i < count; i++)
     {
-        local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
+        // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
         // finOverlaps.push_back();
-        
-        // Aabb a = boxes[overlaps[i].x];
-        // Aabb b = boxes[overlaps[i].y];
-        
+        int aid = overlaps[i].x;
+        int bid = overlaps[i].y;
+        Aabb a = boxes[aid];
+        Aabb b = boxes[bid];
+
+        if (is_vertex(a) && is_face(b)) //vertex, face
+            local_overlaps.emplace_back(aid, bid);
+        else if (is_edge(a) && is_edge(b))
+            local_overlaps.emplace_back(aid, bid);
+        else if (is_face(a) && is_vertex(b))
+            local_overlaps.emplace_back(bid, aid);
         // if (is_vertex(a) && is_face(b)) //vertex, face
         // {
         //     local_overlaps.emplace_back(a.ref_id, b.ref_id);
