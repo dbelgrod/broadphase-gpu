@@ -80,6 +80,10 @@ __host__ __device__ bool is_face(Aabb& x);
 __host__ __device__ bool is_edge(Aabb& x);
 __host__ __device__ bool is_vertex(Aabb& x);
 __host__ __device__ bool is_valid_pair(Aabb& x, Aabb& y);
+__host__ __device__ bool is_face(const int3& vids);
+__host__ __device__ bool is_edge(const int3& vids);
+__host__ __device__ bool is_vertex(const int3& vids);
+__host__ __device__ bool is_valid_pair(const int3& a, const int3& b);
 
 __global__ class MiniBox  {
     public:
@@ -97,31 +101,31 @@ __global__ class MiniBox  {
         MiniBox() = default;
 };
 
-// __global__ class SortedMin {
-//     public:
-//         float min;
-//         float max;
-//         int id;
-//         int3 vertexIds;
+__global__ class SortedMin {
+    public:
+        float3 data;
+        int3 vertexIds;
 
-//     __device__ SortedMin(float _min, float _max, int assignid, int * vids)
-//         {
-//             min = _min;
-//             max = _max;
-//             vertexIds = make_int3(vids[0], vids[1], vids[2]);
-//             id = assignid;
-//         };
+    __device__ SortedMin(float _min, float _max, int assignid, int * vids)
+        {
+            data = make_float3(_min, _max, float(assignid));
+            // min = _min;
+            // max = _max;
+            vertexIds = make_int3(vids[0], vids[1], vids[2]);
+            // id = assignid;
+        };
 
-//     __device__ SortedMin(float _min, float _max, int assignid, int3 vids)
-//     {
-//         min = _min;
-//         max = _max;
-//         vertexIds = vids;
-//         id = assignid;
-//     };
+    __device__ SortedMin(float _min, float _max, int assignid, int3 vids)
+    {
+        data = make_float3(_min, _max, float(assignid));
+        // min = _min;
+        // max = _max;
+        vertexIds = vids;
+        // id = assignid;
+    };
 
-//         SortedMin() = default;
-// };
+        SortedMin() = default;
+};
 
 __global__ class RankBox {
 public:
