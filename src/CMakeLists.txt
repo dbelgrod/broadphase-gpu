@@ -18,12 +18,12 @@ src/groundtruth.cu
 src/groundtruth.h
 src/sweep.cu
 src/sweep.cuh
-src/klee.cu
-src/klee.cuh
+# src/klee.cu
+# src/klee.cuh
 src/util.cuh
 src/queue.cu
 src/queue.cuh
-src/object.cuh
+# src/object.cuh
 src/io.cuh
 src/timer.cuh
 

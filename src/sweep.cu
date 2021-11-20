@@ -1,5 +1,5 @@
 #include <gpubf/sweep.cuh>
-#include <cuda/pipeline>
+// #include <cuda/pipeline>
 
 __global__ void build_index(Aabb * boxes, int N, int* index)
 {
@@ -210,18 +210,20 @@ __global__ void build_checker(float3 * sm, int2 * out, int N, int * count, int g
     int ltid = threadIdx.x;
     
     // init(&barrier, 1);
-    cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
-    pipe.producer_acquire();
-    cuda::memcpy_async(s_sortedmin + ltid, sm + tid, sizeof(*sm), pipe);
-    pipe.producer_commit();
-    pipe.consumer_wait();
+
+    // cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
+    // pipe.producer_acquire();
+    // cuda::memcpy_async(s_sortedmin + ltid, sm + tid, sizeof(*sm), pipe);
+    // pipe.producer_commit();
+    // pipe.consumer_wait();
+
     // pipeline_producer_commit(pipe, barrier);
     // barrier.arrive_and_wait();
     // pipe.consumer_release();
 
 
-    // for (int i=0; i < nbox; i++)
-    //     s_sortedmin[i*blockDim.x + ltid] = sm[tid+i*blockDim.x];
+    for (int i=0; i < nbox; i++)
+        s_sortedmin[i*blockDim.x + ltid] = sm[tid+i*blockDim.x];
 
     __syncthreads();
 
