@@ -97,7 +97,7 @@ __device__ void Queue::push(int2 pair)
 	{
 		harr[heap_size] = pair;
 		heap_size++;
-		printf("Pushed pair (%i,%i) to harr[%i] with cap %i\n", pair.x, pair.y, heap_size, capacity);
+		printf("Pushed pair (%i,%i) to harr[%i] with cap %i\n", pair.x, pair.y, heap_size-1, capacity);
 		return;
 	}
 	

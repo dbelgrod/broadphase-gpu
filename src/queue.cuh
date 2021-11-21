@@ -4,7 +4,7 @@
 
 // https://github.com/wangbolun300/GPUTI/blob/master/src/queue.cu
 
-static const int HEAP_SIZE=20;
+static const int HEAP_SIZE=5;
 
 using namespace std;
 

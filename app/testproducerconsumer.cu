@@ -28,7 +28,7 @@ __global__ void run(ll* in, ll * out, int N)
 
     // cuda::std::ptrdiff_t max = 1;
     extern __shared__ cuda::binary_semaphore<cuda::thread_scope_block> a[];
-    cuda::binary_semaphore<cuda::thread_scope_block>* b[1] = {a};
+    // cuda::binary_semaphore<cuda::thread_scope_block>* b[1] = {a};
     // a = cuda::binary_semaphore<cuda::thread_scope_block>(1);
     a[0].release();
     __syncthreads();
@@ -43,9 +43,16 @@ __global__ void run(ll* in, ll * out, int N)
     {
         printf("tid %i acquired semaphore\n", tid);
         queue.push(val);
+        a[0].release();
     }
     else
+    {
         printf("tid %i failed to acquire semaphore\n", tid);
+        a[0].acquire();
+        printf("tid %i acquired semaphore\n", tid);
+        queue.push(val);
+        a[0].release();
+    }
     
 
     // pipe.producer_commit();
