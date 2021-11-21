@@ -26,10 +26,11 @@ __global__ void run(ll* in, ll * out, int N)
     cuda::std::size_t producer_count = group.size() / 2;
     cuda::pipeline<cuda::thread_scope_block> pipe = cuda::make_pipeline(group, &pss, producer_count);
 
-    // __shared__ cuda::binary_semaphore<cuda::thread_scope_block> d;
-    __shared__ int mutex;
-    mutex = 0;
-
+    // cuda::std::ptrdiff_t max = 1;
+    extern __shared__ cuda::binary_semaphore<cuda::thread_scope_block> a[];
+    cuda::binary_semaphore<cuda::thread_scope_block>* b[1] = {a};
+    // a = cuda::binary_semaphore<cuda::thread_scope_block>(1);
+    a[0].release();
     __syncthreads();
 
     int tid = threadIdx.x + blockDim.x*blockIdx.x;
@@ -38,14 +39,15 @@ __global__ void run(ll* in, ll * out, int N)
     // Prime the pipeline.
     // pipe.producer_acquire();
     int2 val = make_int2(in[tid], in[tid]);
-    while (mutex != 0){};
-    printf("mutex %i\n", mutex);
-    atomicAdd_block(&mutex, 1);
-    printf("tid %i mutex %i\n", tid, mutex);
-    printf("tid %i acquired semaphore\n", tid);
-    queue.push(val);
-    atomicAdd_block(&mutex, -1);
-    printf("mutex %i\n", mutex);
+    if (a[0].try_acquire())
+    {
+        printf("tid %i acquired semaphore\n", tid);
+        queue.push(val);
+    }
+    else
+        printf("tid %i failed to acquire semaphore\n", tid);
+    
+
     // pipe.producer_commit();
 
     // cuda::pipeline_consumer_wait_prior<1>(pipe);
@@ -85,8 +87,9 @@ int main( int argc, char **argv )
 
     int block = 1024;
     int grid = (N / block + 1); 
+    printf("grid size: %i\n", grid);
 
-    run<<<grid, block>>>(d_in, d_out, N);
+    run<<<grid, block, 80>>>(d_in, d_out, N);
     cudaDeviceSynchronize();
 
     vector<ll> out;
