@@ -1,6 +1,6 @@
 #include <gpubf/aabb.cuh>
 
-__host__ __device__ bool is_face(Aabb& x)
+__host__ __device__ bool is_face(const Aabb& x)
 {
     return x.vertexIds.z >= 0;
 };
@@ -10,7 +10,7 @@ __host__ __device__ bool is_face(const int3& vids)
     return vids.z >= 0;
 };
 
-__host__ __device__ bool is_edge(Aabb& x)
+__host__ __device__ bool is_edge(const Aabb& x)
 {
     return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;
 };
@@ -20,7 +20,7 @@ __host__ __device__ bool is_edge(const int3& vids)
     return vids.z < 0 && vids.y >= 0 ;
 };
 
-__host__ __device__ bool is_vertex(Aabb& x)
+__host__ __device__ bool is_vertex(const Aabb& x)
 {
     return x.vertexIds.z < 0  && x.vertexIds.y < 0;
 };
@@ -30,7 +30,7 @@ __host__ __device__ bool is_vertex(const int3& vids)
     return vids.z < 0  && vids.y < 0;
 };
 
-__host__ __device__ bool is_valid_pair(Aabb& a, Aabb& b)
+__host__ __device__ bool is_valid_pair(const Aabb& a, const Aabb& b)
 {
     return (is_vertex(a) && is_face(b)) ||
         (is_face(a) && is_vertex(b)) ||

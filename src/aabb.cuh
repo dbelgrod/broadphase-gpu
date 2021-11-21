@@ -76,10 +76,10 @@ void addFaces
 // bool is_edge = [](Aabb& x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
 // bool is_vertex = [](Aabb& x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
 
-__host__ __device__ bool is_face(Aabb& x);
-__host__ __device__ bool is_edge(Aabb& x);
-__host__ __device__ bool is_vertex(Aabb& x);
-__host__ __device__ bool is_valid_pair(Aabb& x, Aabb& y);
+__host__ __device__ bool is_face(const Aabb& x);
+__host__ __device__ bool is_edge(const Aabb& x);
+__host__ __device__ bool is_vertex(const Aabb& x);
+__host__ __device__ bool is_valid_pair(const Aabb& x, const Aabb& y);
 __host__ __device__ bool is_face(const int3& vids);
 __host__ __device__ bool is_edge(const int3& vids);
 __host__ __device__ bool is_vertex(const int3& vids);
