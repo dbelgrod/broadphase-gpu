@@ -12,7 +12,7 @@
 #include <igl/edges.h>
 
 #include <gpubf/simulation.cuh>
-#include <gpubf/groundtruth.h>
+#include <gpubf/groundtruth.cuh>
 #include <gpubf/util.cuh>
 #include <gpubf/klee.cuh>
 #include <gpubf/io.cuh>

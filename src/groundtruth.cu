@@ -1,4 +1,4 @@
-#include <gpubf/groundtruth.h>
+#include <gpubf/groundtruth.cuh>
 
 
 // https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way

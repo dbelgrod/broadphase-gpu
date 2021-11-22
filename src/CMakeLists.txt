@@ -15,7 +15,7 @@ src/collision.h
 src/simulation.cu
 src/simulation.cuh
 src/groundtruth.cu
-src/groundtruth.h
+src/groundtruth.cuh
 src/sweep.cu
 src/sweep.cuh
 # src/klee.cu
