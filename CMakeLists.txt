@@ -60,7 +60,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas -O3,-v -use_fast_math -maxrregcount 24")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math -Xptxas -O3,-v")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math --expt-relaxed-constexpr -Xptxas -O3,-v")
 
 # We need to explicitly state that we need all CUDA files in the GPUBF
 # library to be built with -dc as the member functions could be called by
@@ -77,6 +77,7 @@ set_target_properties( ${PROJECT_NAME}
 set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 70 75 86)
 
 # executable
+# add_executable(GPUBF_bin app/main.cu)
 add_executable(GPUBF_bin app/main.cu)
 set_target_properties(GPUBF_bin PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET GPUBF_bin PROPERTY CUDA_ARCHITECTURES 70 75 86)
@@ -98,7 +99,7 @@ endif()
 target_link_libraries(${PROJECT_NAME} PUBLIC igl::core)
 
 # tbb (for multiGPU)
-target_link_libraries(${PROJECT_NAME}  PUBLIC tbb::tbb)
+target_link_libraries(${PROJECT_NAME}  PUBLIC TBB::tbb)
 
 # JSON
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann_json::nlohmann_json)
@@ -129,7 +130,7 @@ target_compile_features(CPUSWEEP PUBLIC cxx_std_17)
 
 # TBB
 # include(tbb)
-target_link_libraries(CPUSWEEP PUBLIC tbb::tbb)
+target_link_libraries(CPUSWEEP PUBLIC TBB::tbb)
 
 
 target_link_libraries(CPUSWEEP PUBLIC igl::core)
