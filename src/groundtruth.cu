@@ -39,3 +39,36 @@ void compare_mathematica(vector<pair<int,int>> overlaps, const char* jsonPath)
     printf("Contains %lu/%lu TP\n", algotruePositives.size(), truePositives.size());
     return;
 }
+
+void compare_mathematica(vector<pair<int,int>> overlaps, const vector<bool>& result_list, const char* jsonPath)
+{
+    // Get from file
+    ifstream in(jsonPath);
+    if(in.fail()) 
+    {
+        printf("%s does not exist\n", jsonPath);
+        return;
+    }
+
+    json j_vec = json::parse(in);
+    
+    set<unsigned long> truePositives = j_vec.get<std::set<unsigned long>>();
+
+    // Transform data to cantor
+    set<unsigned long> algoBroadPhase;
+    for (size_t i=0; i < overlaps.size(); i+=1)
+    {
+        if (result_list[i])
+            algoBroadPhase.emplace(cantor(overlaps[i].first, overlaps[i].second));
+    }
+                                               
+    // Get intersection of true positive
+    vector<unsigned long> algotruePositives(truePositives.size());
+    vector<unsigned long>::iterator it=std::set_intersection (
+        truePositives.begin(), truePositives.end(), 
+        algoBroadPhase.begin(), algoBroadPhase.end(), algotruePositives.begin());
+    algotruePositives.resize(it-algotruePositives.begin());
+    
+    printf("Contains %lu/%lu TP\n", algotruePositives.size(), truePositives.size());
+    return;
+}
