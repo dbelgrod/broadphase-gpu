@@ -8,13 +8,15 @@
 
 #include <gpubf/queue.cuh>
 #include <gpubf/aabb.cuh>
+#include <gpubf/timer.cuh>
+#include <gpubf/util.cuh>
 
 using namespace std;
 typedef long long int ll;
 
 __global__ void run(ll* in, ll * out, int N)
 {
-    __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 1> pss;
+    __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2> pss;
     __shared__ Queue queue;
     queue.capacity = HEAP_SIZE;
 
@@ -37,32 +39,32 @@ __global__ void run(ll* in, ll * out, int N)
     if (tid >= N) return;
 
     // Prime the pipeline.
-    // pipe.producer_acquire();
+    pipe.producer_acquire();
     int2 val = make_int2(in[tid], in[tid]);
     if (a[0].try_acquire())
     {
-        printf("tid %i acquired semaphore\n", tid);
+        // printf("tid %i acquired semaphore\n", tid);
         queue.push(val);
         a[0].release();
     }
     else
     {
-        printf("tid %i failed to acquire semaphore\n", tid);
+        // printf("tid %i failed to acquire semaphore\n", tid);
         a[0].acquire();
-        printf("tid %i acquired semaphore\n", tid);
+        // printf("tid %i acquired semaphore\n", tid);
         queue.push(val);
         a[0].release();
     }
-    
-
-    // pipe.producer_commit();
+    pipe.producer_commit();
 
     // cuda::pipeline_consumer_wait_prior<1>(pipe);
     // pipe.consumer_wait();
     // // while (queue.size())
-    // int2 res = queue.pop();
-    // out[tid] = val.x * val.y;
-    // pipe.consumer_release();
+    a[0].acquire();
+    int2 res = queue.pop();
+    out[tid] = val.x+val.y;
+    a[0].release();
+    pipe.consumer_release();
     // // Create a pipeline.
 
     // out[tid] = // atomicAdd(&var[0].x, __powf(boxes[tid].min.x-mean[0].x, 2));
@@ -96,7 +98,7 @@ int main( int argc, char **argv )
     int grid = (N / block + 1); 
     printf("grid size: %i\n", grid);
 
-    run<<<grid, block, 80>>>(d_in, d_out, N);
+    recordLaunch("run", grid, block, 8, run, d_in, d_out, N);
     cudaDeviceSynchronize();
 
     vector<ll> out;
@@ -104,10 +106,10 @@ int main( int argc, char **argv )
     cudaMemcpy(out.data(), d_out, sizeof(ll)*N, cudaMemcpyDeviceToHost);
 
 
-    for (ll i = 0; i < N; i++)
-    {        
-        printf("%lld:%lld ", nums[i], out[i]);
-    }
+    // for (ll i = 0; i < N; i+=100)
+    // {        
+    //     printf("%lld:%lld ", nums[i], out[i]);
+    // }
     printf("\n");
 
 }
