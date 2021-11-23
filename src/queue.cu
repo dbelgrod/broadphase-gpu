@@ -82,31 +82,31 @@ __device__ __host__ Queue::Queue()
 
 __device__ int2 Queue::pop()
 {
-	int itr = 0;
-	while (harr[itr].x < 0)
-		itr = (itr + 1) % heap_size;
-	int2 val = harr[itr];
-	harr[itr].x = -1; //set as removed
-	return val;
+	// int itr = 0;
+	while (harr[current].x < 0)
+		current = (current + 1) % heap_size;
+	int2 pair = harr[current];
+	harr[current].x = -1; //set as removed
+	// printf("Popped pair (%i,%i) from harr[%i] with cap %i\n", pair.x, pair.y, current, capacity);
+	return pair;
 }
 
 __device__ void Queue::push(int2 pair)
 {
-	printf("%i %i\n", heap_size, capacity);
 	if (heap_size < capacity)
 	{
 		harr[heap_size] = pair;
 		heap_size++;
-		printf("Pushed pair (%i,%i) to harr[%i] with cap %i\n", pair.x, pair.y, heap_size-1, capacity);
+		// printf("Pushed pair (%i,%i) to harr[%i] with cap %i\n", pair.x, pair.y, heap_size-1, capacity);
 		return;
 	}
 	
-	int itr = 0;
+	// int itr = 0;
 
-	while (harr[itr].x > 0)
-		itr = (itr + 1) % heap_size;
-	harr[itr] = pair;
-	printf("Pushed pair (%i,%i) to harr[%i]\n", pair.x, pair.y, itr);
+	while (harr[current].x > 0)
+		current = (current + 1) % heap_size;
+	harr[current] = pair;
+	// printf("Pushed pair (%i,%i) to harr[%i]\n", pair.x, pair.y, current);
 	return;
 	
 }

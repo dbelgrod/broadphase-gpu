@@ -4,7 +4,7 @@
 
 // https://github.com/wangbolun300/GPUTI/blob/master/src/queue.cu
 
-static const int HEAP_SIZE=5;
+static const int HEAP_SIZE=500;
 
 using namespace std;
 
@@ -40,6 +40,7 @@ __device__ __host__ class Queue
 {
 public:
 	int2 harr[HEAP_SIZE]; // pointer to array of elements in heap
+	int current = 0;
 	int capacity; // maximum possible size of min heap
 	int heap_size; // Current number of elements in min heap
     // Cell root;// temporary variable used for extractMin()
