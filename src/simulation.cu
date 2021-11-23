@@ -4,13 +4,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 
-#include <tbb/mutex.h>
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range.h>
-#include <tbb/task_scheduler_init.h>
-#include <tbb/enumerable_thread_specific.h>
-#include "tbb/concurrent_vector.h"
-#include <tbb/task_group.h>
+
 
 #include <cmath>
 
@@ -906,7 +900,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
         if (is_vertex(a) && is_face(b)) //vertex, face
             local_overlaps.emplace_back(aid, bid);
         else if (is_edge(a) && is_edge(b))
-            local_overlaps.emplace_back(aid, bid);
+            local_overlaps.emplace_back(min(aid, bid), max(aid,bid));
         else if (is_face(a) && is_vertex(b))
             local_overlaps.emplace_back(bid, aid);
         // if (is_vertex(a) && is_face(b)) //vertex, face
