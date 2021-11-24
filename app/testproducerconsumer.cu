@@ -19,6 +19,14 @@ __global__ void run(ll* in, ll * out, int N)
     __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2> pss;
     __shared__ Queue queue;
     queue.capacity = HEAP_SIZE;
+    queue.heap_size = HEAP_SIZE;
+    for (int i = threadIdx.x; i < HEAP_SIZE; i += blockDim.x) 
+    {
+        queue.lock[i].release();
+        queue.harr[i].x = -1; //release to add
+        // printf("Lock %i released\n", i);
+    }
+    __syncthreads();
 
     // extern __shared__ T s[];
     auto group = cooperative_groups::this_thread_block();
@@ -28,43 +36,42 @@ __global__ void run(ll* in, ll * out, int N)
     cuda::std::size_t producer_count = group.size() / 2;
     cuda::pipeline<cuda::thread_scope_block> pipe = cuda::make_pipeline(group, &pss, producer_count);
 
-    // cuda::std::ptrdiff_t max = 1;
-    extern __shared__ cuda::binary_semaphore<cuda::thread_scope_block> a[];
-    // cuda::binary_semaphore<cuda::thread_scope_block>* b[1] = {a};
-    // a = cuda::binary_semaphore<cuda::thread_scope_block>(1);
-    a[0].release();
+    // extern __shared__ cuda::binary_semaphore<cuda::thread_scope_block> a[];
+    // a[0].release();
     __syncthreads();
 
     int tid = threadIdx.x + blockDim.x*blockIdx.x;
     if (tid >= N) return;
 
     // Prime the pipeline.
-    pipe.producer_acquire();
+    // pipe.producer_acquire();
     int2 val = make_int2(in[tid], in[tid]);
-    if (a[0].try_acquire())
-    {
-        // printf("tid %i acquired semaphore\n", tid);
-        queue.push(val);
-        a[0].release();
-    }
-    else
-    {
-        // printf("tid %i failed to acquire semaphore\n", tid);
-        a[0].acquire();
-        // printf("tid %i acquired semaphore\n", tid);
-        queue.push(val);
-        a[0].release();
-    }
-    pipe.producer_commit();
+    // if (a[0].try_acquire())
+    // {
+    //     // printf("tid %i acquired semaphore\n", tid);
+    //     queue.push(val);
+    //     a[0].release();
+    // }
+    // else
+    // {
+    //     // printf("tid %i failed to acquire semaphore\n", tid);
+    //     a[0].acquire();
+    //     // printf("tid %i acquired semaphore\n", tid);
+    //     queue.push(val);
+    //     a[0].release();
+    // }
+    int curr;
+    curr = queue.push(tid, val);
+    // pipe.producer_commit();
 
     // cuda::pipeline_consumer_wait_prior<1>(pipe);
     // pipe.consumer_wait();
     // // while (queue.size())
-    a[0].acquire();
-    int2 res = queue.pop();
+    // a[0].acquire();
+    int2 res = queue.pop(curr);
     out[tid] = val.x+val.y;
-    a[0].release();
-    pipe.consumer_release();
+    // a[0].release();
+    // pipe.consumer_release();
     // // Create a pipeline.
 
     // out[tid] = // atomicAdd(&var[0].x, __powf(boxes[tid].min.x-mean[0].x, 2));
@@ -97,6 +104,8 @@ int main( int argc, char **argv )
     int block = 1024;
     int grid = (N / block + 1); 
     printf("grid size: %i\n", grid);
+    printf("sizeof(semaphore):  %i\n", sizeof(cuda::binary_semaphore<cuda::thread_scope_block>));
+    printf("sizeof(int2):  %i\n", sizeof(int2));
 
     recordLaunch("run", grid, block, 8, run, d_in, d_out, N);
     cudaDeviceSynchronize();
@@ -106,7 +115,7 @@ int main( int argc, char **argv )
     cudaMemcpy(out.data(), d_out, sizeof(ll)*N, cudaMemcpyDeviceToHost);
 
 
-    // for (ll i = 0; i < N; i+=100)
+    // for (ll i = 0; i < N; i+=1000)
     // {        
     //     printf("%lld:%lld ", nums[i], out[i]);
     // }

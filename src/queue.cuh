@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cuda/semaphore>
+
 // #include <gpubf/object.cuh>
 
 // https://github.com/wangbolun300/GPUTI/blob/master/src/queue.cu
 
-static const int HEAP_SIZE=500;
+static const int HEAP_SIZE=4000;
 
 using namespace std;
 
@@ -40,7 +42,8 @@ __device__ __host__ class Queue
 {
 public:
 	int2 harr[HEAP_SIZE]; // pointer to array of elements in heap
-	int current = 0;
+	// int current = 0;
+	cuda::binary_semaphore<cuda::thread_scope_block> lock[HEAP_SIZE];
 	int capacity; // maximum possible size of min heap
 	int heap_size; // Current number of elements in min heap
     // Cell root;// temporary variable used for extractMin()
@@ -49,10 +52,10 @@ public:
 	// Constructor
    __device__ __host__ Queue();
 
-	__device__ int2 pop();
+	__device__ int2 pop(int curr);
 
 	// Inserts a new key 'k'
-	__device__ void push(int2 pair);
+	__device__ int push(int tid, int2 pair);
 
     __device__ int size();
 };
