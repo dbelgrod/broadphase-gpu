@@ -2,6 +2,9 @@
 #include <iostream>
 #include <bitset>
 #include <string>
+#include <numeric>
+#include <string>
+#include <functional>
 #include <cuda/pipeline>
 #include <cuda/semaphore>
 #include <cooperative_groups.h>
@@ -45,7 +48,8 @@ __global__ void run(ll* in, ll * out, int N)
 
     // Prime the pipeline.
     // pipe.producer_acquire();
-    int2 val = make_int2(in[tid], in[tid]);
+    int2 val1 = make_int2(in[tid],0);
+    int2 val2 = make_int2(0, in[tid]);
     // if (a[0].try_acquire())
     // {
     //     // printf("tid %i acquired semaphore\n", tid);
@@ -60,16 +64,20 @@ __global__ void run(ll* in, ll * out, int N)
     //     queue.push(val);
     //     a[0].release();
     // }
-    int curr;
-    curr = queue.push(tid, val);
+    int curr1, curr2;
+    curr1 = queue.push(tid, val1);
+    int2 res1 = queue.pop(curr1);
+    curr2 = queue.push(tid, val2);
+    int2 res2 = queue.pop(curr2);
     // pipe.producer_commit();
 
     // cuda::pipeline_consumer_wait_prior<1>(pipe);
     // pipe.consumer_wait();
     // // while (queue.size())
     // a[0].acquire();
-    int2 res = queue.pop(curr);
-    out[tid] = val.x+val.y;
+    
+    
+    out[tid] = res1.x - res2.y;
     // a[0].release();
     // pipe.consumer_release();
     // // Create a pipeline.
@@ -114,11 +122,12 @@ int main( int argc, char **argv )
     out.reserve(N);
     cudaMemcpy(out.data(), d_out, sizeof(ll)*N, cudaMemcpyDeviceToHost);
 
-
-    // for (ll i = 0; i < N; i+=1000)
-    // {        
-    //     printf("%lld:%lld ", nums[i], out[i]);
-    // }
+    int s = accumulate(out.begin(), out.end(), 0);
+    for (ll i = 0; i < N; i+=1)
+    {        
+        // printf("%lld:%lld ", nums[i], out[i]);
+    }
     printf("\n");
+    printf("sum: %i\n", s);
 
 }
