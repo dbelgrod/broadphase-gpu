@@ -7,14 +7,25 @@
 #include <functional>
 #include <cuda/pipeline>
 #include <cuda/semaphore>
+
+// need this to get tiled_partition > 32 threads
+#define _CG_ABI_EXPERIMENTAL // enable experimental API
+
 #include <cooperative_groups.h>
+
+#include <curand.h>
+#include <curand_kernel.h>
 
 #include <gpubf/queue.cuh>
 #include <gpubf/aabb.cuh>
 #include <gpubf/timer.cuh>
 #include <gpubf/util.cuh>
 
+
+
 using namespace std;
+// using namespace cooperative_groups;
+namespace cg = cooperative_groups;
 typedef long long int ll;
 
 __global__ void run(ll* in, ll * out, int N)
@@ -31,13 +42,28 @@ __global__ void run(ll* in, ll * out, int N)
     }
     __syncthreads();
 
+    // Size must be a power of 2 and less than or equal to 32.
+    cg::thread_block g = cg::this_thread_block();
+    // thread_group tile32 = tiled_partition(g, 32);
+    // int lane = tile32.thread_rank();
+    // int tileIdx = g.thread_rank() / 32;
+    
+     // reserve shared memory for thread_block_tile usage.
+    __shared__ cg::experimental::block_tile_memory<2, 1024> shared;
+    cg::thread_block thb = cg::experimental::this_thread_block(shared);
+ 
+    auto tilehalf = cg::experimental::tiled_partition<512>(thb);
+
+    // thread_group tilehalf = cooperative_groups::experimental::tiled_partition(this_thread_block(), g.size() / 2);
+    int lane = tilehalf.thread_rank();
+
     // extern __shared__ T s[];
-    auto group = cooperative_groups::this_thread_block();
+    // auto group = cooperative_groups::this_thread_block();
     // T* shared[2] = { s, s + 2 * group.size() };
 
       // Create a partitioned block-scoped pipeline where half the threads are producers.
-    cuda::std::size_t producer_count = group.size() / 2;
-    cuda::pipeline<cuda::thread_scope_block> pipe = cuda::make_pipeline(group, &pss, producer_count);
+    // cuda::std::size_t producer_count = group.size() / 2;
+    // cuda::pipeline<cuda::thread_scope_block> pipe = cuda::make_pipeline(group, &pss, producer_count);
 
     // extern __shared__ cuda::binary_semaphore<cuda::thread_scope_block> a[];
     // a[0].release();
@@ -64,11 +90,27 @@ __global__ void run(ll* in, ll * out, int N)
     //     queue.push(val);
     //     a[0].release();
     // }
+    int rand1, rand2;
+    /* CUDA's random number library uses curandState_t to keep track of the seed value
+     we will store a random state for every thread  */
+    curandState_t state;
+
+  /* we have to initialize the state */
+    curand_init(0, /* the seed controls the sequence of random values that are produced */
+                0, /* the sequence number is only important with multiple cores */
+                tid, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
+                &state);
+
+  /* curand works like rand - except that it takes a state as a parameter */
+    rand1 = int(curand(&state) % HEAP_SIZE);
+    rand2 = int(curand(&state) % HEAP_SIZE);
+    if (tid == 0)
+        printf("rand1: %i, rand2: %i\n", rand1, rand2);
     int curr1, curr2;
     curr1 = queue.push(tid, val1);
-    int2 res1 = queue.pop(curr1);
+    int2 res1 = queue.pop(tid % HEAP_SIZE);
     curr2 = queue.push(tid, val2);
-    int2 res2 = queue.pop(curr2);
+    int2 res2 = queue.pop(tid % HEAP_SIZE);
     // pipe.producer_commit();
 
     // cuda::pipeline_consumer_wait_prior<1>(pipe);
