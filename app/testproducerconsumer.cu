@@ -37,7 +37,7 @@ __global__ void run(ll* in, ll * out, int N)
     for (int i = threadIdx.x; i < HEAP_SIZE; i += blockDim.x) 
     {
         queue.lock[i].release();
-        queue.harr[i].x = -1; //release to add
+        queue.harr[i].x = -1.0; //release to add
         // printf("Lock %i released\n", i);
     }
     __syncthreads();
@@ -54,78 +54,52 @@ __global__ void run(ll* in, ll * out, int N)
  
     auto tilehalf = cg::experimental::tiled_partition<512>(thb);
 
-    // thread_group tilehalf = cooperative_groups::experimental::tiled_partition(this_thread_block(), g.size() / 2);
     int lane = tilehalf.thread_rank();
-
-    // extern __shared__ T s[];
-    // auto group = cooperative_groups::this_thread_block();
-    // T* shared[2] = { s, s + 2 * group.size() };
-
-      // Create a partitioned block-scoped pipeline where half the threads are producers.
-    // cuda::std::size_t producer_count = group.size() / 2;
-    // cuda::pipeline<cuda::thread_scope_block> pipe = cuda::make_pipeline(group, &pss, producer_count);
-
-    // extern __shared__ cuda::binary_semaphore<cuda::thread_scope_block> a[];
-    // a[0].release();
+    int lanerel = lane + blockIdx.x * blockDim.x;
     __syncthreads();
 
     int tid = threadIdx.x + blockDim.x*blockIdx.x;
+    // if (tid >= N) return;
+    // if in the first group + tid >= N
     if (tid >= N) return;
 
-    // Prime the pipeline.
-    // pipe.producer_acquire();
-    int2 val1 = make_int2(in[tid],0);
-    int2 val2 = make_int2(0, in[tid]);
-    // if (a[0].try_acquire())
-    // {
-    //     // printf("tid %i acquired semaphore\n", tid);
-    //     queue.push(val);
-    //     a[0].release();
-    // }
-    // else
-    // {
-    //     // printf("tid %i failed to acquire semaphore\n", tid);
-    //     a[0].acquire();
-    //     // printf("tid %i acquired semaphore\n", tid);
-    //     queue.push(val);
-    //     a[0].release();
-    // }
-    int rand1, rand2;
-    /* CUDA's random number library uses curandState_t to keep track of the seed value
-     we will store a random state for every thread  */
-    curandState_t state;
-
-  /* we have to initialize the state */
-    curand_init(0, /* the seed controls the sequence of random values that are produced */
-                0, /* the sequence number is only important with multiple cores */
-                tid, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
-                &state);
-
-  /* curand works like rand - except that it takes a state as a parameter */
-    rand1 = int(curand(&state) % HEAP_SIZE);
-    rand2 = int(curand(&state) % HEAP_SIZE);
-    if (tid == 0)
-        printf("rand1: %i, rand2: %i\n", rand1, rand2);
-    int curr1, curr2;
-    curr1 = queue.push(tid, val1);
-    int2 res1 = queue.pop(tid % HEAP_SIZE);
-    curr2 = queue.push(tid, val2);
-    int2 res2 = queue.pop(tid % HEAP_SIZE);
-    // pipe.producer_commit();
-
-    // cuda::pipeline_consumer_wait_prior<1>(pipe);
-    // pipe.consumer_wait();
-    // // while (queue.size())
-    // a[0].acquire();
+    // if (lane == 0)
+    //     printf("group_rank: %i\n", tilehalf.meta_group_rank());
+    
+    if (tilehalf.meta_group_rank() == 0)
+    {
+        int curr1, curr2;
+        int2 val1 = make_int2(in[tid],0);
+        int2 val2 = make_int2(0, in[tid]);
+        curr1 = queue.push(lanerel, val1);
+        curr2 = queue.push(lanerel, val2);
+    }
+    else 
+    {
+        int2 res1 = queue.pop(lanerel  % HEAP_SIZE);
+        // int2 res2 = queue.pop(lanerel % HEAP_SIZE);
+        out[tid] = res1.x;
+    }
     
     
-    out[tid] = res1.x - res2.y;
-    // a[0].release();
-    // pipe.consumer_release();
-    // // Create a pipeline.
 
-    // out[tid] = // atomicAdd(&var[0].x, __powf(boxes[tid].min.x-mean[0].x, 2));
-    // out[tid] = __mulhi(f1,f2);
+//     int rand1, rand2;
+//     /* CUDA's random number library uses curandState_t to keep track of the seed value
+//      we will store a random state for every thread  */
+//     curandState_t state;
+
+//   /* we have to initialize the state */
+//     curand_init(0, /* the seed controls the sequence of random values that are produced */
+//                 0, /* the sequence number is only important with multiple cores */
+//                 tid, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
+//                 &state);
+
+//   /* curand works like rand - except that it takes a state as a parameter */
+//     rand1 = int(curand(&state) % HEAP_SIZE);
+//     rand2 = int(curand(&state) % HEAP_SIZE);
+    // if (tid == 0)
+    //     printf("rand1: %i, rand2: %i\n", rand1, rand2);
+
     
     return;
 
@@ -161,13 +135,15 @@ int main( int argc, char **argv )
     cudaDeviceSynchronize();
 
     vector<ll> out;
-    out.reserve(N);
+    out.resize(N);
     cudaMemcpy(out.data(), d_out, sizeof(ll)*N, cudaMemcpyDeviceToHost);
 
-    int s = accumulate(out.begin(), out.end(), 0);
-    for (ll i = 0; i < N; i+=1)
+    // int s = accumulate(out.begin(), out.end(), 0);
+    int s = 0;
+    for (int i = 0; i < N; i+=1)
     {        
         // printf("%lld:%lld ", nums[i], out[i]);
+        s += out[i];
     }
     printf("\n");
     printf("sum: %i\n", s);
