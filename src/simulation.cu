@@ -842,7 +842,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
 
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); 
     cudaMemset(d_count, 0, sizeof(int));
-    recordLaunch<float3 *, const MiniBox *, int2 *, int, int *, int>("twostage_queue", 2*grid_dim_1d, threads,twostage_queue, d_sm, d_mini, d_overlaps, N, d_count, count);
+    recordLaunch<float3 *, const MiniBox *, int2 *, int, int *, int, int, int>("twostage_queue", 2*grid_dim_1d, threads,twostage_queue, d_sm, d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
 
     gpuErrchk(cudaDeviceSynchronize());
     gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
@@ -1162,7 +1162,7 @@ void run_sweep_multigpu_queue(const Aabb* boxes, int N, int nbox, vector<pair<in
         gpuErrchk( cudaGetLastError() );   
 
         // Find overlapping pairs
-        int count = 200*N;
+        int count = 0;
         printf("Guess %i\n", count);
 
         int2 * d_overlaps;
@@ -1173,7 +1173,7 @@ void run_sweep_multigpu_queue(const Aabb* boxes, int N, int nbox, vector<pair<in
         dim3 grid( grid_dim_1d );
 
         cudaEventRecord(starts[device_id]);
-        twostage_queue<<<2*grid_dim_1d, threads>>>(d_sm, d_mini, d_overlaps, N, d_count, count);
+        twostage_queue<<<2*grid_dim_1d, threads>>>(d_sm_peer, d_mini_peer, d_overlaps, N, d_count, count, range_start, range_end);
         cudaEventRecord(stops[device_id]);
         cudaEventSynchronize(stops[device_id]);
         cudaEventElapsedTime(&millisecondss[device_id], starts[device_id], stops[device_id]);
@@ -1181,6 +1181,21 @@ void run_sweep_multigpu_queue(const Aabb* boxes, int N, int nbox, vector<pair<in
         cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
         printf("count for device %i : %i\n", device_id, count);
 
+        if (1){
+            printf("Running again\n");
+            cudaFree(d_overlaps);
+            cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count));
+            // cudaMemset(d_overlaps, 0, sizeof(int2)*(count));
+            cudaMemset(d_count, 0, sizeof(int));
+            cudaEventRecord(starts[device_id]);
+            twostage_queue<<<2*grid_dim_1d, threads>>>(d_sm_peer, d_mini_peer, d_overlaps, N, d_count, count, range_start, range_end);
+            cudaEventRecord(stops[device_id]);
+            cudaEventSynchronize(stops[device_id]);
+            cudaEventElapsedTime(&millisecondss[device_id], starts[device_id], stops[device_id]);
+            cudaDeviceSynchronize();
+            cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+            printf("count2 for device %i : %i\n", device_id, count);
+        }
         
         // printf("Elapsed time: %.9f ms/collision\n", milliseconds/count);
         // printf("Boxes: %i\n", N);

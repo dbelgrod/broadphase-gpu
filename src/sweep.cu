@@ -296,7 +296,7 @@ __global__ void retrieve_collision_pairs2(const MiniBox* const mini, int * count
     
 }
 
-__global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * overlaps, int N, int * count, int guess)
+__global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * overlaps, int N, int * count, int guess, int start, int end)
 {
     // extern __shared__ float3 s_sortedmin[];
     // __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2> pss;
@@ -319,9 +319,9 @@ __global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * ov
     auto tilehalf = cg::experimental::tiled_partition<512>(thb);
     int lane = tilehalf.thread_rank();
 
-    int lanerel = lane + blockIdx.x * blockDim.x/2;
+    int lanerel = lane + blockIdx.x * blockDim.x/2 + start;
 
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    int tid = threadIdx.x + blockIdx.x * blockDim.x + start;
     
     int latecutoff = tid - tilehalf.meta_group_rank()*tilehalf.size();
 
@@ -350,7 +350,7 @@ __global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * ov
     // {
         // if (tid >= N) return;
         // lanerel = lane + blockIdx.x * blockDim.x;
-        if (lanerel >= N) return;
+        if (lanerel >= N || lanerel >= end) return;
 
         int ntid = tid + 1;
         int ltid = lanerel + 1;
