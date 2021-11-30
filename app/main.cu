@@ -14,7 +14,7 @@
 #include <gpubf/simulation.cuh>
 #include <gpubf/groundtruth.cuh>
 #include <gpubf/util.cuh>
-#include <gpubf/klee.cuh>
+// #include <gpubf/klee.cuh>
 #include <gpubf/io.cuh>
 
 using namespace std;

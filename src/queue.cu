@@ -83,18 +83,23 @@ __device__ __host__ Queue::Queue()
 __device__ int2 Queue::pop(int curr)
 {
 	// skip while data inside or locked
-	
-	int current = curr;
-	if (current == 0) current = HEAP_SIZE - 1;
-	else current = current - 1;
+	// int itr = 0;
+	int current = curr % HEAP_SIZE;
+	// if (current == 0) current = HEAP_SIZE - 1;
+	// else current = current - 1;
+	// int old  = current;
 	while (1)
 	{
-		if (harr[current].x >= 0.0 && lock[current].try_acquire() )
+		// old  = current;
+		// if (lock[current].try_acquire() )
+		if (harr[current].x >= 0.0 )
 		{
+			lock[current].acquire();
 			if (harr[current].x < 0)
 			{
 				// printf("Pop[%i]: adding 1 to %i/%i\n", curr, current, HEAP_SIZE);
-				current = (current + 1) % HEAP_SIZE;
+				// current = (current + 1) % HEAP_SIZE;
+				// itr++;
 				lock[current].release();
 			}
 			else 
@@ -108,28 +113,36 @@ __device__ int2 Queue::pop(int curr)
 		}
 		else 
 		{
-			// printf("Pop[%i]: Failed to lock w/ val %.6f, adding 1 to %i/%i\n", curr, harr[current].x, current, HEAP_SIZE);
-			current = (current + 1) % capacity;
+			// printf("Pop[%i]: Failed to lock %i (%i) w/ val %i, itr %i\n", curr, current, 4000, harr[current].x, itr);
+			// current = (current + 1) % HEAP_SIZE;
+			// itr++;
 		}
 		// unsigned ns = 1000;
 		// for (int i=0; i<1000000; i++)
 		// 	__nanosleep(ns);
+
 	}
+	int2 ret = make_int2(-1,-1);
+	return ret; //failure
+	// printf("Terminating Pop[%i]\n", curr);
 	
 }
 
 __device__ int Queue::push(int tid, int2 pair)
 {
-	int current = tid % HEAP_SIZE;
+	int current = tid % 4000;
+	// int old  = current;
 	while (1)
 	{
-		
-		if (harr[current].x < 0 && lock[current].try_acquire() )
+		// old = current;
+		// if (lock[current].try_acquire() )
+		if (harr[current].x < 0)
 		{
+			lock[current].acquire();
 			if (harr[current].x >= 0)
 			{
-				// printf("Push[%i]: adding 1 to %i/%i\n", tid, current, HEAP_SIZE);
-				current = (current + 1) % HEAP_SIZE;
+				// printf("Push[%i]: adding 1 to %i/%i\n", tid, current, 4000);
+				// current = (current + 1) % 4000;
 				lock[current].release();
 			}
 			else 
@@ -142,14 +155,15 @@ __device__ int Queue::push(int tid, int2 pair)
 		}
 		else 
 		{
-			// printf("Push[%i]: Failed to lock for val %.6f, adding 1 to %i/%i\n", tid, harr[current].x, current, HEAP_SIZE);
-			current = (current + 1) % HEAP_SIZE;
+			// printf("Push[%i]: Failed to lock %i (%i) w/ val %i\n", tid, current, 4000, harr[current].x);
+			// current = (current + 1) % 4000;
 		}
 		// unsigned ns = 1000;
 		// for (int i=0; i<1000000; i++)
 		// 	__nanosleep(ns);
 
 	}
+	// printf("Terminating Push[%i]\n", tid);
 }
 
 __device__ int Queue::size()
