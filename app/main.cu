@@ -92,14 +92,16 @@ int main( int argc, char **argv )
     }
     printf("Boxes (N): %i\n", N);
     vector<pair<int,int>> overlaps;
+    int2 * d_overlaps; //device
+
     if (evenworkload)
-        run_sweep_pieces(boxes.data(), N, nbox, overlaps, parallel, devcount);
+        run_sweep_pieces(boxes.data(), N, nbox, overlaps, d_overlaps, parallel, devcount);
     else if (pairing)
-        run_sweep_pairing(boxes.data(), N, nbox, overlaps, parallel, devcount);
+        run_sweep_pairing(boxes.data(), N, nbox, overlaps, d_overlaps, parallel, devcount);
     else if (quantumspeed)
-        run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel, devcount);
+        run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, d_overlaps, parallel, devcount);
     else
-        run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
+        run_sweep_multigpu(boxes.data(), N, nbox, overlaps, d_overlaps, parallel, devcount);
 
     for (auto i : compare)
     {

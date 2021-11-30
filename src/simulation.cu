@@ -497,7 +497,7 @@ void merge_local_overlaps(
     }
 }
 
-void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads, int & devcount)
+void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int2* d_overlaps, int& threads, int & devcount)
 {
     cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
     tbb::enumerable_thread_specific<tbb::concurrent_vector<pair<int,int>>> storages;
@@ -745,7 +745,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
 
 }
 
-void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads, int & devcount)
+void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int2* d_overlaps, int& threads, int & devcount)
 {
  
     int device_init_id = 0;
@@ -832,7 +832,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     cudaMalloc((void**)&d_count, sizeof(int));
     cudaMemset(d_count, 0, sizeof(int));
 
-    int2 * d_overlaps;
+    // int2 * d_overlaps;
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*count);
 
     // twostage_queue<<<grid,block>>>(d_sm, d_mini, d_overlaps, N, d_count, count);
@@ -892,7 +892,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
 }
 
 
-void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads, int & devcount)
+void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int2* d_overlaps, int& threads, int & devcount)
 {
  
     int device_init_id = 0;
@@ -932,7 +932,7 @@ void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int, int>
     cudaMalloc((void**)&d_count, sizeof(int));
     cudaMemset(d_count, 0, sizeof(int));
     
-    int2 * d_overlaps;
+    // int2 * d_overlaps;
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*count);
     printf("sizeof(RankBox): %i\n", sizeof(RankBox));
     printf("sharedMem: %i\n", sizeof(RankBox)*block);
@@ -997,7 +997,7 @@ void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int, int>
      printf("Total(filt.) overlaps for devid %i: %i\n", 0, local_overlaps.size());
 }
 
-void run_sweep_multigpu_queue(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int& threads, int & devcount)
+void run_sweep_multigpu_queue(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int2* d_overlaps, int& threads, int & devcount)
 {
     cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
     tbb::enumerable_thread_specific<tbb::concurrent_vector<pair<int,int>>> storages;
