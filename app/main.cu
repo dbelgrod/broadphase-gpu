@@ -52,9 +52,10 @@ int main( int argc, char **argv )
     bool evenworkload = false;
     int devcount = 1;
     bool pairing = false;
+    bool quantumspeed = false;
 
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:p:d:WP")) != -1)
+    while ((o = getopt (argc, argv, "c:n:b:p:d:WPQ")) != -1)
     {
         switch (o)
         {
@@ -84,6 +85,9 @@ int main( int argc, char **argv )
             case 'P':
                 pairing = true;
                 break;
+            case 'Q':
+                quantumspeed = true;
+                break;
         }
     }
     printf("Boxes (N): %i\n", N);
@@ -92,8 +96,11 @@ int main( int argc, char **argv )
         run_sweep_pieces(boxes.data(), N, nbox, overlaps, parallel, devcount);
     else if (pairing)
         run_sweep_pairing(boxes.data(), N, nbox, overlaps, parallel, devcount);
+    else if (quantumspeed)
+        run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel, devcount);
     else
         run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
+
     for (auto i : compare)
     {
         // printf("%s\n", i );
