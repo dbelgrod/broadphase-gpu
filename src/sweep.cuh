@@ -2,10 +2,17 @@
 
 #include <bits/stdc++.h>
 
+
+// need this to get tiled_partition > 32 threads
+#define _CG_ABI_EXPERIMENTAL // enable experimental API
+
+#include <cooperative_groups.h>
+
+
 #include <gpubf/aabb.cuh>
 #include <gpubf/collision.h>
 
-
+namespace cg = cooperative_groups;
 
 // #include <cuda/atomic>
 
@@ -34,6 +41,7 @@ __global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int 
 __global__ void retrieve_collision_pairs2(const MiniBox* const mini, int * count, int2 * inpairs, int2 * overlaps, int N, int guess);
 __global__ void calc_variance(Aabb * boxes, float3 * var, int N, float3 * mean);
 __global__ void calc_mean(Aabb * boxes, float3 * mean, int N);
+__global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * overlaps, int N, int * count, int guess);
 
 // for pairing
 __global__ void create_ds(Aabb * boxes, float3 * sortedmin, MiniBox * mini, int N, float3 * mean);

@@ -1,7 +1,7 @@
 #include <gpubf/collision.h>
 
-#include <cooperative_groups.h>
-using namespace cooperative_groups;
+// #include <cooperative_groups.h>
+// using namespace cooperative_groups;
 
 
 __global__ void count_collisions(Aabb * boxes, int * count, int N){

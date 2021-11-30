@@ -2,11 +2,12 @@
 
 #include <cuda/semaphore>
 
+
 // #include <gpubf/object.cuh>
 
 // https://github.com/wangbolun300/GPUTI/blob/master/src/queue.cu
 
-static const int HEAP_SIZE=4000;
+#define HEAP_SIZE 4000
 
 using namespace std;
 

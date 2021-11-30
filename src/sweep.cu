@@ -1,5 +1,9 @@
+#include <cuda/pipeline>
+
+#include <gpubf/queue.cuh>
 #include <gpubf/sweep.cuh>
-// #include <cuda/pipeline>
+
+
 
 __global__ void build_index(Aabb * boxes, int N, int* index)
 {
@@ -290,6 +294,136 @@ __global__ void retrieve_collision_pairs2(const MiniBox* const mini, int * count
     }
 }
     
+}
+
+__global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * overlaps, int N, int * count, int guess)
+{
+    // extern __shared__ float3 s_sortedmin[];
+    // __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2> pss;
+    __shared__ Queue queue;
+    queue.capacity = 4000;
+    queue.heap_size = 4000;
+    __syncthreads();
+    for (int i = threadIdx.x; i < queue.capacity; i += blockDim.x) 
+    {
+        queue.lock[i].release();
+        queue.harr[i].x = -1.0; //release to add
+        // printf("Lock %i released\n", i);
+    }
+    __syncthreads();
+    cg::thread_block g = cg::this_thread_block();
+    // __shared__ cg::experimental::block_tile_memory<4, 1024> shared;
+    __shared__ cg::experimental::block_tile_memory<1, 512> shared;
+    cg::thread_block thb = cg::experimental::this_thread_block(shared);
+
+    auto tilehalf = cg::experimental::tiled_partition<512>(thb);
+    int lane = tilehalf.thread_rank();
+
+    int lanerel = lane + blockIdx.x * blockDim.x/2;
+
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    
+    int latecutoff = tid - tilehalf.meta_group_rank()*tilehalf.size();
+
+    // if (lane == 0 && tid == 0)
+    // {
+    //     printf("tilehalf.meta_group_rank: %i\n", tilehalf.meta_group_rank());
+    //     printf("tilehalf.meta_group_size: %i\n", tilehalf.meta_group_size());
+    //     printf("tilehalf.size: %i\n", tilehalf.size());
+    // }
+    // return;
+
+    // int ltid = threadIdx.x;
+
+    // cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
+    // pipe.producer_acquire();
+    // cuda::memcpy_async(s_sortedmin + ltid, sm + tid, sizeof(*sm), pipe);
+    // pipe.producer_commit();
+
+    
+
+    // __shared__ bool is_valid;
+    // is_valid = true;
+    // __syncthreads();
+    
+    // if (tilehalf.meta_group_rank() == 0 )
+    // {
+        // if (tid >= N) return;
+        // lanerel = lane + blockIdx.x * blockDim.x;
+        if (lanerel >= N) return;
+
+        int ntid = tid + 1;
+        int ltid = lanerel + 1;
+        // int nltid = ltid + 1;
+
+        //513, we want 512 to be ok and then ignore
+        // if (ntid >= N && tilehalf.meta_group_rank() == 0) return; 
+        if (ltid >= N) return;
+
+        const float3& a = sm[lanerel]; //s_sortedmin[ltid];
+        float3 b = sm[ltid]; //nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid];
+
+        // int2 val = make_int2(int(a.z), int(b.z));
+        // int whocares = queue.push(lanerel+(ntid-tid-1), val);
+        // atomicAdd(count, 1);
+        // if (lane == 72) printf("a.y: %.3f, b.x %.3f\n", a.y, b.x);
+        while (a.y  >= b.x) // curr max > following min
+        {
+            // consider_pair(int(a.z), int(b.z), count, out, guess);
+            if (tilehalf.meta_group_rank() == 0 )
+            {
+                
+                int2 val = make_int2(int(a.z), int(b.z));
+                int whocares = queue.push(lanerel+512*(ntid-tid-1), val);
+            }  
+            else
+            {
+                // unsigned ns = 100;
+                // for (int i=0; i<10000; i++)
+                // __nanosleep(ns);
+                int2 res = queue.pop(lanerel+512*(ntid-tid-1));
+                // if (res.x < 0) return;
+
+        
+                const MiniBox& ax = mini[res.x];
+                const MiniBox& bx = mini[res.y];
+            
+                if ( does_collide(ax,bx) 
+                        && !covertex(ax.vertexIds, bx.vertexIds)
+                ){
+                    add_overlap(res.x, res.y, count, overlaps, guess);
+                }
+            }  
+                // atomicAdd(count, 1);
+            // return;
+            ntid++;
+            ltid++;
+            // nltid++;
+            // if (ntid >= N && tilehalf.meta_group_rank() == 0) return;
+            if (ltid >= N) return;
+            b = sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid];
+    }
+    // else 
+    // {
+    //     // if (tid >= count[0]) return;
+    //     // while (is_valid){
+    //     // lanerel = (tilehalf.meta_group_rank()-criteria)*128+lane + blockIdx.x * blockDim.x;
+    //     int2 res;
+    //     res = queue.pop(lanerel);
+    //     if (res.x < 0) return;
+
+  
+    //     const MiniBox& a = mini[res.x];
+    //     const MiniBox& b = mini[res.y];
+    
+    //     if ( does_collide(a,b) 
+    //             && !covertex(a.vertexIds, b.vertexIds)
+    //     ){
+    //         add_overlap(res.x, res.y, count, overlaps, guess);
+    //     }
+    // // }
+    // }   
+
 }
 
 
