@@ -388,8 +388,8 @@ __global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * ov
                 const MiniBox& ax = mini[res.x];
                 const MiniBox& bx = mini[res.y];
             
-                if ( does_collide(ax,bx) 
-                        && !covertex(ax.vertexIds, bx.vertexIds)
+                if ( does_collide(ax,bx) && is_valid_pair(ax.vertexIds, bx.vertexIds)
+                        && !covertex(ax.vertexIds, bx.vertexIds) 
                 ){
                     add_overlap(res.x, res.y, count, overlaps, guess);
                 }
