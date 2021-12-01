@@ -745,7 +745,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
 
 }
 
-void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int2* d_overlaps, int& threads, int & devcount)
+void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>& finOverlaps, int2* d_overlaps, int * d_count, int& threads, int & devcount)
 {
  
     int device_init_id = 0;
@@ -828,7 +828,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
 
     int count = 200*N;
 
-    int * d_count;
+    // int * d_count;
     cudaMalloc((void**)&d_count, sizeof(int));
     cudaMemset(d_count, 0, sizeof(int));
 

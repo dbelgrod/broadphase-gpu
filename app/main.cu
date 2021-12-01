@@ -93,9 +93,10 @@ int main( int argc, char **argv )
     printf("Boxes (N): %i\n", N);
     vector<pair<int,int>> overlaps;
     int2 * d_overlaps; //device
+    int * d_count; //device
 
     if (evenworkload)
-        run_sweep_pieces(boxes.data(), N, nbox, overlaps, d_overlaps, parallel, devcount);
+        run_sweep_pieces(boxes.data(), N, nbox, overlaps, d_overlaps, d_count, parallel, devcount);
     else if (pairing)
         run_sweep_pairing(boxes.data(), N, nbox, overlaps, d_overlaps, parallel, devcount);
     else if (quantumspeed)
