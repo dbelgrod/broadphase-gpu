@@ -4,11 +4,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <cfloat>
+#include <cfenv>
 #include <vector>
+#include <functional>
 #include <Eigen/Core>
 
 
 using namespace std;
+using namespace std::placeholders;
 
 typedef enum { VERTEX, FACE, EDGE }  Simplex;
 typedef enum { x, y, z }  Dimension;
