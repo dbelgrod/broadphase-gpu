@@ -20,6 +20,7 @@ src/sweep.cu
 src/sweep.cuh
 # src/klee.cu
 # src/klee.cuh
+src/util.cu
 src/util.cuh
 src/queue.cu
 src/queue.cuh
