@@ -2,6 +2,8 @@
 
 #include <gpubf/aabb.cuh>
 
+using namespace ccdgpu;
+
 void constructBoxes
 (
     Eigen::MatrixXd& vertices_t0, 

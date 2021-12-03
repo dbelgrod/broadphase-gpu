@@ -1,5 +1,7 @@
 #include <gpubf/aabb.cuh>
 
+namespace ccdgpu { 
+
 __host__ __device__ bool is_face(const Aabb& x)
 {
     return x.vertexIds.z >= 0;
@@ -130,3 +132,4 @@ void addFaces
     }
 };
 
+} //namespace ccdgpu

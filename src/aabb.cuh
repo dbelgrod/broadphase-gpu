@@ -18,6 +18,7 @@ typedef enum { VERTEX, FACE, EDGE }  Simplex;
 typedef enum { x, y, z }  Dimension;
 typedef unsigned long long int ull;
 
+namespace ccdgpu { 
 
 __global__ class Aabb {
     public:
@@ -138,3 +139,5 @@ public:
     ull rank_y;
     ull rank_c;
 };
+
+} //namespace ccdgpu
