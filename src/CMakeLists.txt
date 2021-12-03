@@ -25,6 +25,7 @@ src/queue.cu
 src/queue.cuh
 # src/object.cuh
 src/io.cuh
+src/io.cu
 src/timer.cuh
 
 PARENT_SCOPE
