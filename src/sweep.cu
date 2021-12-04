@@ -4,6 +4,7 @@
 #include <gpubf/sweep.cuh>
 
 
+using namespace ccdgpu;
 
 __global__ void build_index(Aabb * boxes, int N, int* index)
 {

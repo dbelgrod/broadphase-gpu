@@ -7,9 +7,6 @@
 // #include <cuda.h>
 // #include <cuda_runtime.h>
 
-#include <igl/readOBJ.h>
-#include <igl/readPLY.h>
-#include <igl/edges.h>
 
 #include <gpubf/simulation.cuh>
 #include <gpubf/groundtruth.cuh>
@@ -18,6 +15,7 @@
 #include <gpubf/io.cuh>
 
 using namespace std;
+using namespace ccdgpu;
 
 bool is_file_exist(const char *fileName)
 {

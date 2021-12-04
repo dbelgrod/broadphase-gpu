@@ -90,6 +90,8 @@ __host__ __device__ bool is_edge(const int3& vids);
 __host__ __device__ bool is_vertex(const int3& vids);
 __host__ __device__ bool is_valid_pair(const int3& a, const int3& b);
 
+} //namespace ccdgpu
+
 __global__ class MiniBox  {
     public:
         float2 min; //only y,z coord
@@ -134,10 +136,9 @@ __global__ class SortedMin {
 
 __global__ class RankBox {
 public:
-    Aabb * aabb;
+    ccdgpu::Aabb * aabb;
     ull rank_x;
     ull rank_y;
     ull rank_c;
 };
 
-} //namespace ccdgpu

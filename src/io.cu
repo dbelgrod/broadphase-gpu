@@ -3,6 +3,8 @@
 #include <igl/readPLY.h>
 #include <igl/edges.h>
 
+using namespace ccdgpu;
+
 void constructBoxes
 (
     Eigen::MatrixXd& vertices_t0, 

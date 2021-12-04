@@ -11,7 +11,7 @@ set(GPUBF_SOURCES
 src/aabb.cuh
 src/aabb.cu
 src/collision.cu
-src/collision.h
+src/collision.cuh
 src/simulation.cu
 src/simulation.cuh
 src/groundtruth.cu

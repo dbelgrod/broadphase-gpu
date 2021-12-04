@@ -2,7 +2,7 @@
 
 #include <gpubf/aabb.cuh>
 
-using namespace ccdgpu;
+// using namespace ccdgpu;
 
 void constructBoxes
 (
@@ -10,7 +10,7 @@ void constructBoxes
     Eigen::MatrixXd& vertices_t1, 
     Eigen::MatrixXi& faces, 
     Eigen::MatrixXi& edges, 
-    vector<Aabb>& boxes
+    vector<ccdgpu::Aabb>& boxes
 );
 
 void parseMesh(

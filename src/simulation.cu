@@ -4,7 +4,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 
-
+using namespace ccdgpu;
 
 #include <cmath>
 

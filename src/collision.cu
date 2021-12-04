@@ -1,8 +1,9 @@
-#include <gpubf/collision.h>
+#include <gpubf/collision.cuh>
 
 // #include <cooperative_groups.h>
 // using namespace cooperative_groups;
 
+using namespace ccdgpu;
 
 __global__ void count_collisions(Aabb * boxes, int * count, int N){
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
