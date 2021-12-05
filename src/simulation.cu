@@ -826,7 +826,7 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     gpuErrchk( cudaGetLastError() );
 
 
-    int count = 200*N;
+    int count = 0*N;
 
     // int * d_count;
     cudaMalloc((void**)&d_count, sizeof(int));
@@ -835,14 +835,14 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     // int2 * d_overlaps;
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*count);
 
-    // twostage_queue<<<grid,block>>>(d_sm, d_mini, d_overlaps, N, d_count, count);
-    // cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-    // gpuErrchk(cudaDeviceSynchronize());
-    // printf("1st count for device %i:  %i\n", device_init_id, count);
+    recordLaunch<float3 *, const MiniBox *, int2 *, int, int *, int, int, int>("twostage_queue_1st", 2*grid_dim_1d, threads,twostage_queue, d_sm, d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
+    gpuErrchk(cudaDeviceSynchronize());
+    cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("1st count for device %i:  %i\n", device_init_id, count);
 
     cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); 
     cudaMemset(d_count, 0, sizeof(int));
-    recordLaunch<float3 *, const MiniBox *, int2 *, int, int *, int, int, int>("twostage_queue", 2*grid_dim_1d, threads,twostage_queue, d_sm, d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
+    recordLaunch<float3 *, const MiniBox *, int2 *, int, int *, int, int, int>("twostage_queue_2nd", 2*grid_dim_1d, threads,twostage_queue, d_sm, d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
 
     gpuErrchk(cudaDeviceSynchronize());
     gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
