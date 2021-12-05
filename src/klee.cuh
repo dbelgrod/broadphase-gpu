@@ -5,7 +5,7 @@
 
 
 #include <gpubf/aabb.cuh>
-#include <gpubf/collision.h>
+#include <gpubf/collision.cuh>
 #include <gpubf/queue.cuh>
 // #include <gpubf/util.cuh>
 

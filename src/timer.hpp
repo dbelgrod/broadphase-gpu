@@ -175,4 +175,16 @@ namespace ccd
     timeval endCount;
 #endif
   };
+
+template <typename... Arguments>
+void recordLaunch(char* tag, void(*f)(Arguments...), Arguments... args) {
+      Timer timer;
+      timer.start();
+      f(args...);
+      timer.stop();
+      double elapsed = 0;
+      elapsed += timer.getElapsedTimeInMicroSec();
+      printf("%s : %.6f ms\n", tag, elapsed );
+};
+
 }
