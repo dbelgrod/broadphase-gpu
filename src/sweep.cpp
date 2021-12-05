@@ -123,9 +123,9 @@ void run_sweep_cpu(
     int N, int numBoxes, 
     vector<unsigned long>& finOverlaps)
 {
-    vector<Aabb> og_boxes;
-    og_boxes.reserve(N);
-    copy(boxes.begin(), boxes.end(), og_boxes.begin());
+    vector<Aabb> boxes_cpy;
+    boxes_cpy.reserve(N);
+    copy(boxes.begin(), boxes.end(), boxes_cpy.begin());
     // for(int i=0; i<N; ++i)
     //     og_boxes[i] = boxes[i];
     // sort boxes by xaxis in parallel
@@ -156,22 +156,22 @@ void run_sweep_cpu(
         // finOverlaps.push_back(overlaps[i].y);
         
         // need to fetch where box is from index first
-        const Aabb& a = og_boxes[overlaps[i].first];
-        const Aabb& b = og_boxes[overlaps[i].second];
+        const Aabb& a = boxes_cpy[overlaps[i].first];
+        const Aabb& b = boxes_cpy[overlaps[i].second];
         if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
         {
-            finOverlaps.push_back(a.ref_id);
-            finOverlaps.push_back(b.ref_id);
+            finOverlaps.push_back(overlaps[i].first);
+            finOverlaps.push_back(overlaps[i].second);
         }
         else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
         {
-            finOverlaps.push_back(b.ref_id);
-            finOverlaps.push_back(a.ref_id);
+            finOverlaps.push_back(overlaps[i].second);
+            finOverlaps.push_back(overlaps[i].first);
         }
         else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
         {
-            finOverlaps.push_back(min(a.ref_id, b.ref_id));
-            finOverlaps.push_back(max(a.ref_id, b.ref_id));
+            finOverlaps.push_back(min(overlaps[i].first, overlaps[i].second));
+            finOverlaps.push_back(max(overlaps[i].first, overlaps[i].second));
         }
     }
     printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);

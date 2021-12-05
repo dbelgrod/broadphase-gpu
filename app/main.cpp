@@ -94,18 +94,22 @@ void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
     }
     json j_vec = json::parse(in);
     
-    set<unsigned long> truePositives = j_vec.get<std::set<unsigned long>>();
+    set<pair<long,long>> truePositives;
+    vector<array<long,2>> tmp = j_vec.get<vector<array<long,2>>>();
+    for (auto & arr: tmp)
+        truePositives.emplace(arr[0], arr[1]);
+
 
     // Transform data to cantor
-    set<unsigned long> algoBroadPhase;
+    set<pair<long,long>> algoBroadPhase;
     for (size_t i=0; i < overlaps.size(); i+=2)
     {
-        algoBroadPhase.emplace(cantor(overlaps[i], overlaps[i+1]));
+        algoBroadPhase.emplace(overlaps[i], overlaps[i+1]);
     }
                                                
     // Get intersection of true positive
-    vector<unsigned long> algotruePositives(truePositives.size());
-    vector<unsigned long>::iterator it=std::set_intersection (
+    vector<pair<long,long>> algotruePositives(truePositives.size());
+    vector<pair<long,long>>::iterator it=std::set_intersection (
         truePositives.begin(), truePositives.end(), 
         algoBroadPhase.begin(), algoBroadPhase.end(), algotruePositives.begin());
     algotruePositives.resize(it-algotruePositives.begin());
