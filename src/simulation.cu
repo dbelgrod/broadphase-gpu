@@ -1,4 +1,6 @@
 #include <gpubf/simulation.cuh>
+#include "timer.hpp"
+#include <gpubf/queue.cuh>
 
 
 #include <thrust/sort.h>
@@ -548,7 +550,7 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
     cudaEventRecord(start);
     try{
         // thrust::sort_by_key(thrust::device, d_boxes, d_boxes + N, rank_x, sort_aabb_x() );
-        thrust::sort(thrust::device, d_boxes, d_boxes + N, sort_aabb_x() );
+        thrust::sort(thrust::device, d_boxes, d_boxes + N, sort_aabb_x());
         }
     catch (thrust::system_error &e){
         printf("Error: %s \n",e.what());}
@@ -689,28 +691,23 @@ void run_sweep_multigpu(const Aabb* boxes, int N, int nbox, vector<pair<int, int
         // auto is_edge = [&](Aabb x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0 ;};
         // auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
         
-        
         for (size_t i=0; i < count; i++)
         {
             // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
             // finOverlaps.push_back();
-            
-            Aabb a = boxes[overlaps[i].x];
-            Aabb b = boxes[overlaps[i].y];
-            
+            int aid = overlaps[i].x;
+            int bid = overlaps[i].y;
+            Aabb a = boxes[aid];
+            Aabb b = boxes[bid];
+    
             if (is_vertex(a) && is_face(b)) //vertex, face
-            {
-                local_overlaps.emplace_back(a.ref_id, b.ref_id);
-            }
-            else if (is_face(a) && is_vertex(b))
-            {
-                local_overlaps.emplace_back(b.ref_id, a.ref_id);
-            }
+                local_overlaps.emplace_back(aid, bid);
             else if (is_edge(a) && is_edge(b))
-            {
-                local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
-            }
+                local_overlaps.emplace_back(min(aid, bid), max(aid,bid));
+            else if (is_face(a) && is_vertex(b))
+                local_overlaps.emplace_back(bid, aid);
         }
+        
         
         printf("Total(filt.) overlaps for devid %i: %i\n", device_id, local_overlaps.size());
         // delete [] overlaps;
@@ -767,6 +764,8 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
     printf("Box size: %i\n", sizeof(Aabb));
     // printf("MiniBox size: %i\n", sizeof(MiniBox));
     printf("float3 size: %i\n", sizeof(float3));
+    printf("sizeof(queue) size: %i\n", sizeof(Queue));
+    
     
     // float3 * d_sortedmin;
     // cudaMalloc((void**)&d_sortedmin, sizeof(float3)*N);
@@ -977,27 +976,27 @@ void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int, int>
      auto is_vertex = [&](Aabb x){return x.vertexIds.z < 0  && x.vertexIds.y < 0;};
      
      
-     for (size_t i=0; i < count; i++)
-     {
-         // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
-         // finOverlaps.push_back();
+    //  for (size_t i=0; i < count; i++)
+    //  {
+    //      // local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
+    //      // finOverlaps.push_back();
          
-         Aabb a = boxes[overlaps[i].x];
-         Aabb b = boxes[overlaps[i].y];
+    //      Aabb a = boxes[overlaps[i].x];
+    //      Aabb b = boxes[overlaps[i].y];
          
-         if (is_vertex(a) && is_face(b)) //vertex, face
-         {
-             local_overlaps.emplace_back(a.ref_id, b.ref_id);
-         }
-         else if (is_face(a) && is_vertex(b))
-         {
-             local_overlaps.emplace_back(b.ref_id, a.ref_id);
-         }
-         else if (is_edge(a) && is_edge(b))
-         {
-             local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
-         }
-     }
+    //      if (is_vertex(a) && is_face(b)) //vertex, face
+    //      {
+    //          local_overlaps.emplace_back(a.ref_id, b.ref_id);
+    //      }
+    //      else if (is_face(a) && is_vertex(b))
+    //      {
+    //          local_overlaps.emplace_back(b.ref_id, a.ref_id);
+    //      }
+    //      else if (is_edge(a) && is_edge(b))
+    //      {
+    //          local_overlaps.emplace_back(min(a.ref_id, b.ref_id), max(a.ref_id, b.ref_id));
+    //      }
+    //  }
      
      printf("Total(filt.) overlaps for devid %i: %i\n", 0, local_overlaps.size());
 }

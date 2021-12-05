@@ -14,7 +14,7 @@
 using namespace std;
 using namespace std::placeholders;
 
-typedef enum { VERTEX, FACE, EDGE }  Simplex;
+// typedef enum { VERTEX, FACE, EDGE }  Simplex;
 typedef enum { x, y, z }  Dimension;
 typedef unsigned long long int ull;
 
@@ -39,7 +39,7 @@ __global__ class Aabb {
         //     memcpy(min,tempmin, sizeof(half)*3);
         // };
 
-        Aabb(int assignid, int reference_id, Simplex assigntype, int * vids, float* tempmin, float* tempmax)
+        Aabb(int assignid, int reference_id, int * vids, float* tempmin, float* tempmax)
         {
             min = make_float3(tempmin[0], tempmin[1], tempmin[2]);
             max = make_float3(tempmax[0], tempmax[1], tempmax[2]);

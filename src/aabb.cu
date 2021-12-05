@@ -73,7 +73,7 @@ void addEdges
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down).cast<float>();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up).cast<float>();
-        boxes.emplace_back(boxes.size(), i, Simplex::EDGE, vertexIds, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -96,7 +96,7 @@ void addVertices
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down).cast<float>();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up).cast<float>();
-        boxes.emplace_back(boxes.size(), i, Simplex::VERTEX, vertexIds, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 }
 
@@ -128,7 +128,7 @@ void addFaces
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down).cast<float>();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up).cast<float>();;
-        boxes.emplace_back(boxes.size(), i, Simplex::FACE, vertexIds, lower_bound.array().data(), upper_bound.array().data());
+        boxes.emplace_back(boxes.size(), i, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 };
 
