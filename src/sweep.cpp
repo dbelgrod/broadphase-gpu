@@ -16,6 +16,29 @@
 
 // typedef StructAlignment(32) std::array<_simd, 6> SimdObject;
 
+bool is_face(const int* vids)
+{
+    return vids[2] >= 0;
+};
+
+
+bool is_edge(const int* vids)
+{
+    return vids[2] < 0 && vids[1] >= 0 ;
+};
+
+bool is_vertex(const int* vids)
+{
+    return vids[2] < 0  && vids[1] < 0;
+};
+
+bool is_valid_pair(const int* a, const int* b)
+{
+    return (is_vertex(a) && is_face(b)) ||
+        (is_face(a) && is_vertex(b)) ||
+        (is_edge(a) && is_edge(b));
+};
+
 bool does_collide(const Aabb& a, const Aabb& b)
 {
     return 
@@ -99,7 +122,7 @@ void sweep(const vector<Aabb> &boxes, const vector<int>& box_indices, vector<std
             while (a.max[0]  >= b.min[0] ) //&& inc-i <=1)
             {
                 if (
-                    does_collide(a,b) &&
+                    does_collide(a,b) && is_valid_pair(a.vertexIds, b.vertexIds) &&
                     !covertex(a.vertexIds, b.vertexIds)
                     )
                     {
@@ -121,13 +144,13 @@ void sweep(const vector<Aabb> &boxes, const vector<int>& box_indices, vector<std
 void run_sweep_cpu(
     vector<Aabb>& boxes, 
     int N, int numBoxes, 
-    vector<unsigned long>& finOverlaps)
+    vector<pair<long,long>>& finOverlaps)
 {
     vector<Aabb> boxes_cpy;
     boxes_cpy.reserve(N);
-    copy(boxes.begin(), boxes.end(), boxes_cpy.begin());
-    // for(int i=0; i<N; ++i)
-    //     og_boxes[i] = boxes[i];
+    // copy(boxes.begin(), boxes.end(), boxes_cpy.begin());
+    for(int i=0; i<N; ++i)
+        boxes_cpy.push_back(boxes[i]);
     // sort boxes by xaxis in parallel
     // we will need an index vector
     vector<int> box_indices;
@@ -135,14 +158,14 @@ void run_sweep_cpu(
     for (int i=0;i<N;i++) {box_indices.push_back(i);}
 
     printf("Running sort\n");
-    sort_along_xaxis(boxes, box_indices, N);
+    sort_along_xaxis(boxes_cpy, box_indices, N);
     printf("Finished sort\n");
 
     std::vector<std::pair<int,int>> overlaps;
       
     ccd::Timer timer;
     timer.start();
-    sweep(boxes, box_indices, overlaps, N);
+    sweep(boxes_cpy, box_indices, overlaps, N);
     timer.stop();
     double total_time = 0;
     total_time += timer.getElapsedTimeInMicroSec();
@@ -152,29 +175,22 @@ void run_sweep_cpu(
 
     for (size_t i=0; i < overlaps.size(); i++)
     {
-        // finOverlaps.push_back(overlaps[i].x);
-        // finOverlaps.push_back(overlaps[i].y);
-        
+       
         // need to fetch where box is from index first
-        const Aabb& a = boxes_cpy[overlaps[i].first];
-        const Aabb& b = boxes_cpy[overlaps[i].second];
-        if (a.type == Simplex::VERTEX && b.type == Simplex::FACE)
+        const Aabb& a = boxes[overlaps[i].first];
+        const Aabb& b = boxes[overlaps[i].second];
+        if (is_vertex(a.vertexIds) && is_face(b.vertexIds))
+            finOverlaps.emplace_back(overlaps[i].first, overlaps[i].second);
+        else if (is_face(a.vertexIds) && is_vertex(b.vertexIds))
+            finOverlaps.emplace_back(overlaps[i].second, overlaps[i].first);
+        else if (is_edge(a.vertexIds) && is_edge(b.vertexIds))
         {
-            finOverlaps.push_back(overlaps[i].first);
-            finOverlaps.push_back(overlaps[i].second);
-        }
-        else if (a.type == Simplex::FACE && b.type == Simplex::VERTEX)
-        {
-            finOverlaps.push_back(overlaps[i].second);
-            finOverlaps.push_back(overlaps[i].first);
-        }
-        else if (a.type == Simplex::EDGE && b.type == Simplex::EDGE)
-        {
-            finOverlaps.push_back(min(overlaps[i].first, overlaps[i].second));
-            finOverlaps.push_back(max(overlaps[i].first, overlaps[i].second));
+            int minnow = min(overlaps[i].first, overlaps[i].second);
+            int maxxer = max(overlaps[i].first, overlaps[i].second);
+            finOverlaps.emplace_back(minnow, maxxer);
         }
     }
-    printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
+    printf("Total(filt.) overlaps: %lu\n", finOverlaps.size());
     // delete[] box_indices; 
     // delete[] og_boxes; 
 }

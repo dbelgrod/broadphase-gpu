@@ -76,14 +76,10 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
     constructBoxes(V0, V1, F, E, boxes);
 }
 
-// https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
-unsigned long cantor(unsigned long x, unsigned long y)
-{
-    return (x + y)*(x + y + 1) / 2 + y;
-}
 
 
-void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
+
+void compare_mathematica(vector<pair<long,long>> overlaps, const char* jsonPath)
 {
     // Get from file
     ifstream in(jsonPath);
@@ -102,9 +98,9 @@ void compare_mathematica(vector<unsigned long> overlaps, const char* jsonPath)
 
     // Transform data to cantor
     set<pair<long,long>> algoBroadPhase;
-    for (size_t i=0; i < overlaps.size(); i+=2)
+    for (size_t i=0; i < overlaps.size(); i++)
     {
-        algoBroadPhase.emplace(overlaps[i], overlaps[i+1]);
+        algoBroadPhase.emplace(overlaps[i].first, overlaps[i].second);
     }
                                                
     // Get intersection of true positive
@@ -160,7 +156,7 @@ int main( int argc, char **argv )
     tbb::task_scheduler_init init(parallel);
     printf("Running with %i threads\n", parallel);
 
-    vector<unsigned long> overlaps;
+    vector<pair<long,long>> overlaps;
     // printf("Running sweep\n");
     run_sweep_cpu(boxes, N, nbox, overlaps);
     for (auto i : compare)

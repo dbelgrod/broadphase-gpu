@@ -8,4 +8,4 @@ using namespace std;
 void run_sweep_cpu(
     vector<Aabb>& boxes, 
     int N, int numBoxes, 
-    vector<unsigned long>& finOverlaps);
+    vector<pair<long,long>>& finOverlaps);

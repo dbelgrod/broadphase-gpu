@@ -21,7 +21,7 @@ void addEdges
         points.row(2) = edge_vertex0_t1;
         points.row(3) = edge_vertex1_t1;
 
-        int vertexIds[3] = {edges(i,0), edges(i,1), edges(i,0)};
+        int vertexIds[3] = {edges(i,0), edges(i,1), -edges(i,0)-1};
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
@@ -44,7 +44,7 @@ void addVertices
         points.row(0) = vertex_t0;
         points.row(1) = vertex_t1;
 
-        int vertexIds[3] = {i, i, i};
+        int vertexIds[3] = {i, -i-1, -i-1};
 
         Eigen::MatrixXf lower_bound = points.colwise().minCoeff();
         Eigen::MatrixXf upper_bound = points.colwise().maxCoeff();
