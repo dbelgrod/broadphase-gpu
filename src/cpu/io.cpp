@@ -22,6 +22,7 @@
 
 using namespace std;
 
+namespace ccdcpu {
 
 void constructBoxes
 (
@@ -63,3 +64,5 @@ void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes)
     // faces should be same F^{t=0} = F^{t=1}
     constructBoxes(V0, V1, F, E, boxes);
 }
+
+} //namespace

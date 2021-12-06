@@ -13,6 +13,7 @@
 #include <vector>       // std::vector
 #include <execution> 
 
+namespace ccdcpu {
 
 // typedef StructAlignment(32) std::array<_simd, 6> SimdObject;
 
@@ -199,4 +200,4 @@ void run_sweep_cpu(
 
     // #pragma omp parallel for num_threads(num_threads),reduction(+:m_narrowPhase), reduction(merge:narrowPhaseValues)
 
-    
+} //namespace

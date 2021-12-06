@@ -9,6 +9,8 @@
 
 using namespace std;
 
+namespace ccdcpu {
+
 typedef enum { VERTEX, FACE, EDGE }  Simplex;
 
 class Aabb {
@@ -70,3 +72,5 @@ void addFaces
     Eigen::MatrixXi& faces, 
     vector<Aabb>& boxes
 );
+
+} //namespace

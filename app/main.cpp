@@ -26,6 +26,7 @@ using json = nlohmann::json;
 #include <tbb/enumerable_thread_specific.h>
 
 using namespace std;
+using namespace ccdcpu;
 
 void compare_mathematica(vector<pair<long,long>> overlaps, const char* jsonPath)
 {

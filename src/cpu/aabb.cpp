@@ -1,5 +1,6 @@
 #include "aabb.h"
 
+namespace ccdcpu {
 
 void addEdges
 (
@@ -83,4 +84,6 @@ void addFaces
         boxes.emplace_back(boxes.size(), i, Simplex::FACE, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 };
+
+} //namespace
 

@@ -16,11 +16,13 @@
 #include <set>
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json.hpp>
+// #include <nlohmann/json.hpp>
 
 #include <gpubf/aabb.h>
 
 using namespace std;
+
+namespace ccdcpu {
 
 void constructBoxes
 (
@@ -32,3 +34,5 @@ void constructBoxes
 );
 
 void parseMesh(const char* filet0, const char* filet1, vector<Aabb>& boxes);
+
+} //namespace
