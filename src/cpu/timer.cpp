@@ -15,6 +15,11 @@ struct Record
 
       Record(){};
 
+      Record(json & jtmp)
+      {
+          j_object = jtmp;
+      };
+
       void Start(char * s)
       {
             tag = s;
