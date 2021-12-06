@@ -62,7 +62,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_11)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
 # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas -O3,-v -use_fast_math -maxrregcount 24")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math --expt-relaxed-constexpr -Xptxas -O3,-v")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math --expt-relaxed-constexpr  -gencode arch=compute_86,code=sm_86")
 
 # We need to explicitly state that we need all CUDA files in the GPUBF
 # library to be built with -dc as the member functions could be called by
@@ -128,8 +128,14 @@ target_compile_options(GPUBF_bin PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 ################################################################################
 # C++ code
 ################################################################################
-add_executable(cpusweep_bin app/main.cpp src/sweep.cpp src/aabb.cpp)
-add_library(CPUSWEEP STATIC src/sweep.cpp src/aabb.cpp src/aabb.h src/timer.hpp)
+add_executable(cpusweep_bin app/main.cpp)
+prepend_current_path(CPUSWEEP_SOURCES)
+message(STATUS "foo include dir: ${CPUSWEEP_SOURCES}")
+gpubf_copy_headers(${CPUSWEEP_SOURCES})
+gpubf_set_source_group(${CPUSWEEP_SOURCES})
+add_library(CPUSWEEP STATIC ${CPUSWEEP_SOURCES} )
+target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
+
 # target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_link_libraries(CPUSWEEP PRIVATE warnings::all)
 target_compile_definitions(CPUSWEEP PUBLIC NOMINMAX)
@@ -149,5 +155,6 @@ target_link_libraries(CPUSWEEP PUBLIC igl::core)
 # JSON
 target_link_libraries(CPUSWEEP PUBLIC nlohmann_json::nlohmann_json)
 
+# target_link_libraries(CPUSWEEP PUBLIC_HEADER ${PROJECT_NAME})
 
 target_link_libraries(cpusweep_bin PRIVATE CPUSWEEP)

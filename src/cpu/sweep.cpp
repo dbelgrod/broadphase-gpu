@@ -1,5 +1,5 @@
-#include "aabb.h"
-#include "timer.hpp"
+#include <gpubf/aabb.h>
+#include <gpubf/timer.hpp>
 
 #include <tbb/mutex.h>
 #include <tbb/parallel_for.h>

@@ -1,5 +1,4 @@
 #include <gpubf/simulation.cuh>
-#include "timer.hpp"
 #include <gpubf/queue.cuh>
 
 
@@ -809,6 +808,8 @@ void run_sweep_pieces(const Aabb* boxes, int N, int nbox, vector<pair<int, int>>
         axis = y;
     else 
         axis = z;
+    //hack
+    axis = x;
 
     printf("Axis: %s\n", axis == x ? "x" : (axis == y ? "y" : "z"));
 

@@ -34,3 +34,16 @@ PARENT_SCOPE
 ################################################################################
 # Subfolders
 ################################################################################
+
+# add_subdirectory(cpu)
+set(CPUSWEEP_SOURCES
+  src/cpu/aabb.cpp
+  src/cpu/aabb.h
+  src/cpu/io.cpp
+  src/cpu/io.hpp
+  src/cpu/sweep.cpp
+  src/cpu/sweep.h
+  src/cpu/timer.hpp
+
+  PARENT_SCOPE
+)
