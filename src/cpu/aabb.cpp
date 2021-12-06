@@ -1,4 +1,4 @@
-#include "aabb.h"
+#include <gpubf/aabb.hpp>
 
 namespace ccdcpu {
 

@@ -15,9 +15,9 @@
 // for convenience
 using json = nlohmann::json;
 
-#include <gpubf/aabb.h>
+#include <gpubf/aabb.hpp>
 #include <gpubf/io.hpp>
-#include <gpubf/sweep.h>
+#include <gpubf/sweep.hpp>
 
 #include <tbb/mutex.h>
 #include <tbb/parallel_for.h>
@@ -26,7 +26,7 @@ using json = nlohmann::json;
 #include <tbb/enumerable_thread_specific.h>
 
 using namespace std;
-using namespace ccdcpu;
+// using namespace ccdcpu;
 
 void compare_mathematica(vector<pair<long,long>> overlaps, const char* jsonPath)
 {
@@ -71,8 +71,8 @@ int main( int argc, char **argv )
     const char* filet0 = argv[1];
     const char* filet1 = argv[2];
     
-    vector<Aabb> boxes;
-    parseMesh(filet0, filet1, boxes);
+    vector<ccdcpu::Aabb> boxes;
+    ccdcpu::parseMesh(filet0, filet1, boxes);
     int N = boxes.size();
     int nbox = 0;
     

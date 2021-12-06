@@ -18,7 +18,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-#include <gpubf/aabb.h>
+#include <gpubf/aabb.hpp>
 
 using namespace std;
 

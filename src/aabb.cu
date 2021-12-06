@@ -1,5 +1,8 @@
 #include <gpubf/aabb.cuh>
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 namespace ccdgpu { 
 
 __host__ __device__ bool is_face(const Aabb& x)

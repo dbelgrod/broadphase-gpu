@@ -1,6 +1,6 @@
 #pragma once
 
-#include "aabb.h"
+#include <gpubf/aabb.hpp>
 #include <vector>
 
 using namespace std;
