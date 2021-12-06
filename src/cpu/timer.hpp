@@ -16,8 +16,8 @@
 #pragma once
 
 #include <iostream>
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+// #include <nlohmann/json.hpp>
+// using json = nlohmann::json;
 
 #ifdef WIN32   // Windows system specific
 #include <windows.h>

@@ -19,6 +19,11 @@ using json = nlohmann::json;
 #include <gpubf/io.hpp>
 #include <gpubf/sweep.hpp>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+#include <gpubf/timer.hpp>
+
 #include <tbb/mutex.h>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
