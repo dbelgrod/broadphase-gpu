@@ -16,8 +16,8 @@ typedef enum { VERTEX, FACE, EDGE }  Simplex;
 class Aabb {
     public:
         // int id;
-        float min[3];
-        float max[3];
+        double min[3];
+        double max[3];
         int vertexIds[3];
         unsigned long ref_id;
         Simplex type;
@@ -32,7 +32,7 @@ class Aabb {
         //     memcpy(min,tempmin, sizeof(half)*3);
         // };
 
-        Aabb(int assignid, unsigned long reference_id, Simplex assigntype, int * vids, float* tempmin, float* tempmax)
+        Aabb(int assignid, unsigned long reference_id, Simplex assigntype, int * vids, double* tempmin, double* tempmax)
         {
             for (size_t i = 0; i < 3; i++)
             {
