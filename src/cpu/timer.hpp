@@ -14,6 +14,7 @@
 // clang-format off
 
 #pragma once
+#include <stdio.h>
 
 #ifdef WIN32   // Windows system specific
 #include <windows.h>

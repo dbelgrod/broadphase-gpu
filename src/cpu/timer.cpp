@@ -1,6 +1,9 @@
 #include <gpubf/timer.hpp>
 #include <iostream>
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
+
+using namespace std;
 
 namespace ccd {
 
