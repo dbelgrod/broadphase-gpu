@@ -49,8 +49,8 @@ __host__ __device__ bool is_valid_pair(const int3& a, const int3& b)
         (is_edge(a) && is_edge(b));
 };
 
-double nextafter_up(double x){return nextafter(x, x+1.);};
-double nextafter_down(double x){return nextafter(x, x-1.);};
+float nextafter_up(float x){return nextafterf(x, x+1.);};
+float nextafter_down(float x){return nextafterf(x, x-1.);};
 
 void addEdges
 (
@@ -74,8 +74,8 @@ void addEdges
 
         int vertexIds[3] = {edges(i,0), edges(i,1), -edges(i,0)-1};
 
-        Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down).cast<float>();
-        Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up).cast<float>();
+        Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down);
+        Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up);
         boxes.emplace_back(boxes.size(), i, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 }
@@ -97,8 +97,8 @@ void addVertices
 
         int vertexIds[3] = {i, -i-1, -i-1};
 
-        Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down).cast<float>();
-        Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up).cast<float>();
+        Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down);
+        Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up);
         boxes.emplace_back(boxes.size(), i, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 }
@@ -129,8 +129,8 @@ void addFaces
 
         int vertexIds[3] = {faces(i,0), faces(i,1), faces(i,2)};
 
-        Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down).cast<float>();
-        Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up).cast<float>();;
+        Eigen::MatrixXf lower_bound = points.colwise().minCoeff().unaryExpr(&nextafter_down);
+        Eigen::MatrixXf upper_bound = points.colwise().maxCoeff().unaryExpr(&nextafter_up);
         boxes.emplace_back(boxes.size(), i, vertexIds, lower_bound.array().data(), upper_bound.array().data());
     }
 };
