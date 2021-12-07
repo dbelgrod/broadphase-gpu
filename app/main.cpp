@@ -10,7 +10,10 @@
 #include <set>
 #include <fstream>
 #include <iostream>
+#include <chrono>
+#include <ctime>
 #include <nlohmann/json.hpp>
+
 
 // for convenience
 using json = nlohmann::json;
@@ -104,6 +107,7 @@ int main( int argc, char **argv )
                 break;
         }
     }
+    auto start = std::chrono::system_clock::now();
     cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
     tbb::task_scheduler_init init(parallel);
     printf("Running with %i threads\n", parallel);
@@ -111,6 +115,9 @@ int main( int argc, char **argv )
     vector<pair<long,long>> overlaps;
     // printf("Running sweep\n");
     run_sweep_cpu(boxes, N, nbox, overlaps);
+    auto stop = std::chrono::system_clock::now();
+    double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    printf("Elapsed time: %.1f ms\n", elapsed);
     for (auto i : compare)
     {
         printf("%s\n", i );
