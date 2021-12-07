@@ -44,7 +44,6 @@ set(CPUSWEEP_SOURCES
   src/cpu/sweep.cpp
   src/cpu/sweep.hpp
   src/cpu/timer.hpp
-  src/cpu/timer.cpp
 
   PARENT_SCOPE
 )

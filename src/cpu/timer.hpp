@@ -15,6 +15,12 @@
 
 #pragma once
 #include <stdio.h>
+#include <iostream>
+
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+
 
 #ifdef WIN32   // Windows system specific
 #include <windows.h>
@@ -188,4 +194,54 @@ void recordLaunch(char* tag, void(*f)(Arguments...), Arguments... args) {
       printf("%s : %.6f ms\n", tag, elapsed );
 };
 
-}
+
+
+
+
+} // namespace
+
+struct Record
+{
+      ccd::Timer timer;
+      char * tag;
+      json j_object;
+
+      Record(){};
+
+      Record(json & jtmp)
+      {
+          j_object = jtmp;
+      };
+
+      void Start(char * s)
+      {
+            tag = s;
+            timer.start();
+      }
+
+      void Start(char * s, json & jtmp)
+      {
+           j_object = jtmp;
+           Start(s);
+      } 
+
+      void Stop()
+      {
+            timer.stop();
+            double elapsed = 0;
+            elapsed += timer.getElapsedTimeInMicroSec();
+            // j_object[tag]=elapsed;
+            j_object.push_back(json::object_t::value_type(tag, elapsed));
+            printf("%s : %.3f ms\n", tag, elapsed / 1000.f);
+      }
+
+      void Print()
+      {
+            cout << j_object.dump() << endl;  
+      }
+      
+      json Dump()
+      {
+            return j_object;
+      }
+};
