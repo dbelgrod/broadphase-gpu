@@ -43,7 +43,6 @@ set(CPUSWEEP_SOURCES
   src/cpu/io.hpp
   src/cpu/sweep.cpp
   src/cpu/sweep.hpp
-  src/cpu/timer.hpp
 
   PARENT_SCOPE
 )

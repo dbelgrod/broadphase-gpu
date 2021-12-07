@@ -1,5 +1,4 @@
 #include <gpubf/sweep.hpp>
-#include <gpubf/timer.hpp>
 
 
 #include <tbb/mutex.h>
@@ -165,13 +164,7 @@ void run_sweep_cpu(
 
     std::vector<std::pair<int,int>> overlaps;
       
-    ccd::Timer timer;
-    timer.start();
     sweep(boxes_cpy, box_indices, overlaps, N);
-    timer.stop();
-    double total_time = 0;
-    total_time += timer.getElapsedTimeInMicroSec();
-    printf("Elapsed time: %.6f ms\n", total_time / 1000);
     printf("Final count: %i\n", overlaps.size() );
     
 
