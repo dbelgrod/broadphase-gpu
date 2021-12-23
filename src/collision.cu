@@ -76,6 +76,14 @@ __device__ void add_overlap(const int& xid, const int& yid, int * count, int2 * 
     } 
 }
 
+__device__ void append_queue(const int2& checknext, int2 * queue, int * end)
+{
+    // need to make sure we have enough space in queue
+    int i = atomicAdd(end, 1);
+
+    queue[i] = checknext; 
+}
+
 __global__ void get_collision_pairs(Aabb * boxes, int * count, int2 * overlaps, int N, int G, const int nBoxesPerThread, long long * queries)
 {       
         extern __shared__ Aabb s_objects[];

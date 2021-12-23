@@ -429,89 +429,130 @@ __global__ void twostage_queue(float3 * sm, const MiniBox* const mini, int2 * ov
 
 
 
-//////////////
-__global__ void create_rankbox(Aabb * boxes, RankBox * rankboxes, int N)
-{
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+// BigWorkerQueue 
+// we will have int2 queue, int start, int end
+// we keep going start+tid, atomicAdd the end
+// we need to have the sweep function + initially setup first array
 
+__global__ void init_bigworkerqueue(int2 * queue, int N)
+{
+    int tid = threadIdx.x + blockDim.x * blockIdx.x;
     if (tid >= N) return;
 
-    rankboxes[tid].aabb = &boxes[tid];
+    queue[tid] = make_int2(tid, tid + 1);
 }
+
+__global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, int N, int start, int * end, int2 * overlaps)
+{
+    int tid = threadIdx.x + blockDim.x * blockIdx.x;
+    if (tid >= N) return;
+    
+    queue[tid] = make_int2(tid, tid + 1);
+
+    int qid = tid + start;
+
+    int2 check = queue[qid];
+
+    const Aabb& a = boxes[check.x];
+    const Aabb& b = boxes[check.y];
+    
+    if (a.max.x  >= b.min.x) //boxes can touch and collide
+    {
+        if ( does_collide(a,b) 
+            && !covertex(a.vertexIds, b.vertexIds)
+        )
+            add_overlap(a.id, b.id, count, overlaps, guess);
+        
+    int2 checknext = make_int2(check.x, check.y+1);   
+    append_queue(checknext, queue, end);     
+    }
+}
+
+
+
+//////////////
+// __global__ void create_rankbox(Aabb * boxes, RankBox * rankboxes, int N)
+// {
+//     int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+//     if (tid >= N) return;
+
+//     rankboxes[tid].aabb = &boxes[tid];
+// }
     
 
-__global__ void register_rank_x(RankBox * rankboxes, int N)
-{
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= N) return;
-    rankboxes[tid].rank_x = tid;
-}
+// __global__ void register_rank_x(RankBox * rankboxes, int N)
+// {
+//     int tid = threadIdx.x + blockIdx.x * blockDim.x;
+//     if (tid >= N) return;
+//     rankboxes[tid].rank_x = tid;
+// }
 
-__global__ void register_rank_y(RankBox * rankboxes, int N)
-{
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= N) return;
-    rankboxes[tid].rank_y = tid;
-}
+// __global__ void register_rank_y(RankBox * rankboxes, int N)
+// {
+//     int tid = threadIdx.x + blockIdx.x * blockDim.x;
+//     if (tid >= N) return;
+//     rankboxes[tid].rank_y = tid;
+// }
 
-__device__ ull cantor(ull x, ull y)
-{
-    return (x+y)/2 * (x+y+1) + y;
-}
+// __device__ ull cantor(ull x, ull y)
+// {
+//     return (x+y)/2 * (x+y+1) + y;
+// }
 
-__global__ void assign_rank_c(RankBox * rankboxes, int N)
-{
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= N) return;
-    rankboxes[tid].rank_c = cantor(rankboxes[tid].rank_x, rankboxes[tid].rank_y);
-}
+// __global__ void assign_rank_c(RankBox * rankboxes, int N)
+// {
+//     int tid = threadIdx.x + blockIdx.x * blockDim.x;
+//     if (tid >= N) return;
+//     rankboxes[tid].rank_c = cantor(rankboxes[tid].rank_x, rankboxes[tid].rank_y);
+// }
 
-__global__ void build_checker2(const RankBox * const rankboxes, int2 * overlaps, int N, int * count, int guess)
-{
-    extern __shared__ RankBox s_rank[];
+// __global__ void build_checker2(const RankBox * const rankboxes, int2 * overlaps, int N, int * count, int guess)
+// {
+//     extern __shared__ RankBox s_rank[];
 
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    int ltid = threadIdx.x;
+//     int tid = threadIdx.x + blockIdx.x * blockDim.x;
+//     int ltid = threadIdx.x;
 
-    if (tid >= N) return;
+//     if (tid >= N) return;
 
-    int ntid = tid + 1;
-    int nltid = ltid + 1;
+//     int ntid = tid + 1;
+//     int nltid = ltid + 1;
 
-    if (ntid >= N) return;
+//     if (ntid >= N) return;
 
-    s_rank[ltid] = rankboxes[tid];
+//     s_rank[ltid] = rankboxes[tid];
 
-    __syncthreads();
+//     __syncthreads();
 
-    const RankBox a = s_rank[ltid];
-    RankBox b = rankboxes[ntid]; //nltid < blockDim.x ? s_rank[nltid] : rankboxes[ntid];
+//     const RankBox a = s_rank[ltid];
+//     RankBox b = rankboxes[ntid]; //nltid < blockDim.x ? s_rank[nltid] : rankboxes[ntid];
   
-    while (a.aabb->max.x  >= b.aabb->min.x || a.aabb->max.y  >= b.aabb->min.y) // curr max > following min
-    {
-        if(b.rank_x <= a.rank_x && b.rank_y <= a.rank_y &&
-            // does_collide(a.aabb, b.aabb) &&
-            //  a.aabb->max.z >= b.aabb->min.z && a.aabb->min.z <= b.aabb->max.z &&
-            !covertex(a.aabb->vertexIds, b.aabb->vertexIds)
-        )
-        {
+//     while (a.aabb->max.x  >= b.aabb->min.x || a.aabb->max.y  >= b.aabb->min.y) // curr max > following min
+//     {
+//         if(b.rank_x <= a.rank_x && b.rank_y <= a.rank_y &&
+//             // does_collide(a.aabb, b.aabb) &&
+//             //  a.aabb->max.z >= b.aabb->min.z && a.aabb->min.z <= b.aabb->max.z &&
+//             !covertex(a.aabb->vertexIds, b.aabb->vertexIds)
+//         )
+//         {
             
-            add_overlap(a.aabb->id, b.aabb->id, count, overlaps, guess);
-        }
+//             add_overlap(a.aabb->id, b.aabb->id, count, overlaps, guess);
+//         }
         
-        ntid++;
-        nltid++;
-        if (ntid >= N) return;
-        b =  rankboxes[ntid]; //nltid < blockDim.x ? s_rank[nltid] : rankboxes[ntid];
-    }
-}
+//         ntid++;
+//         nltid++;
+//         if (ntid >= N) return;
+//         b =  rankboxes[ntid]; //nltid < blockDim.x ? s_rank[nltid] : rankboxes[ntid];
+//     }
+// }
 
-__global__ void print_stats(RankBox * rankboxes, int N)
-{
-    for (int i=N-50; i < N; i++)
-    {
-        RankBox & curr = rankboxes[i];
-        printf("id: %i -> rank_x %llu rank_y %llu rank_c %llu\n", curr.aabb->id, curr.rank_x, curr.rank_y, curr.rank_c);
-    }
-    // rankboxes[tid].rank_c = cantor(rankboxes[tid].rank_x, rankboxes[tid].rank_y);
-}
+// __global__ void print_stats(RankBox * rankboxes, int N)
+// {
+//     for (int i=N-50; i < N; i++)
+//     {
+//         RankBox & curr = rankboxes[i];
+//         printf("id: %i -> rank_x %llu rank_y %llu rank_c %llu\n", curr.aabb->id, curr.rank_x, curr.rank_y, curr.rank_c);
+//     }
+//     // rankboxes[tid].rank_c = cantor(rankboxes[tid].rank_x, rankboxes[tid].rank_y);
+// }

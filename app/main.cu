@@ -50,7 +50,8 @@ int main( int argc, char **argv )
     bool evenworkload = false;
     int devcount = 1;
     bool pairing = false;
-    bool quantumspeed = false;
+    bool sharedqueue_mgpu = false;
+    bool bigworkerqueue = false;
 
     int o;
     while ((o = getopt (argc, argv, "c:n:b:p:d:WPQ")) != -1)
@@ -84,7 +85,10 @@ int main( int argc, char **argv )
                 pairing = true;
                 break;
             case 'Q':
-                quantumspeed = true;
+                sharedqueue_mgpu = true;
+                break;
+            case 'Z':
+                bigworkerqueue = true;
                 break;
         }
     }
@@ -94,11 +98,13 @@ int main( int argc, char **argv )
     int * d_count; //device
 
     if (evenworkload)
-        run_sweep_pieces(boxes.data(), N, nbox, overlaps, d_overlaps, d_count, parallel, devcount);
-    else if (pairing)
-        run_sweep_pairing(boxes.data(), N, nbox, overlaps, parallel, devcount);
-    else if (quantumspeed)
+        run_sweep_sharedqueue(boxes.data(), N, nbox, overlaps, d_overlaps, d_count, parallel, devcount);
+    // else if (pairing)
+    //     run_sweep_pairing(boxes.data(), N, nbox, overlaps, parallel, devcount);
+    else if (sharedqueue_mgpu)
         run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel, devcount);
+    else if (bigworkerqueue)
+        run_sweep_bigworkerqueue(boxes.data(), N, nbox, overlaps, d_overlaps, d_count, parallel, devcount);
     else
         run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
 

@@ -51,3 +51,6 @@ __global__ void register_rank_x(RankBox * rankboxes, int N);
 __global__ void create_rankbox(ccdgpu::Aabb * boxes, RankBox * rankboxes, int N);
 __global__ void build_checker2(const RankBox * const rankboxes, int2 * out, int N, int * count, int guess);
 __global__ void print_stats(RankBox * rankboxes, int N);
+
+__global__ void init_bigworkerqueue(int2 * queue, int N);
+__global__ void sweepqueue(int2 * queue, ccdgpu::Aabb * boxes, int * count, int guess, int N, int start, int * end, int2 * overlaps);
