@@ -442,14 +442,15 @@ __global__ void init_bigworkerqueue(int2 * queue, int N)
     queue[tid] = make_int2(tid, tid + 1);
 }
 
-__global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, int N, int TotBoxes, int start, unsigned * end, int2 * overlaps)
+__global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess,  int * d_N, int N, int TotBoxes, int start, unsigned * end, int2 * overlaps)
 {
     int tid = threadIdx.x + blockDim.x * blockIdx.x;
     if (tid >= N) return;
     
     // queue[tid] = make_int2(tid, tid + 1);
 
-    int qid = (tid + start) % 2000000;
+    // int qid = (tid + start) % 2000000;
+    int qid = tid;
 
     const int2 check = queue[qid];
 
@@ -468,7 +469,7 @@ __global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, i
             add_overlap(a.id, b.id, count, overlaps, guess);
         
         if (check.y + MAX_CHECK >= TotBoxes) return;   
-        append_queue(check, MAX_CHECK, queue, end);
+        append_queue(check, MAX_CHECK, queue, d_N, end);
         // inc++; 
         // if (check.y + inc >= TotBoxes) return;   
         // b = boxes[check.y+inc];  
@@ -479,7 +480,11 @@ __global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, i
         //     return;
         // }
     }
-    
+    else 
+    {
+        atomicSub(d_N, 1);
+        // printf("d_N %i\n", *d_N);
+    }
 }
 
 

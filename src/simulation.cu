@@ -1365,7 +1365,8 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
 
     // create worker queue
     int2 * d_queue;
-    unsigned SIZE = 2000000;
+    // unsigned SIZE = 2000000;
+    unsigned SIZE = N;
     cudaMalloc((void**)&d_queue, sizeof(int2)*SIZE);
 
     // start w/ tid, tid + 1
@@ -1390,20 +1391,25 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
 
     // Get number of collisions
     cudaEventRecord(b);
+
+    int * d_N;
+    cudaMalloc((void**)&d_N, sizeof(int));
+    cudaMemcpy(d_N, &N, sizeof(int), cudaMemcpyHostToDevice);
     
     int inc = 0;
     while (N > 0)
     {
-        sweepqueue<<<N/threads + 1, threads>>>(d_queue, d_boxes, d_count, count, N, TotBoxes,  start, d_end, d_overlaps);
+        sweepqueue<<<N/threads + 1, threads>>>(d_queue, d_boxes, d_count, count, d_N, N, TotBoxes,  start, d_end, d_overlaps);
         gpuErrchk(cudaDeviceSynchronize());
-        cudaMemcpy(&end, d_end, sizeof(int), cudaMemcpyDeviceToHost);
-        start += N;
-        start = start % 2000000;
-        N = (end - start );
-        N = N < 0 ? end + 2000000 - start  : N;
+        cudaMemcpy(&N, d_N, sizeof(int), cudaMemcpyDeviceToHost);
+        // cudaMemcpy(&end, d_end, sizeof(int), cudaMemcpyDeviceToHost);
+        // start += N;
+        // start = start % 2000000;
+        // N = (end - start );
+        // N = N < 0 ? end + 2000000 - start  : N;
         
         if (inc % 100)
-        printf("start %i, end %i, N %i\n", start, end, N);
+        // printf("start %i, end %i, N %i\n", start, end, N);
         inc++;
     }
     cudaEventRecord(e);

@@ -26,4 +26,4 @@ __device__ void add_overlap(const int& xid, const int& yid, int * count, int2 * 
 __device__ bool covertex(const int3& a, const int3& b);
 __device__ bool does_collide(const MiniBox& a, const MiniBox& b);
 
-__device__ void append_queue(const int2& lastcheck, int inc, int2 * queue, unsigned * end);
+__device__ void append_queue(const int2& lastcheck, int inc, int2 * queue, int * d_N, unsigned * end);
