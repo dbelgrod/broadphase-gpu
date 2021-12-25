@@ -78,7 +78,7 @@ __device__ void add_overlap(const int& xid, const int& yid, int * count, int2 * 
 
 __device__ void append_queue(const int2& lastcheck, int inc, int2 * queue, unsigned * end)
 {
-    int i = atomicInc(end, 2000000);
+    int i = atomicInc(end, 2000000 - 1);
     queue[i] = make_int2(lastcheck.x, lastcheck.y + inc); 
 }
 

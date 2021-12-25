@@ -1382,7 +1382,7 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
     cudaMemcpy(&end, d_end, sizeof(int), cudaMemcpyDeviceToHost);
     printf("start %i, end %i, N %i\n", start, end, N);
 
-    int TotBoxes = N;
+    int N0 = N;
 
     cudaEvent_t b, e;
     cudaEventCreate(&b);
@@ -1394,15 +1394,18 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
     int inc = 0;
     while (N > 0)
     {
-        sweepqueue<<<N/threads + 1, threads>>>(d_queue, d_boxes, d_count, count, N, TotBoxes,  start, d_end, d_overlaps);
+        sweepqueue<<<N/threads + 1, threads>>>(d_queue, d_boxes, d_count, count, N, N0,  start, d_end, d_overlaps);
         gpuErrchk(cudaDeviceSynchronize());
         cudaMemcpy(&end, d_end, sizeof(int), cudaMemcpyDeviceToHost);
+        gpuErrchk(cudaDeviceSynchronize());
         start += N;
         start = start % 2000000;
         N = (end - start );
+        // if (N < 0)
+        //     printf("start %i, end %i, N %i\n", start, end, N);
         N = N < 0 ? end + 2000000 - start  : N;
         
-        if (inc % 100)
+        if (N < 2)
         printf("start %i, end %i, N %i\n", start, end, N);
         inc++;
     }
@@ -1412,13 +1415,6 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
     cudaEventElapsedTime(&milliseconds, b, e);
     printf("Elapsed time: %.6f ms\n", milliseconds);
 
-    // gpuErrchk(cudaDeviceSynchronize());
-    // cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-    // printf("1st count for device %i:  %i\n", device_init_id, count);
-
-    // cudaMalloc((void**)&d_overlaps, sizeof(int2)*(count)); 
-    // cudaMemset(d_count, 0, sizeof(int));
-    // recordLaunch<float3 *, const MiniBox *, int2 *, int, int *, int, int, int>("twostage_queue_2nd", 2*grid_dim_1d, threads,twostage_queue, d_sm, d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
 
     gpuErrchk(cudaDeviceSynchronize());
     gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
