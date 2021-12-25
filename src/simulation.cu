@@ -1401,13 +1401,12 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
         start += N;
         start = start % 2000000;
         N = (end - start );
-        // if (N < 0)
-        //     printf("start %i, end %i, N %i\n", start, end, N);
+    
         N = N < 0 ? end + 2000000 - start  : N;
         
-        if (N < 2)
-        printf("start %i, end %i, N %i\n", start, end, N);
-        inc++;
+        // inc++;
+        // if (inc < 10)
+        //     printf("start %i, end %i, N %i\n", start, end, N);
     }
     cudaEventRecord(e);
     cudaEventSynchronize(e);
