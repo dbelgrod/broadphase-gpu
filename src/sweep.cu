@@ -442,20 +442,24 @@ __global__ void init_bigworkerqueue(int2 * queue, int N)
     queue[tid] = make_int2(tid, tid + 1);
 }
 
-__global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, int N, int start, int * end, int2 * overlaps)
+__global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, int N, int TotBoxes, int start, unsigned * end, int2 * overlaps)
 {
     int tid = threadIdx.x + blockDim.x * blockIdx.x;
     if (tid >= N) return;
     
-    queue[tid] = make_int2(tid, tid + 1);
+    // queue[tid] = make_int2(tid, tid + 1);
 
-    int qid = tid + start;
+    int qid = (tid + start) % 2000000;
 
-    int2 check = queue[qid];
+    const int2 check = queue[qid];
+
+    if (check.y >= TotBoxes) return;
 
     const Aabb& a = boxes[check.x];
-    const Aabb& b = boxes[check.y];
+    Aabb& b = boxes[check.y];
     
+    int inc = 0;
+    int MAX_CHECK = 1;
     if (a.max.x  >= b.min.x) //boxes can touch and collide
     {
         if ( does_collide(a,b) 
@@ -463,9 +467,19 @@ __global__ void sweepqueue(int2 * queue, Aabb * boxes, int * count, int guess, i
         )
             add_overlap(a.id, b.id, count, overlaps, guess);
         
-    int2 checknext = make_int2(check.x, check.y+1);   
-    append_queue(checknext, queue, end);     
+        if (check.y + MAX_CHECK >= TotBoxes) return;   
+        append_queue(check, MAX_CHECK, queue, end);
+        // inc++; 
+        // if (check.y + inc >= TotBoxes) return;   
+        // b = boxes[check.y+inc];  
+
+        // if (inc == MAX_CHECK)
+        // {
+        //     append_queue(check, MAX_CHECK, queue, end);
+        //     return;
+        // }
     }
+    
 }
 
 

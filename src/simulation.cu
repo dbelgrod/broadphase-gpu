@@ -1354,7 +1354,7 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
     gpuErrchk( cudaGetLastError() );
 
 
-    int count = 200*N;
+    int count = 300*N;
 
     // int * d_count;
     cudaMalloc((void**)&d_count, sizeof(int));
@@ -1365,28 +1365,52 @@ void run_sweep_bigworkerqueue(const Aabb* boxes, int N, int nbox, vector<pair<in
 
     // create worker queue
     int2 * d_queue;
-    size_t SIZE = 100*N;
+    unsigned SIZE = 2000000;
     cudaMalloc((void**)&d_queue, sizeof(int2)*SIZE);
 
     // start w/ tid, tid + 1
-    init_bigworkerqueue<<<grid_dim_1d, threads>>>(d_queue, N);
+    recordLaunch("init_bigworkerqueue", grid_dim_1d, threads, init_bigworkerqueue, d_queue, N);
+    gpuErrchk(cudaDeviceSynchronize());
 
     int start = 0;
 
-    int * d_end;
-    cudaMalloc((void**)&d_end, sizeof(int));
-    cudaMemset(d_end, N, sizeof(int));
+    unsigned * d_end;
+    cudaMalloc((void**)&d_end, sizeof(unsigned));
+    cudaMemcpy(d_end, &N, sizeof(unsigned), cudaMemcpyHostToDevice);
 
-    int end;
+    unsigned end;
+    cudaMemcpy(&end, d_end, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("start %i, end %i, N %i\n", start, end, N);
+
+    int TotBoxes = N;
+
+    cudaEvent_t b, e;
+    cudaEventCreate(&b);
+    cudaEventCreate(&e);
+
+    // Get number of collisions
+    cudaEventRecord(b);
     
+    int inc = 0;
     while (N > 0)
     {
-        sweepqueue<<<N/threads + 1, threads>>>(d_queue, d_boxes, d_count, count, N,  start, d_end, d_overlaps);
-        cudaDeviceSynchronize();
+        sweepqueue<<<N/threads + 1, threads>>>(d_queue, d_boxes, d_count, count, N, TotBoxes,  start, d_end, d_overlaps);
+        gpuErrchk(cudaDeviceSynchronize());
         cudaMemcpy(&end, d_end, sizeof(int), cudaMemcpyDeviceToHost);
-        start = N;
-        N = end - start;
+        start += N;
+        start = start % 2000000;
+        N = (end - start );
+        N = N < 0 ? end + 2000000 - start  : N;
+        
+        if (inc % 100)
+        printf("start %i, end %i, N %i\n", start, end, N);
+        inc++;
     }
+    cudaEventRecord(e);
+    cudaEventSynchronize(e);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, b, e);
+    printf("Elapsed time: %.6f ms\n", milliseconds);
 
     // gpuErrchk(cudaDeviceSynchronize());
     // cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);

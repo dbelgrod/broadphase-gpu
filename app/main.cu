@@ -54,7 +54,7 @@ int main( int argc, char **argv )
     bool bigworkerqueue = false;
 
     int o;
-    while ((o = getopt (argc, argv, "c:n:b:p:d:WPQ")) != -1)
+    while ((o = getopt (argc, argv, "c:n:b:p:d:WPQZ")) != -1)
     {
         switch (o)
         {
