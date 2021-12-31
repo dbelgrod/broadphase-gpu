@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TEST_H_INCLUDED
+#define TEST_H_INCLUDED
 
 #include <Eigen/Core>
 #include <assert.h>
@@ -10,16 +11,30 @@
 #include <stdlib.h>
 #include <vector>
 
+__host__ __device__ struct half3 {
+  __half x;
+  __half y;
+  __half z;
+};
+
+__host__ __device__ half3 make_half3(__half x, __half y, __half z);
+
+__host__ __device__ half3 make_half3(float x, float y, float z);
+
 #ifdef CCD_USE_DOUBLE
 typedef double3 Scalar3;
+typedef double2 Scalar2;
 typedef double Scalar;
 #warning Using Double
 #define make_Scalar3 make_double3
+#define make_Scalar2 make_double2
 #else
 typedef float3 Scalar3;
+typedef float2 Scalar2;
 typedef float Scalar;
 #warning Using Float
 #define make_Scalar3 make_float3
+#define make_Scalar2 make_float2
 #endif
 
 using namespace std;
@@ -48,6 +63,15 @@ public:
     id = assignid;
     ref_id = reference_id;
   };
+
+  //   Aabb(int assignid, int reference_id, int *vids, float *tempmin,
+  //        float *tempmax) {
+  //     min = make_Scalar3(tempmin[0], tempmin[1], tempmin[2]);
+  //     max = make_Scalar3(tempmax[0], tempmax[1], tempmax[2]);
+  //     vertexIds = make_int3(vids[0], vids[1], vids[2]);
+  //     id = assignid;
+  //     ref_id = reference_id;
+  //   };
 
   Aabb() = default;
 };
@@ -79,26 +103,21 @@ __host__ __device__ bool is_valid_pair(const int3 &a, const int3 &b);
 
 __global__ class MiniBox {
 public:
-#ifdef CCD_USE_DOUBLE
-  double2 min; // only y,z coord
-  double2 max;
-#else
-  float2 min; // only y,z coord
-  float2 max;
-#endif
+  Scalar2 min; // only y,z coord
+  Scalar2 max;
   int3 vertexIds;
 
-#ifdef CCD_USE_DOUBLE
-  __device__ MiniBox(double *tempmin, double *tempmax, int3 vids) {
-    min = make_double2(tempmin[0], tempmin[1]);
-    max = make_double2(tempmax[0], tempmax[1]);
-#else
-  __device__ MiniBox(float *tempmin, float *tempmax, int3 vids) {
-    min = make_float2(tempmin[0], tempmin[1]);
-    max = make_float2(tempmax[0], tempmax[1]);
-#endif
+  __device__ MiniBox(Scalar *tempmin, Scalar *tempmax, int3 vids) {
+    min = make_Scalar2(tempmin[0], tempmin[1]);
+    max = make_Scalar2(tempmax[0], tempmax[1]);
     vertexIds = vids;
   };
+
+  //   __device__ MiniBox(float *tempmin, float *tempmax, int3 vids) {
+  //     min = make_Scalar2(tempmin[0], tempmin[1]);
+  //     max = make_Scalar2(tempmax[0], tempmax[1]);
+  //     vertexIds = vids;
+  //   };
 
   MiniBox() = default;
 };
@@ -134,3 +153,5 @@ public:
   ull rank_y;
   ull rank_c;
 };
+
+#endif

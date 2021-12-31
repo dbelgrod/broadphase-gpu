@@ -274,22 +274,21 @@ void run_scaling(const Aabb *boxes, int N, int desiredBoxesPerThread,
 }
 //  // // //////// / / // / / // / // // / //  /
 
-struct sort_sweepmarker_x {
-  __host__ __device__ bool operator()(const SweepMarker &a,
-                                      const SweepMarker &b) const {
-    return (a.x < b.x);
-  }
-};
+// struct sort_sweepmarker_x {
+//   __host__ __device__ bool operator()(const SweepMarker &a,
+//                                       const SweepMarker &b) const {
+//     return (a.x < b.x);
+//   }
+// };
 
 struct sorter {};
 
 struct sort_aabb_x : sorter {
-  __host__ __device__ bool operator()(const Aabb &a, const Aabb &b) const {
+  __device__ bool operator()(const Aabb &a, const Aabb &b) const {
     return (a.min.x < b.min.x);
   }
 
-  __host__ __device__ bool operator()(const Scalar3 &a,
-                                      const Scalar3 &b) const {
+  __device__ bool operator()(const Scalar3 &a, const Scalar3 &b) const {
     return (a.x < b.x);
   }
 
@@ -297,8 +296,7 @@ struct sort_aabb_x : sorter {
   // bool operator()(const SortedMin &a, const SortedMin &b) const {
   //     return (a.min < b.min);}
 
-  __host__ __device__ bool operator()(const RankBox &a,
-                                      const RankBox &b) const {
+  __device__ bool operator()(const RankBox &a, const RankBox &b) const {
     return (a.aabb->min.x < b.aabb->min.x);
   }
 };
@@ -768,13 +766,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   printf("Scalar3 size: %i\n", sizeof(Scalar3));
   printf("sizeof(queue) size: %i\n", sizeof(Queue));
 
-#ifdef CCD_USE_DOUBLE
-  double3 *d_sm;
-  cudaMalloc((void **)&d_sm, sizeof(double3) * N);
-#else
   Scalar3 *d_sm;
   cudaMalloc((void **)&d_sm, sizeof(Scalar3) * N);
-#endif
 
   MiniBox *d_mini;
   cudaMalloc((void **)&d_mini, sizeof(MiniBox) * N);
@@ -834,6 +827,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   } catch (thrust::system_error &e) {
     printf("Thrust error: %s \n", e.what());
   }
+  printf("Thrust sort finished\n");
 
   gpuErrchk(cudaGetLastError());
 
@@ -846,11 +840,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   // int2 * d_overlaps;
   cudaMalloc((void **)&d_overlaps, sizeof(int2) * count);
 
-#ifdef CCD_USE_DOUBLE
-  recordLaunch<double3 *, const MiniBox *, int2 *, int, int *, int, int, int>(
-#else
+  printf("Starting twostage_queue\n");
   recordLaunch<Scalar3 *, const MiniBox *, int2 *, int, int *, int, int, int>(
-#endif
       "twostage_queue_1st", 2 * grid_dim_1d, threads, twostage_queue, d_sm,
       d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
   gpuErrchk(cudaDeviceSynchronize());
@@ -860,11 +851,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   cudaMalloc((void **)&d_overlaps, sizeof(int2) * (count));
   cudaMemset(d_count, 0, sizeof(int));
 
-#ifdef CCD_USE_DOUBLE
-  recordLaunch<double3 *, const MiniBox *, int2 *, int, int *, int, int, int>(
-#else
   recordLaunch<Scalar3 *, const MiniBox *, int2 *, int, int *, int, int, int>(
-#endif
       "twostage_queue_2nd", 2 * grid_dim_1d, threads, twostage_queue, d_sm,
       d_mini, d_overlaps, N, d_count, count, 0, INT_MAX);
 
@@ -1083,33 +1070,34 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
                d_mean, N);
 
   // temporary
-  Scalar3 mean;
-  cudaMemcpy(&mean, d_mean, sizeof(Scalar3), cudaMemcpyDeviceToHost);
-  printf("mean: x %.6f y %.6f z %.6f\n", mean.x, mean.y, mean.z);
+  //   Scalar3 mean;
+  //   cudaMemcpy(&mean, d_mean, sizeof(Scalar3), cudaMemcpyDeviceToHost);
+  //   printf("mean: x %.6f y %.6f z %.6f\n", mean.x, mean.y, mean.z);
 
-  // calculate variance and determine which axis to sort on
-  Scalar3 *d_var; // 2 vertices per box
-  cudaMalloc((void **)&d_var, sizeof(Scalar3));
-  cudaMemset(d_var, 0, sizeof(Scalar3));
-  // calc_variance(boxes, d_var, N, d_mean);
-  recordLaunch("calc_variance", grid_dim_1d, threads, smemSize, calc_variance,
-               d_boxes, d_var, N, d_mean);
-  cudaDeviceSynchronize();
+  //   // calculate variance and determine which axis to sort on
+  //   Scalar3 *d_var; // 2 vertices per box
+  //   cudaMalloc((void **)&d_var, sizeof(Scalar3));
+  //   cudaMemset(d_var, 0, sizeof(Scalar3));
+  //   // calc_variance(boxes, d_var, N, d_mean);
+  //   recordLaunch("calc_variance", grid_dim_1d, threads, smemSize,
+  //   calc_variance,
+  //                d_boxes, d_var, N, d_mean);
+  //   cudaDeviceSynchronize();
 
-  Scalar3 var3d;
-  cudaMemcpy(&var3d, d_var, sizeof(Scalar3), cudaMemcpyDeviceToHost);
-  float maxVar = max(max(var3d.x, var3d.y), var3d.z);
+  //   Scalar3 var3d;
+  //   cudaMemcpy(&var3d, d_var, sizeof(Scalar3), cudaMemcpyDeviceToHost);
+  //   Scalar maxVar = max(max(var3d.x, var3d.y), var3d.z);
 
-  printf("var: x %.6f y %.6f z %.6f\n", var3d.x, var3d.y, var3d.z);
+  //   printf("var: x %.6f y %.6f z %.6f\n", var3d.x, var3d.y, var3d.z);
 
-  Dimension axis;
-  if (maxVar == var3d.x)
-    axis = x;
-  else if (maxVar == var3d.y)
-    axis = y;
-  else
-    axis = z;
-
+  //   Dimension axis;
+  //   if (maxVar == var3d.x)
+  //     axis = x;
+  //   else if (maxVar == var3d.y)
+  //     axis = y;
+  //   else
+  //     axis = z;
+  Dimension axis = x;
   printf("Axis: %s\n", axis == x ? "x" : (axis == y ? "y" : "z"));
 
   recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes,

@@ -115,12 +115,9 @@ __global__ void calc_mean(Aabb *boxes, Scalar3 *mean, int N) {
   if (tid >= N)
     return;
 
-// add to mean
-#ifdef CCD_USE_DOUBLE
-  double3 mx = __fdividef((boxes[tid].min + boxes[tid].max), 2 * N);
-#else
+  // add to mean
+
   Scalar3 mx = __fdividef((boxes[tid].min + boxes[tid].max), 2 * N);
-#endif
   atomicAdd(&mean[0].x, mx.x);
   atomicAdd(&mean[0].y, mx.y);
   atomicAdd(&mean[0].z, mx.z);
@@ -144,7 +141,7 @@ __device__ Scalar3 __powf(const Scalar3 &a, const Scalar &b) {
 }
 
 __device__ Scalar3 abs(const Scalar3 &a) {
-  return make_Scalar3(abs(a.x), abs(a.y), abs(a.z));
+  return make_Scalar3(__habs(a.x), __habs(a.y), __habs(a.z));
 }
 
 __global__ void calc_variance(Aabb *boxes, Scalar3 *var, int N, Scalar3 *mean) {
@@ -160,38 +157,12 @@ __global__ void calc_variance(Aabb *boxes, Scalar3 *var, int N, Scalar3 *mean) {
   atomicAdd(&var[0].z, fx.z);
 }
 
-#ifdef CCD_USE_DOUBLE
-__global__ void create_ds(Aabb *boxes, double3 *sortedmin, MiniBox *mini, int N,
-#else
 __global__ void create_ds(Aabb *boxes, Scalar3 *sortedmin, MiniBox *mini, int N,
-#endif
                           Dimension axis) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   if (tid >= N)
     return;
-#ifdef CCD_USE_DOUBLE
-  double *min;
-  double *max;
-
-  if (axis == x) {
-    sortedmin[tid] =
-        make_double3(boxes[tid].min.x, boxes[tid].max.x, double(tid));
-    min = (double[2]){boxes[tid].min.y, boxes[tid].min.z};
-    max = (double[2]){boxes[tid].max.y, boxes[tid].max.z};
-  } else if (axis == y) {
-
-    sortedmin[tid] =
-        make_double3(boxes[tid].min.y, boxes[tid].max.y, double(tid));
-    min = (double[2]){boxes[tid].min.x, boxes[tid].min.z};
-    max = (double[2]){boxes[tid].max.x, boxes[tid].max.z};
-  } else {
-    sortedmin[tid] =
-        make_double3(boxes[tid].min.z, boxes[tid].max.z, double(tid));
-    min = (double[2]){boxes[tid].min.x, boxes[tid].min.y};
-    max = (double[2]){boxes[tid].max.x, boxes[tid].max.y};
-  }
-#else
   Scalar *min;
   Scalar *max;
 
@@ -212,7 +183,7 @@ __global__ void create_ds(Aabb *boxes, Scalar3 *sortedmin, MiniBox *mini, int N,
     min = (Scalar[2]){boxes[tid].min.x, boxes[tid].min.y};
     max = (Scalar[2]){boxes[tid].max.x, boxes[tid].max.y};
   }
-#endif
+
   // sm[tid] = SortedMin(boxes[tid].min.x, boxes[tid].max.x, tid,
   // boxes[tid].vertexIds);
 
@@ -322,8 +293,11 @@ __global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
 __global__ void twostage_queue(Scalar3 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
                                int start, int end) {
+  if (threadIdx.x + blockIdx.x * blockDim.x == 0)
+    printf("sizeof(Scalar3) %i\n", sizeof(Scalar3));
   // extern __shared__ Scalar3 s_sortedmin[];
-  // __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2> pss;
+  // __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2>
+  // pss;
   __shared__ Queue queue;
   queue.capacity = 4000;
   queue.heap_size = 4000;
@@ -348,29 +322,6 @@ __global__ void twostage_queue(Scalar3 *sm, const MiniBox *const mini,
 
   int latecutoff = tid - tilehalf.meta_group_rank() * tilehalf.size();
 
-  // if (lane == 0 && tid == 0)
-  // {
-  //     printf("tilehalf.meta_group_rank: %i\n", tilehalf.meta_group_rank());
-  //     printf("tilehalf.meta_group_size: %i\n", tilehalf.meta_group_size());
-  //     printf("tilehalf.size: %i\n", tilehalf.size());
-  // }
-  // return;
-
-  // int ltid = threadIdx.x;
-
-  // cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
-  // pipe.producer_acquire();
-  // cuda::memcpy_async(s_sortedmin + ltid, sm + tid, sizeof(*sm), pipe);
-  // pipe.producer_commit();
-
-  // __shared__ bool is_valid;
-  // is_valid = true;
-  // __syncthreads();
-
-  // if (tilehalf.meta_group_rank() == 0 )
-  // {
-  // if (tid >= N) return;
-  // lanerel = lane + blockIdx.x * blockDim.x;
   if (lanerel >= N || lanerel >= end)
     return;
 
@@ -383,19 +334,13 @@ __global__ void twostage_queue(Scalar3 *sm, const MiniBox *const mini,
   if (ltid >= N)
     return;
 
-#ifdef CCD_USE_DOUBLE
-  const double3 &a = sm[lanerel]; // s_sortedmin[ltid];
-  double3 b =
-      sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid];
-#else
   const Scalar3 &a = sm[lanerel]; // s_sortedmin[ltid];
   Scalar3 b =
       sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid
-#endif
-  // int2 val = make_int2(int(a.z), int(b.z));
-  // int whocares = queue.push(lanerel+(ntid-tid-1), val);
-  // atomicAdd(count, 1);
-  // if (lane == 72) printf("a.y: %.3f, b.x %.3f\n", a.y, b.x);
+                // int2 val = make_int2(int(a.z), int(b.z));
+                // int whocares = queue.push(lanerel+(ntid-tid-1), val);
+                // atomicAdd(count, 1);
+                // if (lane == 72) printf("a.y: %.3f, b.x %.3f\n", a.y, b.x);
   while (a.y >= b.x) // curr max > following min
   {
     // consider_pair(int(a.z), int(b.z), count, out, guess);
@@ -426,26 +371,9 @@ __global__ void twostage_queue(Scalar3 *sm, const MiniBox *const mini,
     // if (ntid >= N && tilehalf.meta_group_rank() == 0) return;
     if (ltid >= N)
       return;
-    b = sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid];
+    b = sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] :
+    sm[ntid];
   }
-  // else
-  // {
-  //     // if (tid >= count[0]) return;
-  //     // while (is_valid){
-  //     // lanerel = (tilehalf.meta_group_rank()-criteria)*128+lane +
-  //     blockIdx.x * blockDim.x; int2 res; res = queue.pop(lanerel); if (res.x
-  //     < 0) return;
-
-  //     const MiniBox& a = mini[res.x];
-  //     const MiniBox& b = mini[res.y];
-
-  //     if ( does_collide(a,b)
-  //             && !covertex(a.vertexIds, b.vertexIds)
-  //     ){
-  //         add_overlap(res.x, res.y, count, overlaps, guess);
-  //     }
-  // // }
-  // }
 }
 
 // BigWorkerQueue

@@ -7,25 +7,25 @@
 
 #include <cooperative_groups.h>
 
-#include <gpubf/aabb.cuh>
+// #include <gpubf/aabb.cuh>
 #include <gpubf/collision.cuh>
 
 namespace cg = cooperative_groups;
 
 // #include <cuda/atomic>
 
-__global__ struct SweepMarker {
-  int id;
-  Scalar x, length;
+// __global__ struct SweepMarker {
+//   int id;
+//   Scalar x, length;
 
-  __device__ SweepMarker(int aabbId, ccdgpu::Aabb &a) {
-    id = aabbId;
-    x = a.min.x;
-    length = a.max.x - x;
-  }
+//   __device__ SweepMarker(int aabbId, ccdgpu::Aabb &a) {
+//     id = aabbId;
+//     x = a.min.x;
+//     length = a.max.x - x;
+//   }
 
-  __device__ SweepMarker() = default;
-};
+//   __device__ SweepMarker() = default;
+// };
 
 __global__ void build_index(ccdgpu::Aabb *boxes, int N, int *index);
 __global__ void print_sort_axis(ccdgpu::Aabb *axis, int C);
