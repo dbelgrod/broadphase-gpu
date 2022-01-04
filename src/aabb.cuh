@@ -21,6 +21,15 @@ __host__ __device__ half3 make_half3(__half x, __half y, __half z);
 
 __host__ __device__ half3 make_half3(float x, float y, float z);
 
+using namespace std;
+using namespace std::placeholders;
+
+// typedef enum { VERTEX, FACE, EDGE }  Simplex;
+typedef enum { x, y, z } Dimension;
+typedef unsigned long long int ull;
+
+namespace ccdgpu {
+
 #ifdef CCD_USE_DOUBLE
 typedef double3 Scalar3;
 typedef double2 Scalar2;
@@ -36,15 +45,6 @@ typedef float Scalar;
 #define make_Scalar3 make_float3
 #define make_Scalar2 make_float2
 #endif
-
-using namespace std;
-using namespace std::placeholders;
-
-// typedef enum { VERTEX, FACE, EDGE }  Simplex;
-typedef enum { x, y, z } Dimension;
-typedef unsigned long long int ull;
-
-namespace ccdgpu {
 
 __global__ class Aabb {
 public:
@@ -100,6 +100,8 @@ __host__ __device__ bool is_vertex(const int3 &vids);
 __host__ __device__ bool is_valid_pair(const int3 &a, const int3 &b);
 
 } // namespace ccdgpu
+
+using namespace ccdgpu;
 
 __global__ class MiniBox {
 public:
