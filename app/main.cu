@@ -100,8 +100,6 @@ int main(int argc, char **argv) {
   if (evenworkload)
     run_sweep_sharedqueue(boxes.data(), N, nbox, overlaps, d_overlaps, d_count,
                           parallel, devcount);
-  //   else if (pairing)
-  //     run_sweep_pairing(boxes.data(), N, nbox, overlaps, parallel, devcount);
   else if (sharedqueue_mgpu)
     run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel,
                              devcount);
