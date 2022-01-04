@@ -139,7 +139,7 @@ target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
 
 # target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_link_libraries(CPUSWEEP PRIVATE warnings::all)
-target_compile_definitions(CPUSWEEP PUBLIC NOMINMAX CCD_USE_DOUBLE)
+target_compile_definitions(CPUSWEEP PUBLIC NOMINMAX) # CCD_USE_DOUBLE)
 
 
 # Request that GPUBF be built with -std=c++11
