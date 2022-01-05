@@ -132,10 +132,10 @@ target_compile_options(GPUBF_bin PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 add_executable(cpusweep_bin app/main.cpp )
 prepend_current_path(CPUSWEEP_SOURCES)
 message(STATUS "foo include dir: ${CPUSWEEP_SOURCES}")
-gpubf_copy_headers(${CPUSWEEP_SOURCES})
+gpubf_copy_headers_cpu(${CPUSWEEP_SOURCES})
 gpubf_set_source_group(${CPUSWEEP_SOURCES})
 add_library(CPUSWEEP STATIC ${CPUSWEEP_SOURCES} )
-target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
+target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include/cpu)
 
 # target_include_directories(CPUSWEEP PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_link_libraries(CPUSWEEP PRIVATE warnings::all)

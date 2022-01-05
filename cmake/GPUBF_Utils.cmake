@@ -8,6 +8,16 @@ function(gpubf_copy_headers)
 	endforeach()
 endfunction()
 
+function(gpubf_copy_headers_cpu)
+	foreach(filepath IN ITEMS ${ARGN})
+		get_filename_component(filename "${filepath}" NAME)
+		if(${filename} MATCHES ".*\.(hpp|h|ipp)$")
+			configure_file(${filepath} ${PROJECT_BINARY_DIR}/include/cpu/gpubf/${filename})
+			# configure_file(${filepath} ${CMAKE_CURRENT_SOURCE_DIR}/include/gpubf/${filename})
+		endif()
+	endforeach()
+endfunction()
+
 function(prepend_current_path SOURCE_FILES)
 	# Use recursive substitution to expand SOURCE_FILES
 	unset(MODIFIED)
