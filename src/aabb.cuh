@@ -11,15 +11,15 @@
 #include <stdlib.h>
 #include <vector>
 
-__host__ __device__ struct half3 {
-  __half x;
-  __half y;
-  __half z;
-};
+// __host__ __device__ struct half3 {
+//   __half x;
+//   __half y;
+//   __half z;
+// };
 
-__host__ __device__ half3 make_half3(__half x, __half y, __half z);
+// __host__ __device__ half3 make_half3(__half x, __half y, __half z);
 
-__host__ __device__ half3 make_half3(float x, float y, float z);
+// __host__ __device__ half3 make_half3(float x, float y, float z);
 
 using namespace std;
 using namespace std::placeholders;

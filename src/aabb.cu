@@ -4,21 +4,21 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
-__host__ __device__ half3 make_half3(__half x, __half y, __half z) {
-  half3 t;
-  t.x = x;
-  t.y = y;
-  t.z = z;
-  return t;
-}
+// __host__ __device__ half3 make_half3(__half x, __half y, __half z) {
+//   half3 t;
+//   t.x = x;
+//   t.y = y;
+//   t.z = z;
+//   return t;
+// }
 
-__host__ __device__ half3 make_half3(float x, float y, float z) {
-  half3 t;
-  t.x = __float2half(x);
-  t.y = __float2half(y);
-  t.z = __float2half(z);
-  return t;
-}
+// __host__ __device__ half3 make_half3(float x, float y, float z) {
+//   half3 t;
+//   t.x = __float2half(x);
+//   t.y = __float2half(y);
+//   t.z = __float2half(z);
+//   return t;
+// }
 
 namespace ccdgpu {
 
