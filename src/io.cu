@@ -1,14 +1,15 @@
+#include <gpubf/aabb.cuh>
 #include <gpubf/io.cuh>
 #include <igl/edges.h>
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
 #include <iostream>
 
-using namespace ccdgpu;
+// using namespace ccdgpu;
 
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &faces, Eigen::MatrixXi &edges,
-                    vector<Aabb> &boxes) {
+                    vector<ccdgpu::Aabb> &boxes) {
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);
   addFaces(vertices_t0, vertices_t1, faces, boxes);

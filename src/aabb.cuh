@@ -35,15 +35,17 @@ typedef double3 Scalar3;
 typedef double2 Scalar2;
 typedef double Scalar;
 #warning Using Double
-#define make_Scalar3 make_double3
-#define make_Scalar2 make_double2
+__host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
+                                         const Scalar &c);
+__host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b);
 #else
 typedef float3 Scalar3;
 typedef float2 Scalar2;
 typedef float Scalar;
 #warning Using Float
-#define make_Scalar3 make_float3
-#define make_Scalar2 make_float2
+__host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
+                                         const Scalar &c);
+__host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b);
 #endif
 
 __global__ class Aabb {
@@ -105,13 +107,13 @@ using namespace ccdgpu;
 
 __global__ class MiniBox {
 public:
-  Scalar2 min; // only y,z coord
-  Scalar2 max;
+  ccdgpu::Scalar2 min; // only y,z coord
+  ccdgpu::Scalar2 max;
   int3 vertexIds;
 
-  __device__ MiniBox(Scalar *tempmin, Scalar *tempmax, int3 vids) {
-    min = make_Scalar2(tempmin[0], tempmin[1]);
-    max = make_Scalar2(tempmax[0], tempmax[1]);
+  __device__ MiniBox(Scalar *tempmin, ccdgpu::Scalar *tempmax, int3 vids) {
+    min = ccdgpu::make_Scalar2(tempmin[0], tempmin[1]);
+    max = ccdgpu::make_Scalar2(tempmax[0], tempmax[1]);
     vertexIds = vids;
   };
 
@@ -126,19 +128,21 @@ public:
 
 __global__ class SortedMin {
 public:
-  Scalar3 data;
+  ccdgpu::Scalar3 data;
   int3 vertexIds;
 
-  __device__ SortedMin(Scalar _min, Scalar _max, int assignid, int *vids) {
-    data = make_Scalar3(_min, _max, Scalar(assignid));
+  __device__ SortedMin(ccdgpu::Scalar _min, ccdgpu::Scalar _max, int assignid,
+                       int *vids) {
+    data = ccdgpu::make_Scalar3(_min, _max, ccdgpu::Scalar(assignid));
     // min = _min;
     // max = _max;
     vertexIds = make_int3(vids[0], vids[1], vids[2]);
     // id = assignid;
   };
 
-  __device__ SortedMin(Scalar _min, Scalar _max, int assignid, int3 vids) {
-    data = make_Scalar3(_min, _max, Scalar(assignid));
+  __device__ SortedMin(ccdgpu::Scalar _min, ccdgpu::Scalar _max, int assignid,
+                       int3 vids) {
+    data = ccdgpu::make_Scalar3(_min, _max, ccdgpu::Scalar(assignid));
     // min = _min;
     // max = _max;
     vertexIds = vids;

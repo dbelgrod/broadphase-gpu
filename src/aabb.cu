@@ -22,6 +22,26 @@
 
 namespace ccdgpu {
 
+#ifdef CCD_USE_DOUBLE
+#warning Using Double
+__host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
+                                         const Scalar &c) {
+  return make_double3(a, b, c);
+}
+__host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b) {
+  return make_double2(a, b);
+}
+#else
+__host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
+                                         const Scalar &c) {
+  return make_float3(a, b, c);
+}
+__host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b) {
+  return make_float2(a, b);
+}
+#warning Using Float
+#endif
+
 __host__ __device__ bool is_face(const Aabb &x) { return x.vertexIds.z >= 0; };
 
 __host__ __device__ bool is_face(const int3 &vids) { return vids.z >= 0; };

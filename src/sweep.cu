@@ -97,15 +97,15 @@ __device__ void consider_pair(const int &xid, const int &yid, int *count,
 __device__ ccdgpu::Scalar3 operator+(const ccdgpu::Scalar3 &a,
                                      const ccdgpu::Scalar3 &b) {
 
-  return make_Scalar3(__fadd_rz(a.x, b.x), __fadd_rz(a.y, b.y),
-                      __fadd_rz(a.z, b.z));
+  return ccdgpu::make_Scalar3(__fadd_rz(a.x, b.x), __fadd_rz(a.y, b.y),
+                              __fadd_rz(a.z, b.z));
 }
 
 __device__ ccdgpu::Scalar3 __fdividef(const ccdgpu::Scalar3 &a,
                                       const Scalar &b) {
 
-  return make_Scalar3(__fdividef(a.x, b), __fdividef(a.y, b),
-                      __fdividef(a.z, b));
+  return ccdgpu::make_Scalar3(__fdividef(a.x, b), __fdividef(a.y, b),
+                              __fdividef(a.z, b));
 }
 
 // __global__ void create_sortedmin(Aabb * boxes, ccdgpu::Scalar3 * sortedmin,
@@ -136,16 +136,16 @@ __global__ void calc_mean(Aabb *boxes, ccdgpu::Scalar3 *mean, int N) {
 __device__ ccdgpu::Scalar3 operator-(const ccdgpu::Scalar3 &a,
                                      const ccdgpu::Scalar3 &b) {
 
-  return make_Scalar3(__fsub_rz(a.x, b.x), __fsub_rz(a.y, b.y),
-                      __fsub_rz(a.z, b.z));
+  return ccdgpu::make_Scalar3(__fsub_rz(a.x, b.x), __fsub_rz(a.y, b.y),
+                              __fsub_rz(a.z, b.z));
 }
 
 __device__ ccdgpu::Scalar3 __powf(const ccdgpu::Scalar3 &a, const Scalar &b) {
-  return make_Scalar3(__powf(a.x, b), __powf(a.y, b), __powf(a.z, b));
+  return ccdgpu::make_Scalar3(__powf(a.x, b), __powf(a.y, b), __powf(a.z, b));
 }
 
 __device__ ccdgpu::Scalar3 abs(const ccdgpu::Scalar3 &a) {
-  return make_Scalar3(__habs(a.x), __habs(a.y), __habs(a.z));
+  return ccdgpu::make_Scalar3(__habs(a.x), __habs(a.y), __habs(a.z));
 }
 
 __global__ void calc_variance(Aabb *boxes, ccdgpu::Scalar3 *var, int N,
@@ -173,18 +173,18 @@ __global__ void create_ds(Aabb *boxes, ccdgpu::Scalar3 *sortedmin,
 
   if (axis == x) {
     sortedmin[tid] =
-        make_Scalar3(boxes[tid].min.x, boxes[tid].max.x, Scalar(tid));
+        ccdgpu::make_Scalar3(boxes[tid].min.x, boxes[tid].max.x, Scalar(tid));
     min = (Scalar[2]){boxes[tid].min.y, boxes[tid].min.z};
     max = (Scalar[2]){boxes[tid].max.y, boxes[tid].max.z};
   } else if (axis == y) {
 
     sortedmin[tid] =
-        make_Scalar3(boxes[tid].min.y, boxes[tid].max.y, Scalar(tid));
+        ccdgpu::make_Scalar3(boxes[tid].min.y, boxes[tid].max.y, Scalar(tid));
     min = (Scalar[2]){boxes[tid].min.x, boxes[tid].min.z};
     max = (Scalar[2]){boxes[tid].max.x, boxes[tid].max.z};
   } else {
     sortedmin[tid] =
-        make_Scalar3(boxes[tid].min.z, boxes[tid].max.z, Scalar(tid));
+        ccdgpu::make_Scalar3(boxes[tid].min.z, boxes[tid].max.z, Scalar(tid));
     min = (Scalar[2]){boxes[tid].min.x, boxes[tid].min.y};
     max = (Scalar[2]){boxes[tid].max.x, boxes[tid].max.y};
   }
