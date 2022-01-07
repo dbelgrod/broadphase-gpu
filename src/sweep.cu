@@ -94,22 +94,25 @@ __device__ void consider_pair(const int &xid, const int &yid, int *count,
   }
 }
 
-__device__ Scalar3 operator+(const Scalar3 &a, const Scalar3 &b) {
+__device__ ccdgpu::Scalar3 operator+(const ccdgpu::Scalar3 &a,
+                                     const ccdgpu::Scalar3 &b) {
 
   return make_Scalar3(__fadd_rz(a.x, b.x), __fadd_rz(a.y, b.y),
                       __fadd_rz(a.z, b.z));
 }
 
-__device__ Scalar3 __fdividef(const Scalar3 &a, const Scalar &b) {
+__device__ ccdgpu::Scalar3 __fdividef(const ccdgpu::Scalar3 &a,
+                                      const Scalar &b) {
 
   return make_Scalar3(__fdividef(a.x, b), __fdividef(a.y, b),
                       __fdividef(a.z, b));
 }
 
-// __global__ void create_sortedmin(Aabb * boxes, Scalar3 * sortedmin, int N)
-// __global__ void average(Aabb * boxes, Scalar3 * sm, MiniBox * mini, int N,
-// Scalar3 * mean)
-__global__ void calc_mean(Aabb *boxes, Scalar3 *mean, int N) {
+// __global__ void create_sortedmin(Aabb * boxes, ccdgpu::Scalar3 * sortedmin,
+// int N)
+// __global__ void average(Aabb * boxes, ccdgpu::Scalar3 * sm, MiniBox * mini,
+// int N, ccdgpu::Scalar3 * mean)
+__global__ void calc_mean(Aabb *boxes, ccdgpu::Scalar3 *mean, int N) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   if (tid >= N)
@@ -117,7 +120,7 @@ __global__ void calc_mean(Aabb *boxes, Scalar3 *mean, int N) {
 
   // add to mean
 
-  Scalar3 mx = __fdividef((boxes[tid].min + boxes[tid].max), 2 * N);
+  ccdgpu::Scalar3 mx = __fdividef((boxes[tid].min + boxes[tid].max), 2 * N);
   atomicAdd(&mean[0].x, mx.x);
   atomicAdd(&mean[0].y, mx.y);
   atomicAdd(&mean[0].z, mx.z);
@@ -130,35 +133,37 @@ __global__ void calc_mean(Aabb *boxes, Scalar3 *mean, int N) {
 
 // #include <math.h>
 
-__device__ Scalar3 operator-(const Scalar3 &a, const Scalar3 &b) {
+__device__ ccdgpu::Scalar3 operator-(const ccdgpu::Scalar3 &a,
+                                     const ccdgpu::Scalar3 &b) {
 
   return make_Scalar3(__fsub_rz(a.x, b.x), __fsub_rz(a.y, b.y),
                       __fsub_rz(a.z, b.z));
 }
 
-__device__ Scalar3 __powf(const Scalar3 &a, const Scalar &b) {
+__device__ ccdgpu::Scalar3 __powf(const ccdgpu::Scalar3 &a, const Scalar &b) {
   return make_Scalar3(__powf(a.x, b), __powf(a.y, b), __powf(a.z, b));
 }
 
-__device__ Scalar3 abs(const Scalar3 &a) {
+__device__ ccdgpu::Scalar3 abs(const ccdgpu::Scalar3 &a) {
   return make_Scalar3(__habs(a.x), __habs(a.y), __habs(a.z));
 }
 
-__global__ void calc_variance(Aabb *boxes, Scalar3 *var, int N, Scalar3 *mean) {
+__global__ void calc_variance(Aabb *boxes, ccdgpu::Scalar3 *var, int N,
+                              ccdgpu::Scalar3 *mean) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   if (tid >= N)
     return;
 
-  Scalar3 fx = __powf(abs(boxes[tid].min - mean[0]), 2.0) +
-               __powf(abs(boxes[tid].max - mean[0]), 2.0);
+  ccdgpu::Scalar3 fx = __powf(abs(boxes[tid].min - mean[0]), 2.0) +
+                       __powf(abs(boxes[tid].max - mean[0]), 2.0);
   // if (tid == 0) printf("%.6f %.6f %.6f\n", fx.x, fx.y, fx.z);
   atomicAdd(&var[0].x, fx.x);
   atomicAdd(&var[0].y, fx.y);
   atomicAdd(&var[0].z, fx.z);
 }
 
-__global__ void create_ds(Aabb *boxes, Scalar3 *sortedmin, MiniBox *mini, int N,
-                          Dimension axis) {
+__global__ void create_ds(Aabb *boxes, ccdgpu::Scalar3 *sortedmin,
+                          MiniBox *mini, int N, Dimension axis) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   if (tid >= N)
@@ -193,12 +198,12 @@ __global__ void create_ds(Aabb *boxes, Scalar3 *sortedmin, MiniBox *mini, int N,
   mini[tid] = MiniBox(min, max, boxes[tid].vertexIds);
 }
 
-// __global__ void build_checker(Scalar3 * sortedmin, int2 * out, int N, int *
-// count, int guess)
-__global__ void build_checker(Scalar3 *sm, int2 *out, int N, int *count,
+// __global__ void build_checker(ccdgpu::Scalar3 * sortedmin, int2 * out, int N,
+// int * count, int guess)
+__global__ void build_checker(ccdgpu::Scalar3 *sm, int2 *out, int N, int *count,
                               int guess) {
-  // Scalar3 x -> min, y -> max, z-> boxid
-  extern __shared__ Scalar3 s_sortedmin[];
+  // ccdgpu::Scalar3 x -> min, y -> max, z-> boxid
+  extern __shared__ ccdgpu::Scalar3 s_sortedmin[];
   // __shared__ cuda::barrier<cuda::thread_scope_block> barrier;
   int nbox = 1;
 
@@ -236,10 +241,10 @@ __global__ void build_checker(Scalar3 *sm, int2 *out, int N, int *count,
   if (ntid >= N)
     return;
 
-  const Scalar3 &a = s_sortedmin[ltid];
-  Scalar3 b = nltid < nbox * blockDim.x ? s_sortedmin[nltid] : sm[ntid];
-  // const Scalar3& a = sortedmin[tid];
-  // Scalar3 b = sortedmin[ntid];
+  const ccdgpu::Scalar3 &a = s_sortedmin[ltid];
+  ccdgpu::Scalar3 b = nltid < nbox * blockDim.x ? s_sortedmin[nltid] : sm[ntid];
+  // const ccdgpu::Scalar3& a = sortedmin[tid];
+  // ccdgpu::Scalar3 b = sortedmin[ntid];
 
   while (a.y >= b.x) // curr max > following min
   {
@@ -290,12 +295,12 @@ __global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
   }
 }
 
-__global__ void twostage_queue(Scalar3 *sm, const MiniBox *const mini,
+__global__ void twostage_queue(ccdgpu::Scalar3 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
                                int start, int end) {
   if (threadIdx.x + blockIdx.x * blockDim.x == 0)
-    printf("sizeof(Scalar3) %i\n", sizeof(Scalar3));
-  // extern __shared__ Scalar3 s_sortedmin[];
+    printf("sizeof(ccdgpu::Scalar3) %i\n", sizeof(ccdgpu::Scalar3));
+  // extern __shared__ ccdgpu::Scalar3 s_sortedmin[];
   // __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2>
   // pss;
   __shared__ Queue queue;
@@ -334,8 +339,8 @@ __global__ void twostage_queue(Scalar3 *sm, const MiniBox *const mini,
   if (ltid >= N)
     return;
 
-  const Scalar3 &a = sm[lanerel]; // s_sortedmin[ltid];
-  Scalar3 b =
+  const ccdgpu::Scalar3 &a = sm[lanerel]; // s_sortedmin[ltid];
+  ccdgpu::Scalar3 b =
       sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid
                 // int2 val = make_int2(int(a.z), int(b.z));
                 // int whocares = queue.push(lanerel+(ntid-tid-1), val);
