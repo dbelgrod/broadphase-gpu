@@ -68,9 +68,11 @@ __global__ void retrieve_collision_pairs(const Aabb *const boxes, int *count,
 
   const Aabb &a = s_objects[l];
   Aabb b = nltid < blockDim.x ? s_objects[nltid] : boxes[ntid];
-
+  int i = 0;
   while (a.max.x >= b.min.x) // boxes can touch and collide
   {
+    // printf("res %i %i\n", tid, ntid);
+    i++;
     if (does_collide(a, b) && !covertex(a.vertexIds, b.vertexIds)
         // if (tid % 100 == 0
     )
@@ -83,6 +85,8 @@ __global__ void retrieve_collision_pairs(const Aabb *const boxes, int *count,
       return;
     b = nltid < blockDim.x ? s_objects[nltid] : boxes[ntid];
   }
+  if (tid == 0)
+    printf("final count for box 0: %i\n", i);
 }
 
 __device__ void consider_pair(const int &xid, const int &yid, int *count,
@@ -162,7 +166,7 @@ __global__ void calc_variance(Aabb *boxes, ccdgpu::Scalar3 *var, int N,
   atomicAdd(&var[0].z, fx.z);
 }
 
-__global__ void create_ds(Aabb *boxes, ccdgpu::Scalar3 *sortedmin,
+__global__ void create_ds(Aabb *boxes, ccdgpu::Scalar2 *sortedmin,
                           MiniBox *mini, int N, Dimension axis) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -172,19 +176,16 @@ __global__ void create_ds(Aabb *boxes, ccdgpu::Scalar3 *sortedmin,
   Scalar *max;
 
   if (axis == x) {
-    sortedmin[tid] =
-        ccdgpu::make_Scalar3(boxes[tid].min.x, boxes[tid].max.x, Scalar(tid));
+    sortedmin[tid] = ccdgpu::make_Scalar2(boxes[tid].min.x, boxes[tid].max.x);
     min = (Scalar[2]){boxes[tid].min.y, boxes[tid].min.z};
     max = (Scalar[2]){boxes[tid].max.y, boxes[tid].max.z};
   } else if (axis == y) {
 
-    sortedmin[tid] =
-        ccdgpu::make_Scalar3(boxes[tid].min.y, boxes[tid].max.y, Scalar(tid));
+    sortedmin[tid] = ccdgpu::make_Scalar2(boxes[tid].min.y, boxes[tid].max.y);
     min = (Scalar[2]){boxes[tid].min.x, boxes[tid].min.z};
     max = (Scalar[2]){boxes[tid].max.x, boxes[tid].max.z};
   } else {
-    sortedmin[tid] =
-        ccdgpu::make_Scalar3(boxes[tid].min.z, boxes[tid].max.z, Scalar(tid));
+    sortedmin[tid] = ccdgpu::make_Scalar2(boxes[tid].min.z, boxes[tid].max.z);
     min = (Scalar[2]){boxes[tid].min.x, boxes[tid].min.y};
     max = (Scalar[2]){boxes[tid].max.x, boxes[tid].max.y};
   }
@@ -195,7 +196,7 @@ __global__ void create_ds(Aabb *boxes, ccdgpu::Scalar3 *sortedmin,
   // Scalar min[2] = {boxes[tid].min.y, boxes[tid].min.z};
   // Scalar max[2] = {boxes[tid].max.y, boxes[tid].max.z};
 
-  mini[tid] = MiniBox(min, max, boxes[tid].vertexIds);
+  mini[tid] = MiniBox(tid, min, max, boxes[tid].vertexIds);
 }
 
 // __global__ void build_checker(ccdgpu::Scalar3 * sortedmin, int2 * out, int N,
@@ -295,90 +296,120 @@ __global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
   }
 }
 
-__global__ void twostage_queue(ccdgpu::Scalar3 *sm, const MiniBox *const mini,
+__global__ void twostage_queue(ccdgpu::Scalar2 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
                                int start, int end) {
-  if (threadIdx.x + blockIdx.x * blockDim.x == 0)
-    printf("sizeof(ccdgpu::Scalar3) %i\n", sizeof(ccdgpu::Scalar3));
-  // extern __shared__ ccdgpu::Scalar3 s_sortedmin[];
-  // __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block, 2>
-  // pss;
   __shared__ Queue queue;
-  queue.capacity = 4000;
-  queue.heap_size = 4000;
-  __syncthreads();
-  for (int i = threadIdx.x; i < queue.capacity; i += blockDim.x) {
-    queue.lock[i].release();
-    queue.harr[i].x = -1.0; // release to add
-    // printf("Lock %i released\n", i);
+  // queue.capacity = HEAP_SIZE;
+  queue.heap_size = HEAP_SIZE;
+  queue.start = 0;
+  // queue.old_start = 0;
+  queue.end = 0;
+  // queue.pop_cnt = 0;
+  // queue.push_cnt = 0;
+  // __syncthreads();
+  // for (int i = threadIdx.x; i < queue.capacity; i += blockDim.x) {
+  //   queue.lock[i].release();
+  //   // queue.harr[i].x = -1.0; // release to add
+  // }
+  int tid = threadIdx.x + 1 * blockIdx.x * blockDim.x + start;
+  // if (tid >= N || tid >= end || tid + 1 >= N) {
+  ccdgpu::Scalar2 a;
+  ccdgpu::Scalar2 b;
+  for (size_t i = 0; i < 1; i++) {
+    int t = tid + i * blockDim.x;
+    int lt = t + 1;
+    if (t >= N || lt >= N) {
+      // printf("tid %i\n", tid);
+      return;
+    }
+
+    // int testid = N - N % 1024; // - 4 * 1024;
+
+    a = sm[t]; // s_sortedmin[ltid];
+    b = sm[lt];
+
+    // if (a.y >= b.x) {
+    if (a.y >= b.x) {
+      int2 val = make_int2(t, lt);
+      queue.push(val);
+      // int2 val = make_int2(a.z, tid + 1);
+      // printf("val %i, %i\n", tid, tid + 1);
+    }
   }
+  queue.nbr_per_loop = queue.end - queue.start;
   __syncthreads();
-  cg::thread_block g = cg::this_thread_block();
-  // __shared__ cg::experimental::block_tile_memory<4, 1024> shared;
-  __shared__ cg::experimental::block_tile_memory<1, 512> shared;
-  cg::thread_block thb = cg::experimental::this_thread_block(shared);
 
-  auto tilehalf = cg::experimental::tiled_partition<512>(thb);
-  int lane = tilehalf.thread_rank();
-
-  int lanerel = lane + blockIdx.x * blockDim.x / 2 + start;
-
-  int tid = threadIdx.x + blockIdx.x * blockDim.x + start;
-
-  int latecutoff = tid - tilehalf.meta_group_rank() * tilehalf.size();
-
-  if (lanerel >= N || lanerel >= end)
-    return;
-
-  int ntid = tid + 1;
-  int ltid = lanerel + 1;
-  // int nltid = ltid + 1;
-
-  // 513, we want 512 to be ok and then ignore
-  //  if (ntid >= N && tilehalf.meta_group_rank() == 0) return;
-  if (ltid >= N)
-    return;
-
-  const ccdgpu::Scalar3 &a = sm[lanerel]; // s_sortedmin[ltid];
-  ccdgpu::Scalar3 b =
-      sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] : sm[ntid
-                // int2 val = make_int2(int(a.z), int(b.z));
-                // int whocares = queue.push(lanerel+(ntid-tid-1), val);
-                // atomicAdd(count, 1);
-                // if (lane == 72) printf("a.y: %.3f, b.x %.3f\n", a.y, b.x);
-  while (a.y >= b.x) // curr max > following min
-  {
-    // consider_pair(int(a.z), int(b.z), count, out, guess);
-    if (tilehalf.meta_group_rank() == 0) {
-
-      int2 val = make_int2(int(a.z), int(b.z));
-      int whocares = queue.push(lanerel + 512 * (ntid - tid - 1), val);
-    } else {
-      // unsigned ns = 100;
-      // for (int i=0; i<10000; i++)
-      // __nanosleep(ns);
-      int2 res = queue.pop(lanerel + 512 * (ntid - tid - 1));
-      // if (res.x < 0) return;
-
-      const MiniBox &ax = mini[res.x];
-      const MiniBox &bx = mini[res.y];
+  while (queue.nbr_per_loop > 0) {
+    // if (tid == testid) {
+    //   printf("start of while loop %i: nbr %i\n", queue.nbr_per_loop);
+    // }
+    for (size_t i = 0; i < 1; i++) {
+      if (threadIdx.x >= queue.nbr_per_loop)
+        return;
+      int2 res = queue.pop();
+      // printf("res %i %i\n", res.x, res.y);
+      // if (res.x < 0 || res.y < 0 || res.x >= N || res.y >= N)
+      //   printf("res.x %i, res.y %i\n", res.x, res.y);
+      // return;
+      //   continue;
+      // }
+      MiniBox ax = mini[res.x];
+      MiniBox bx = mini[res.y];
 
       if (does_collide(ax, bx) && is_valid_pair(ax.vertexIds, bx.vertexIds) &&
           !covertex(ax.vertexIds, bx.vertexIds)) {
-        add_overlap(res.x, res.y, count, overlaps, guess);
+        // printf("res.x %i, res.y %i\n", res.x, res.y);
+        add_overlap(ax.id, bx.id, count, overlaps,
+                    guess); // res is the box id
+        // add_overlap(ax.id, bx.id, count, overlaps, guess);
+      }
+
+      if (res.y + 1 >= N)
+        return;
+      a = sm[res.x];
+      b = sm[res.y + 1];
+      if (a.y >= b.x) {
+        // int2 val = make_int2(int(a.z), int(b.z));
+        // int2 val = make_int2(res.x, res.y + 1);
+        res.y += 1;
+        queue.push(res);
+        // printf("val %i, %i\n", val.x, val.y);
       }
     }
-    // atomicAdd(count, 1);
-    // return;
-    ntid++;
-    ltid++;
-    // nltid++;
-    // if (ntid >= N && tilehalf.meta_group_rank() == 0) return;
-    if (ltid >= N)
-      return;
-    b = sm[ltid]; // nltid < nbox*blockDim.x ? s_sortedmin[nltid] :
-    sm[ntid];
+    __syncthreads();
+    queue.nbr_per_loop = queue.end - queue.start;
+    queue.nbr_per_loop = queue.nbr_per_loop < 0
+                             ? queue.end + HEAP_SIZE - queue.start
+                             : queue.nbr_per_loop;
+    __syncthreads();
+    // queue.old_nbr_per_loop = queue.end - queue.old_start;
+    // queue.old_nbr_per_loop = queue.old_nbr_per_loop < 0
+    //                              ? queue.end + HEAP_SIZE - queue.old_start
+    //                              : queue.old_nbr_per_loop;
+    // __syncthreads();
+    // if (tid == testid) {
+    //   printf("%i: nbr %i, start %i, end %i\n", blockIdx.x,
+    //   queue.nbr_per_loop,
+    //          queue.start, queue.end);
+    //   printf("%i: nbr %i, old_start %i, end %i\n", blockIdx.x,
+    //          queue.old_nbr_per_loop, queue.old_start, queue.end);
+    // }
+    // __syncthreads();
+    // queue.old_start = queue.end;
+    // __syncthreads();
+    // if (queue.nbr_per_loop <= 0 && threadIdx.x == 0)
+    //   printf("%i : %i\n", tid, queue.nbr_per_loop);
+    // inc++;
+    // if (inc == 2)
+    //   return;
   }
+  // __syncthreads();
+  // // if (tid == testid) {
+  // //   printf("Final count for box 0: %i\n", inc);
+  // //   printf("push_cnt %i, pop_cnt %i\n", queue.push_cnt, queue.pop_cnt);
+  // // }
+  // __syncthreads();
 }
 
 // BigWorkerQueue
@@ -510,7 +541,8 @@ __global__ void sweepqueue(int2 *queue, const Aabb *boxes, int *count,
 //         if(b.rank_x <= a.rank_x && b.rank_y <= a.rank_y &&
 //             // does_collide(a.aabb, b.aabb) &&
 //             //  a.aabb->max.z >= b.aabb->min.z && a.aabb->min.z <=
-//             b.aabb->max.z && !covertex(a.aabb->vertexIds, b.aabb->vertexIds)
+//             b.aabb->max.z && !covertex(a.aabb->vertexIds,
+//             b.aabb->vertexIds)
 //         )
 //         {
 

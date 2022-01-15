@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
   constructBoxes(vertices_t0, vertices_t1, faces, edges, boxes);
   size_t N = boxes.size();
   std::cout << boxes.size() << std::endl;
-  printf("Boxes (N): %i\n", N);
+
   int nbox = 0;
   int parallel = 0;
   bool evenworkload = false;
@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  printf("Boxes (N): %i\n", N);
   vector<pair<int, int>> overlaps;
   int2 *d_overlaps; // device
   int *d_count;     // device

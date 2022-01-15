@@ -38,7 +38,7 @@ __global__ void print_overlap_start(int2 *overlaps);
 // for balancing
 __global__ void build_checker(ccdgpu::Scalar3 *sortedmin, int2 *outpairs, int N,
                               int *count, int guess);
-__global__ void create_ds(ccdgpu::Aabb *boxes, ccdgpu::Scalar3 *sortedmin,
+__global__ void create_ds(ccdgpu::Aabb *boxes, ccdgpu::Scalar2 *sortedmin,
                           MiniBox *mini, int N, Dimension axis);
 __global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
                                           int2 *inpairs, int2 *overlaps, int N,
@@ -46,7 +46,7 @@ __global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
 __global__ void calc_variance(ccdgpu::Aabb *boxes, ccdgpu::Scalar3 *var, int N,
                               ccdgpu::Scalar3 *mean);
 __global__ void calc_mean(ccdgpu::Aabb *boxes, ccdgpu::Scalar3 *mean, int N);
-__global__ void twostage_queue(ccdgpu::Scalar3 *sm, const MiniBox *const mini,
+__global__ void twostage_queue(ccdgpu::Scalar2 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
                                int start = 0, int end = INT_MAX);
 

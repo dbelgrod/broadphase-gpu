@@ -110,11 +110,14 @@ public:
   ccdgpu::Scalar2 min; // only y,z coord
   ccdgpu::Scalar2 max;
   int3 vertexIds;
+  int id;
 
-  __device__ MiniBox(Scalar *tempmin, ccdgpu::Scalar *tempmax, int3 vids) {
+  __device__ MiniBox(int assignid, Scalar *tempmin, ccdgpu::Scalar *tempmax,
+                     int3 vids) {
     min = ccdgpu::make_Scalar2(tempmin[0], tempmin[1]);
     max = ccdgpu::make_Scalar2(tempmax[0], tempmax[1]);
     vertexIds = vids;
+    id = assignid;
   };
 
   //   __device__ MiniBox(float *tempmin, float *tempmax, int3 vids) {
