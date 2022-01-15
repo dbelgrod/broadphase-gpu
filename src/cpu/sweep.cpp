@@ -66,6 +66,10 @@ void sort_along_xaxis(vector<Aabb> &boxes, vector<int> &box_indices, int N) {
   sort(execution::par_unseq, boxes.begin(), boxes.end(), sort_boxes);
 }
 
+void sort_along_xaxis(vector<Aabb> &boxes, int N) {
+  sort(execution::par_unseq, boxes.begin(), boxes.end(), sort_boxes);
+}
+
 void merge_local_overlaps(
     const tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
         &storages,
@@ -83,8 +87,10 @@ void merge_local_overlaps(
   }
 }
 
-void sweep(const vector<Aabb> &boxes, const vector<int> &box_indices,
-           vector<std::pair<int, int>> &overlaps, int N) {
+// void sweep(const vector<Aabb> &boxes, const vector<int> &box_indices,
+//  vector<std::pair<int, int>> &overlaps, int N) {
+void sweep(const vector<Aabb> &boxes, vector<std::pair<int, int>> &overlaps,
+           int N) {
   tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
   tbb::combinable<int> incrementer;
   tbb::combinable<Aabb> boxer;
@@ -108,7 +114,8 @@ void sweep(const vector<Aabb> &boxes, const vector<int> &box_indices,
       if (does_collide(a, b) && is_valid_pair(a.vertexIds, b.vertexIds) &&
           !covertex(a.vertexIds, b.vertexIds)) {
         auto &local_overlaps = storages.local();
-        local_overlaps.emplace_back(box_indices[i], box_indices[inc]);
+        // local_overlaps.emplace_back(box_indices[i], box_indices[inc]);
+        local_overlaps.emplace_back(a.id, b.id);
       }
       inc++;
       if (inc >= N)
@@ -122,44 +129,46 @@ void sweep(const vector<Aabb> &boxes, const vector<int> &box_indices,
 }
 
 void run_sweep_cpu(vector<Aabb> &boxes, int N, int numBoxes,
-                   vector<pair<long, long>> &finOverlaps) {
-  vector<Aabb> boxes_cpy;
-  boxes_cpy.reserve(N);
-  // copy(boxes.begin(), boxes.end(), boxes_cpy.begin());
-  for (int i = 0; i < N; ++i)
-    boxes_cpy.push_back(boxes[i]);
+                   vector<pair<int, int>> &finOverlaps) {
+  // vector<Aabb> boxes_cpy;
+  // boxes_cpy.reserve(N);
+  // for (int i = 0; i < N; ++i)
+  //   boxes_cpy.push_back(boxes[i]);
   // sort boxes by xaxis in parallel
   // we will need an index vector
-  vector<int> box_indices;
-  box_indices.reserve(N);
-  for (int i = 0; i < N; i++) {
-    box_indices.push_back(i);
-  }
+  // vector<int> box_indices;
+  // box_indices.reserve(N);
+  // for (int i = 0; i < N; i++) {
+  //   box_indices.push_back(i);
+  // }
+  finOverlaps.clear();
 
   printf("Running sort\n");
-  sort_along_xaxis(boxes_cpy, box_indices, N);
+  // sort_along_xaxis(boxes_cpy, box_indices, N);
+  sort_along_xaxis(boxes, N);
   printf("Finished sort\n");
 
-  std::vector<std::pair<int, int>> overlaps;
+  // std::vector<std::pair<int, int>> overlaps;
 
-  sweep(boxes_cpy, box_indices, overlaps, N);
-  printf("Final count: %i\n", overlaps.size());
+  // sweep(boxes_cpy, box_indices, overlaps, N);
+  sweep(boxes, finOverlaps, N);
+  printf("Final count: %i\n", finOverlaps.size());
 
-  for (size_t i = 0; i < overlaps.size(); i++) {
+  // for (size_t i = 0; i < overlaps.size(); i++) {
 
-    // need to fetch where box is from index first
-    const Aabb &a = boxes[overlaps[i].first];
-    const Aabb &b = boxes[overlaps[i].second];
-    if (is_vertex(a.vertexIds) && is_face(b.vertexIds))
-      finOverlaps.emplace_back(overlaps[i].first, overlaps[i].second);
-    else if (is_face(a.vertexIds) && is_vertex(b.vertexIds))
-      finOverlaps.emplace_back(overlaps[i].second, overlaps[i].first);
-    else if (is_edge(a.vertexIds) && is_edge(b.vertexIds)) {
-      int minnow = min(overlaps[i].first, overlaps[i].second);
-      int maxxer = max(overlaps[i].first, overlaps[i].second);
-      finOverlaps.emplace_back(minnow, maxxer);
-    }
-  }
+  //   // need to fetch where box is from index first
+  //   const Aabb &a = boxes[overlaps[i].first];
+  //   const Aabb &b = boxes[overlaps[i].second];
+  //   if (is_vertex(a.vertexIds) && is_face(b.vertexIds))
+  //     finOverlaps.emplace_back(overlaps[i].first, overlaps[i].second);
+  //   else if (is_face(a.vertexIds) && is_vertex(b.vertexIds))
+  //     finOverlaps.emplace_back(overlaps[i].second, overlaps[i].first);
+  //   else if (is_edge(a.vertexIds) && is_edge(b.vertexIds)) {
+  //     int minnow = min(overlaps[i].first, overlaps[i].second);
+  //     int maxxer = max(overlaps[i].first, overlaps[i].second);
+  //     finOverlaps.emplace_back(minnow, maxxer);
+  //   }
+  // }
   printf("Total(filt.) overlaps: %lu\n", finOverlaps.size());
   // delete[] box_indices;
   // delete[] og_boxes;

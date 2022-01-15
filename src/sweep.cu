@@ -300,82 +300,42 @@ __global__ void twostage_queue(ccdgpu::Scalar2 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
                                int start, int end) {
   __shared__ Queue queue;
-  // queue.capacity = HEAP_SIZE;
   queue.heap_size = HEAP_SIZE;
   queue.start = 0;
-  // queue.old_start = 0;
   queue.end = 0;
-  // queue.pop_cnt = 0;
-  // queue.push_cnt = 0;
-  // __syncthreads();
-  // for (int i = threadIdx.x; i < queue.capacity; i += blockDim.x) {
-  //   queue.lock[i].release();
-  //   // queue.harr[i].x = -1.0; // release to add
-  // }
-  int tid = threadIdx.x + 1 * blockIdx.x * blockDim.x + start;
-  // if (tid >= N || tid >= end || tid + 1 >= N) {
-  ccdgpu::Scalar2 a;
-  ccdgpu::Scalar2 b;
-  for (size_t i = 0; i < 1; i++) {
-    int t = tid + i * blockDim.x;
-    int lt = t + 1;
-    if (t >= N || lt >= N) {
-      // printf("tid %i\n", tid);
-      return;
-    }
 
-    // int testid = N - N % 1024; // - 4 * 1024;
+  int tid = threadIdx.x + blockIdx.x * blockDim.x + start;
+  if (tid >= N || tid + 1 >= N)
+    return;
+  ccdgpu::Scalar2 a = sm[tid];
+  ccdgpu::Scalar2 b = sm[tid + 1];
 
-    a = sm[t]; // s_sortedmin[ltid];
-    b = sm[lt];
-
-    // if (a.y >= b.x) {
-    if (a.y >= b.x) {
-      int2 val = make_int2(t, lt);
-      queue.push(val);
-      // int2 val = make_int2(a.z, tid + 1);
-      // printf("val %i, %i\n", tid, tid + 1);
-    }
+  if (a.y >= b.x) {
+    int2 val = make_int2(tid, tid + 1);
+    queue.push(val);
   }
   queue.nbr_per_loop = queue.end - queue.start;
   __syncthreads();
 
   while (queue.nbr_per_loop > 0) {
-    // if (tid == testid) {
-    //   printf("start of while loop %i: nbr %i\n", queue.nbr_per_loop);
-    // }
-    for (size_t i = 0; i < 1; i++) {
-      if (threadIdx.x >= queue.nbr_per_loop)
-        return;
-      int2 res = queue.pop();
-      // printf("res %i %i\n", res.x, res.y);
-      // if (res.x < 0 || res.y < 0 || res.x >= N || res.y >= N)
-      //   printf("res.x %i, res.y %i\n", res.x, res.y);
-      // return;
-      //   continue;
-      // }
-      MiniBox ax = mini[res.x];
-      MiniBox bx = mini[res.y];
+    if (threadIdx.x >= queue.nbr_per_loop)
+      return;
+    int2 res = queue.pop();
+    MiniBox ax = mini[res.x];
+    MiniBox bx = mini[res.y];
 
-      if (does_collide(ax, bx) && is_valid_pair(ax.vertexIds, bx.vertexIds) &&
-          !covertex(ax.vertexIds, bx.vertexIds)) {
-        // printf("res.x %i, res.y %i\n", res.x, res.y);
-        add_overlap(ax.id, bx.id, count, overlaps,
-                    guess); // res is the box id
-        // add_overlap(ax.id, bx.id, count, overlaps, guess);
-      }
+    if (does_collide(ax, bx) && is_valid_pair(ax.vertexIds, bx.vertexIds) &&
+        !covertex(ax.vertexIds, bx.vertexIds)) {
+      add_overlap(ax.id, bx.id, count, overlaps, guess);
+    }
 
-      if (res.y + 1 >= N)
-        return;
-      a = sm[res.x];
-      b = sm[res.y + 1];
-      if (a.y >= b.x) {
-        // int2 val = make_int2(int(a.z), int(b.z));
-        // int2 val = make_int2(res.x, res.y + 1);
-        res.y += 1;
-        queue.push(res);
-        // printf("val %i, %i\n", val.x, val.y);
-      }
+    if (res.y + 1 >= N)
+      return;
+    a = sm[res.x];
+    b = sm[res.y + 1];
+    if (a.y >= b.x) {
+      res.y += 1;
+      queue.push(res);
     }
     __syncthreads();
     queue.nbr_per_loop = queue.end - queue.start;

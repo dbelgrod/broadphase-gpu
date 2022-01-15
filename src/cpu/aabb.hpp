@@ -12,7 +12,6 @@ typedef double Scalar;
 #warning Using Double
 #else
 typedef float Scalar;
-// int iwiwi = 4;
 #warning Using Float
 #endif
 
@@ -20,16 +19,15 @@ using namespace std;
 
 namespace ccdcpu {
 
-// typedef enum { VERTEX, FACE, EDGE }  Simplex;
-
 class Aabb {
 public:
-  // int id;
+  int id;
   Scalar min[3];
   Scalar max[3];
   int vertexIds[3];
 
   Aabb(int assignid, int *vids, Scalar *tempmin, Scalar *tempmax) {
+    id = assignid;
     for (size_t i = 0; i < 3; i++) {
       min[i] = tempmin[i];
       max[i] = tempmax[i];
