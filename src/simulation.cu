@@ -880,7 +880,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   cudaFree(d_mini);
   cudaFree(d_sm);
 
-  // #ifdef HOST_OVERLAPS
+#ifdef HOST_OVERLAPS
   int2 *overlaps = (int2 *)malloc(sizeof(int2) * count);
   gpuErrchk(cudaMemcpy(overlaps, d_overlaps, sizeof(int2) * (count),
                        cudaMemcpyDeviceToHost));
@@ -905,7 +905,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   }
   free(overlaps);
   printf("Total(filt.) overlaps for devid %i: %i\n", 0, local_overlaps.size());
-  // #endif
+#endif
 }
 
 // void run_sweep_pairing(const Aabb* boxes, int N, int nbox, vector<pair<int,
