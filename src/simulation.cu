@@ -643,7 +643,7 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
     gpuErrchk(cudaGetLastError());
 
     // Find overlapping pairs
-    int guess = N * 360;
+    int guess = N * 200;
     printf("Guess %i\n", guess);
 
     int2 *d_overlaps;
@@ -752,6 +752,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
                            vector<pair<int, int>> &finOverlaps,
                            int2 *&d_overlaps, int *&d_count, int &threads,
                            int &devcount) {
+  cudaDeviceSynchronize();
 
   int device_init_id = 0;
 
