@@ -314,8 +314,9 @@ __global__ void twostage_queue(ccdgpu::Scalar2 *sm, const MiniBox *const mini,
     int2 val = make_int2(tid, tid + 1);
     queue.push(val);
   }
-  queue.nbr_per_loop = queue.end - queue.start;
   __syncthreads();
+  queue.nbr_per_loop = queue.end - queue.start;
+  // __syncthreads();
 
   while (queue.nbr_per_loop > 0) {
     if (threadIdx.x >= queue.nbr_per_loop)
@@ -342,34 +343,8 @@ __global__ void twostage_queue(ccdgpu::Scalar2 *sm, const MiniBox *const mini,
     queue.nbr_per_loop = queue.nbr_per_loop < 0
                              ? queue.end + HEAP_SIZE - queue.start
                              : queue.nbr_per_loop;
-    __syncthreads();
-    // queue.old_nbr_per_loop = queue.end - queue.old_start;
-    // queue.old_nbr_per_loop = queue.old_nbr_per_loop < 0
-    //                              ? queue.end + HEAP_SIZE - queue.old_start
-    //                              : queue.old_nbr_per_loop;
     // __syncthreads();
-    // if (tid == testid) {
-    //   printf("%i: nbr %i, start %i, end %i\n", blockIdx.x,
-    //   queue.nbr_per_loop,
-    //          queue.start, queue.end);
-    //   printf("%i: nbr %i, old_start %i, end %i\n", blockIdx.x,
-    //          queue.old_nbr_per_loop, queue.old_start, queue.end);
-    // }
-    // __syncthreads();
-    // queue.old_start = queue.end;
-    // __syncthreads();
-    // if (queue.nbr_per_loop <= 0 && threadIdx.x == 0)
-    //   printf("%i : %i\n", tid, queue.nbr_per_loop);
-    // inc++;
-    // if (inc == 2)
-    //   return;
   }
-  // __syncthreads();
-  // // if (tid == testid) {
-  // //   printf("Final count for box 0: %i\n", inc);
-  // //   printf("push_cnt %i, pop_cnt %i\n", queue.push_cnt, queue.pop_cnt);
-  // // }
-  // __syncthreads();
 }
 
 // BigWorkerQueue
