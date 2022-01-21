@@ -7,8 +7,9 @@
 
 // using namespace ccdgpu;
 
-void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                    Eigen::MatrixXi &faces, Eigen::MatrixXi &edges,
+void constructBoxes(const Eigen::MatrixXd &vertices_t0,
+                    const Eigen::MatrixXd &vertices_t1,
+                    const Eigen::MatrixXi &faces, const Eigen::MatrixXi &edges,
                     vector<ccdgpu::Aabb> &boxes) {
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);

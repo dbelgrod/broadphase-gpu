@@ -75,8 +75,9 @@ __host__ __device__ bool is_valid_pair(const int3 &a, const int3 &b) {
 float nextafter_up(float x) { return nextafterf(x, x + 1.); };
 float nextafter_down(float x) { return nextafterf(x, x - 1.); };
 
-void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &edges, vector<Aabb> &boxes) {
+void addEdges(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
+              vector<Aabb> &boxes) {
   for (unsigned long i = 0; i < edges.rows(); i++) {
     Eigen::MatrixXd edge_vertex0_t0 = vertices_t0.row(edges(i, 0));
     Eigen::MatrixXd edge_vertex1_t0 = vertices_t0.row(edges(i, 1));
@@ -105,8 +106,8 @@ void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
   }
 }
 
-void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                 vector<Aabb> &boxes) {
+void addVertices(const Eigen::MatrixXd &vertices_t0,
+                 const Eigen::MatrixXd &vertices_t1, vector<Aabb> &boxes) {
   for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
     Eigen::MatrixXd vertex_t0 = vertices_t0.row(i);
     Eigen::MatrixXd vertex_t1 = vertices_t1.row(i);
@@ -132,8 +133,9 @@ void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
   }
 }
 
-void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &faces, vector<Aabb> &boxes) {
+void addFaces(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
+              vector<Aabb> &boxes) {
   for (unsigned long i = 0; i < faces.rows(); i++) {
     Eigen::MatrixXd face_vertex0_t0 = vertices_t0.row(faces(i, 0));
     Eigen::MatrixXd face_vertex1_t0 = vertices_t0.row(faces(i, 1));

@@ -78,14 +78,16 @@ public:
   Aabb() = default;
 };
 
-void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &edges, vector<Aabb> &boxes);
+void addEdges(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
+              vector<Aabb> &boxes);
 
-void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                 vector<Aabb> &boxes);
+void addVertices(const Eigen::MatrixXd &vertices_t0,
+                 const Eigen::MatrixXd &vertices_t1, vector<Aabb> &boxes);
 
-void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &faces, vector<Aabb> &boxes);
+void addFaces(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
+              vector<Aabb> &boxes);
 
 // bool is_face = [](Aabb& x)
 // bool is_edge = [](Aabb& x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0
