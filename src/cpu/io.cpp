@@ -27,9 +27,11 @@ namespace ccdcpu {
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
                     vector<Aabb> &boxes) {
+  tbb::task_scheduler_init init(64);
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);
   addFaces(vertices_t0, vertices_t1, faces, boxes);
+  init.terminate();
 }
 
 void parseMesh(const char *filet0, const char *filet1, vector<Aabb> &boxes) {

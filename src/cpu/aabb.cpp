@@ -1,16 +1,29 @@
 #include <gpubf/aabb.hpp>
 
 namespace ccdcpu {
-#pragma omp declare reduction (merge : std::vector<Aabb> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
-#define run_threads std::min(omp_get_max_threads(), 64)
+void merge_local_boxes(
+    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
+        &storages,
+    std::vector<Aabb> &boxes) {
+  size_t num_boxes = boxes.size();
+  for (const auto &local_boxes : storages) {
+    num_boxes += local_boxes.size();
+  }
+  // serial merge!
+  boxes.reserve(num_boxes);
+  for (const auto &local_boxes : storages) {
+    boxes.insert(boxes.end(), local_boxes.begin(), local_boxes.end());
+  }
+}
 
 float nextafter_up(float x) { return nextafterf(x, x + 1.); };
 float nextafter_down(float x) { return nextafterf(x, x - 1.); };
 
 void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
               Eigen::MatrixXi &edges, vector<Aabb> &boxes) {
-#pragma omp parallel for num_threads(run_threads), reduction(merge : boxes)
-  for (unsigned long i = 0; i < edges.rows(); i++) {
+  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+  tbb::parallel_for(0, static_cast<int>(edges.rows()), 1, [&](int &i) {
+    // for (unsigned long i = 0; i < edges.rows(); i++) {
     Eigen::MatrixXd edge_vertex0_t0 = vertices_t0.row(edges(i, 0));
     Eigen::MatrixXd edge_vertex1_t0 = vertices_t0.row(edges(i, 1));
     Eigen::MatrixXd edge_vertex0_t1 = vertices_t1.row(edges(i, 0));
@@ -32,15 +45,18 @@ void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
     Eigen::MatrixXf upper_bound =
         points.colwise().maxCoeff().unaryExpr(&nextafter_up);
 #endif
-    boxes.emplace_back(boxes.size(), vertexIds, lower_bound.array().data(),
-                       upper_bound.array().data());
-  }
+    auto &local_boxes = storages.local();
+    local_boxes.emplace_back(i, vertexIds, lower_bound.array().data(),
+                             upper_bound.array().data());
+  });
+  merge_local_boxes(storages, boxes);
 }
 
 void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                  vector<Aabb> &boxes) {
-#pragma omp parallel for num_threads(run_threads), reduction(merge : boxes)
-  for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
+  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+  tbb::parallel_for(0, static_cast<int>(vertices_t0.rows()), 1, [&](int &i) {
+    // for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
     Eigen::MatrixXd vertex_t0 = vertices_t0.row(i);
     Eigen::MatrixXd vertex_t1 = vertices_t1.row(i);
 
@@ -60,15 +76,18 @@ void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
     Eigen::MatrixXf upper_bound =
         points.colwise().maxCoeff().unaryExpr(&nextafter_up);
 #endif
-    boxes.emplace_back(boxes.size(), vertexIds, lower_bound.array().data(),
-                       upper_bound.array().data());
-  }
+    auto &local_boxes = storages.local();
+    local_boxes.emplace_back(i, vertexIds, lower_bound.array().data(),
+                             upper_bound.array().data());
+  });
+  merge_local_boxes(storages, boxes);
 }
 
 void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
               Eigen::MatrixXi &faces, vector<Aabb> &boxes) {
-#pragma omp parallel for num_threads(run_threads), reduction(merge : boxes)
-  for (unsigned long i = 0; i < faces.rows(); i++) {
+  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+  tbb::parallel_for(0, static_cast<int>(faces.rows()), 1, [&](int &i) {
+    // for (unsigned long i = 0; i < faces.rows(); i++) {
     Eigen::MatrixXd face_vertex0_t0 = vertices_t0.row(faces(i, 0));
     Eigen::MatrixXd face_vertex1_t0 = vertices_t0.row(faces(i, 1));
     Eigen::MatrixXd face_vertex2_t0 = vertices_t0.row(faces(i, 2));
@@ -91,14 +110,16 @@ void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
     Eigen::Vector3d upper_bound = points.colwise().maxCoeff();
 #else
 
-    Eigen::MatrixXf lower_bound =
-        points.colwise().minCoeff().unaryExpr(&nextafter_down);
-    Eigen::MatrixXf upper_bound =
-        points.colwise().maxCoeff().unaryExpr(&nextafter_up);
+        Eigen::MatrixXf lower_bound =
+            points.colwise().minCoeff().unaryExpr(&nextafter_down);
+        Eigen::MatrixXf upper_bound =
+            points.colwise().maxCoeff().unaryExpr(&nextafter_up);
 #endif
-    boxes.emplace_back(boxes.size(), vertexIds, lower_bound.array().data(),
-                       upper_bound.array().data());
-  }
-};
+    auto &local_boxes = storages.local();
+    local_boxes.emplace_back(i, vertexIds, lower_bound.array().data(),
+                             upper_bound.array().data());
+  });
+  merge_local_boxes(storages, boxes);
+}
 
 } // namespace ccdcpu

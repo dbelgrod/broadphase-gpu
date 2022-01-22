@@ -7,6 +7,12 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "tbb/concurrent_vector.h"
+#include <tbb/blocked_range.h>
+#include <tbb/enumerable_thread_specific.h>
+#include <tbb/parallel_for.h>
+#include <tbb/task_scheduler_init.h>
+
 #ifdef CCD_USE_DOUBLE
 typedef double Scalar;
 #warning Using Double
@@ -37,6 +43,11 @@ public:
 
   Aabb() = default;
 };
+
+void merge_local_boxes(
+    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
+        &storages,
+    std::vector<Aabb> &boxes);
 
 void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
               Eigen::MatrixXi &edges, vector<Aabb> &boxes);

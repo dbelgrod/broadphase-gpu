@@ -17,8 +17,8 @@
 #include <set>
 #include <vector>
 // #include <nlohmann/json.hpp>
-
 #include <gpubf/aabb.hpp>
+#include <tbb/task_scheduler_init.h>
 
 using namespace std;
 
