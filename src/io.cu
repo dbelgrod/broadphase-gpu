@@ -9,7 +9,7 @@
 
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
-                    const Eigen::MatrixXi &faces, const Eigen::MatrixXi &edges,
+                    const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
                     vector<ccdgpu::Aabb> &boxes) {
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);

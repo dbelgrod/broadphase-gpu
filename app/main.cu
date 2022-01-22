@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   Eigen::MatrixXi edges;
 
   parseMesh(filet0, filet1, vertices_t0, vertices_t1, faces, edges);
-  constructBoxes(vertices_t0, vertices_t1, faces, edges, boxes);
+  constructBoxes(vertices_t0, vertices_t1, edges, faces, boxes);
   size_t N = boxes.size();
   std::cout << boxes.size() << std::endl;
 
