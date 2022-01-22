@@ -93,14 +93,15 @@ void merge_local_boxes(
 
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
-              vector<Aabb> &boxes);
+              Scalar inflation_radius, vector<Aabb> &boxes);
 
 void addVertices(const Eigen::MatrixXd &vertices_t0,
-                 const Eigen::MatrixXd &vertices_t1, vector<Aabb> &boxes);
+                 const Eigen::MatrixXd &vertices_t1, Scalar inflation_radius,
+                 vector<Aabb> &boxes);
 
 void addFaces(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
-              vector<Aabb> &boxes);
+              Scalar inflation_radius, vector<Aabb> &boxes);
 
 // bool is_face = [](Aabb& x)
 // bool is_edge = [](Aabb& x){return x.vertexIds.z < 0 && x.vertexIds.y >= 0
