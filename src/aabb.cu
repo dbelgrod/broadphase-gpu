@@ -22,6 +22,9 @@
 
 namespace ccdgpu {
 
+#pragma omp declare reduction (merge : std::vector<Aabb> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
+#define run_threads std::min(omp_get_max_threads(), 64)
+
 #ifdef CCD_USE_DOUBLE
 #warning Using Double
 __host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
@@ -78,6 +81,7 @@ float nextafter_down(float x) { return nextafterf(x, x - 1.); };
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
               vector<Aabb> &boxes) {
+#pragma omp parallel for num_threads(run_threads), reduction(merge : boxes)
   for (unsigned long i = 0; i < edges.rows(); i++) {
     Eigen::MatrixXd edge_vertex0_t0 = vertices_t0.row(edges(i, 0));
     Eigen::MatrixXd edge_vertex1_t0 = vertices_t0.row(edges(i, 1));
@@ -108,6 +112,7 @@ void addEdges(const Eigen::MatrixXd &vertices_t0,
 
 void addVertices(const Eigen::MatrixXd &vertices_t0,
                  const Eigen::MatrixXd &vertices_t1, vector<Aabb> &boxes) {
+#pragma omp parallel for num_threads(run_threads), reduction(merge : boxes)
   for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
     Eigen::MatrixXd vertex_t0 = vertices_t0.row(i);
     Eigen::MatrixXd vertex_t1 = vertices_t1.row(i);
@@ -136,6 +141,7 @@ void addVertices(const Eigen::MatrixXd &vertices_t0,
 void addFaces(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
               vector<Aabb> &boxes) {
+#pragma omp parallel for num_threads(run_threads), reduction(merge : boxes)
   for (unsigned long i = 0; i < faces.rows(); i++) {
     Eigen::MatrixXd face_vertex0_t0 = vertices_t0.row(faces(i, 0));
     Eigen::MatrixXd face_vertex1_t0 = vertices_t0.row(faces(i, 1));

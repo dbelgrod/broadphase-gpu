@@ -25,7 +25,7 @@ using namespace std;
 namespace ccdcpu {
 
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                    Eigen::MatrixXi &faces, Eigen::MatrixXi &edges,
+                    Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
                     vector<Aabb> &boxes) {
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);
