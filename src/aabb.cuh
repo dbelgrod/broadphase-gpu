@@ -16,6 +16,9 @@
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 
+#define CPU_THREADS                                                            \
+  std::min(tbb::task_scheduler_init::default_num_threads(), 64)
+
 // __host__ __device__ struct half3 {
 //   __half x;
 //   __half y;

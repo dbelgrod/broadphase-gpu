@@ -100,14 +100,16 @@ int main(int argc, char **argv) {
     }
   }
   auto start = std::chrono::system_clock::now();
-  cout << "default threads " << tbb::task_scheduler_init::default_num_threads()
-       << endl;
-  tbb::task_scheduler_init init(parallel);
-  printf("Running with %i threads\n", parallel);
+  // cout << "default threads " <<
+  // tbb::task_scheduler_init::default_num_threads()
+  //      << endl;
+  tbb::task_scheduler_init init(CPU_THREADS);
+  printf("Running with %i threads\n", CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
   // printf("Running sweep\n");
   run_sweep_cpu(boxes, N, nbox, overlaps);
+  init.terminate();
   auto stop = std::chrono::system_clock::now();
   double elapsed =
       std::chrono::duration_cast<std::chrono::milliseconds>(stop - start)

@@ -12,6 +12,9 @@
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 
+#define CPU_THREADS                                                            \
+  std::min(tbb::task_scheduler_init::default_num_threads(), 64)
+
 #ifdef CCD_USE_DOUBLE
 typedef double Scalar;
 #warning Using Double

@@ -12,8 +12,8 @@ void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
                     vector<ccdgpu::Aabb> &boxes) {
-  printf("Creating boxes\n");
-  tbb::task_scheduler_init init(64);
+  cout << "CPU_THREADS " << CPU_THREADS << endl;
+  tbb::task_scheduler_init init(CPU_THREADS);
   addVertices(vertices_t0, vertices_t1, boxes);
   printf("Finished vertices\n");
   addEdges(vertices_t0, vertices_t1, edges, boxes);
