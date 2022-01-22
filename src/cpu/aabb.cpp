@@ -46,7 +46,8 @@ void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
         points.colwise().maxCoeff().unaryExpr(&nextafter_up);
 #endif
     auto &local_boxes = storages.local();
-    local_boxes.emplace_back(i, vertexIds, lower_bound.array().data(),
+    local_boxes.emplace_back(boxes.size() + i, vertexIds,
+                             lower_bound.array().data(),
                              upper_bound.array().data());
   });
   merge_local_boxes(storages, boxes);
@@ -77,7 +78,8 @@ void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
         points.colwise().maxCoeff().unaryExpr(&nextafter_up);
 #endif
     auto &local_boxes = storages.local();
-    local_boxes.emplace_back(i, vertexIds, lower_bound.array().data(),
+    local_boxes.emplace_back(boxes.size() + i, vertexIds,
+                             lower_bound.array().data(),
                              upper_bound.array().data());
   });
   merge_local_boxes(storages, boxes);
@@ -116,7 +118,8 @@ void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
             points.colwise().maxCoeff().unaryExpr(&nextafter_up);
 #endif
     auto &local_boxes = storages.local();
-    local_boxes.emplace_back(i, vertexIds, lower_bound.array().data(),
+    local_boxes.emplace_back(boxes.size() + i, vertexIds,
+                             lower_bound.array().data(),
                              upper_bound.array().data());
   });
   merge_local_boxes(storages, boxes);
