@@ -4,6 +4,7 @@
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
 #include <iostream>
+#include <tbb/task_scheduler_init.h>
 
 // using namespace ccdgpu;
 
@@ -11,9 +12,14 @@ void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
                     vector<ccdgpu::Aabb> &boxes) {
+  printf("Creating boxes\n");
+  tbb::task_scheduler_init init(64);
   addVertices(vertices_t0, vertices_t1, boxes);
+  printf("Finished vertices\n");
   addEdges(vertices_t0, vertices_t1, edges, boxes);
+  printf("Finished edges\n");
   addFaces(vertices_t0, vertices_t1, faces, boxes);
+  init.terminate();
 }
 
 void parseMesh(const char *filet0, const char *filet1, Eigen::MatrixXd &V0,

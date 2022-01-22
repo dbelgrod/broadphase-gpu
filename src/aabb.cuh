@@ -11,6 +11,11 @@
 #include <stdlib.h>
 #include <vector>
 
+#include "tbb/concurrent_vector.h"
+#include <tbb/blocked_range.h>
+#include <tbb/enumerable_thread_specific.h>
+#include <tbb/parallel_for.h>
+
 // __host__ __device__ struct half3 {
 //   __half x;
 //   __half y;
@@ -77,6 +82,11 @@ public:
 
   Aabb() = default;
 };
+
+void merge_local_boxes(
+    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
+        &storages,
+    std::vector<Aabb> &boxes);
 
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,

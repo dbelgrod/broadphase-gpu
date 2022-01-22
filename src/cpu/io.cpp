@@ -18,6 +18,8 @@
 #include <set>
 #include <vector>
 
+#include <tbb/task_scheduler_init.h>
+
 #include <gpubf/aabb.hpp>
 
 using namespace std;
