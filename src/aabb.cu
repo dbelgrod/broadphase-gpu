@@ -116,9 +116,9 @@ void addEdges(const Eigen::MatrixXd &vertices_t0,
 #else
 
     Eigen::MatrixXf lower_bound =
-        points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - inflation_radius;
+        points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - nextafter_up(inflation_radius);
     Eigen::MatrixXf upper_bound =
-        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() + inflation_radius;
+        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() + nextafter_up(inflation_radius);
 #endif
     auto &local_boxes = storages.local();
     local_boxes.emplace_back(boxes.size() + i, i, vertexIds, lower_bound.data(),
@@ -150,9 +150,9 @@ void addVertices(const Eigen::MatrixXd &vertices_t0,
 #else
 
     Eigen::MatrixXf lower_bound =
-        points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - inflation_radius;
+        points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - nextafter_up(inflation_radius);;
     Eigen::MatrixXf upper_bound =
-        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() + inflation_radius;
+        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() +  nextafter_up(inflation_radius);;
 #endif
     auto &local_boxes = storages.local();
     local_boxes.emplace_back(boxes.size() + i, i, vertexIds, lower_bound.data(),
@@ -192,9 +192,9 @@ void addFaces(const Eigen::MatrixXd &vertices_t0,
 #else
 
     Eigen::MatrixXf lower_bound =
-        points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - static_cast<float>(inflation_radius);
+        points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - nextafter_up(inflation_radius);;
     Eigen::MatrixXf upper_bound =
-        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() + static_cast<float>(inflation_radius);
+        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() + nextafter_up(inflation_radius);;
 #endif
     auto &local_boxes = storages.local();
     local_boxes.emplace_back(boxes.size() + i, i, vertexIds, lower_bound.data(),
