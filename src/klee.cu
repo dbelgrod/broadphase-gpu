@@ -1,6 +1,6 @@
 #include <gpubf/klee.cuh>
 
-
+#include <spdlog/spdlog.h>
 
 __global__ void klee_pair_discover(Aabb* boxes__x, Aabb* boxes__y, int * count, int2 * overlaps, int N, int guess, int * numBoxes)
 {
@@ -64,8 +64,8 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
     setup(devId, smemSize, maxBlockSize, numBoxes);
 
     const int nBoxesPerThread = numBoxes ? numBoxes : smemSize / sizeof(Aabb) / maxBlockSize;
-    printf("Boxes per Thread: %i\n", nBoxesPerThread);
-    printf("Shared mem alloc: %i B\n", nBoxesPerThread*maxBlockSize*sizeof(Aabb) );
+    spdlog::trace("Boxes per Thread: {:i}", nBoxesPerThread);
+    spdlog::trace("Shared mem alloc: {:i} B", nBoxesPerThread*maxBlockSize*sizeof(Aabb) );
 
     int * nbox;
     cudaMalloc((void**)&nbox, sizeof(int));
@@ -100,8 +100,8 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
     dim3 block(maxBlockSize);
     int grid_dim_1d = (N / maxBlockSize + 1); /// nBoxesPerThread + 1;
     dim3 grid( grid_dim_1d );
-    printf("Grid dim (1D): %i\n", grid_dim_1d);
-    printf("Box size: %i\n", sizeof(Aabb));
+    spdlog::trace("Grid dim (1D): {:i}", grid_dim_1d);
+    spdlog::trace("Box size: {:i}", sizeof(Aabb));
 
     float milliseconds = 0;
 
@@ -115,7 +115,7 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
     milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
 
-    printf("Elapsed time for sort: %.6f ms\n", milliseconds);
+    spdlog::trace("Elapsed time for sort: {:.6f} ms", milliseconds);
 
     // Find overlapping pairs
     int guess = 400*N;
@@ -128,17 +128,17 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
     cudaEventSynchronize(stop);
     milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
-    printf("Elapsed time for findoverlaps: %.6f ms\n", milliseconds);
+    spdlog::trace("Elapsed time for findoverlaps: {:.6f} ms", milliseconds);
 
     int count;
     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
-    printf("Elapsed time: %.6f ms\n", milliseconds);
-    printf("Collisions: %i\n", count);
-    printf("Elapsed time: %.9f ms/collision\n", milliseconds/count);
-    printf("Boxes: %i\n", N);
-    printf("Elapsed time: %.9f ms/box\n", milliseconds/N);
+    spdlog::trace("Elapsed time: {:.6f} ms", milliseconds);
+    spdlog::trace("Collisions: {:i}", count);
+    spdlog::trace("Elapsed time: {:.9f} ms/collision", milliseconds/count);
+    spdlog::trace("Boxes: {:i}", N);
+    spdlog::trace("Elapsed time: {:.9f} ms/box", milliseconds/N);
 
     int2 * overlaps =  (int2*)malloc(sizeof(int2) * (count));
     cudaMemcpy( overlaps, d_overlaps, sizeof(int2)*(count), cudaMemcpyDeviceToHost);
@@ -169,7 +169,7 @@ void run_klee(const Aabb* boxes, int N, int numBoxes, vector<unsigned long>& fin
         // }
     }
 
-    printf("Total(filt.) overlaps: %lu\n", finOverlaps.size() / 2);
+    spdlog::trace("Total(filt.) overlaps: {:d}", finOverlaps.size() / 2);
     free(overlaps);
     // free(counter);
     // free(counter);

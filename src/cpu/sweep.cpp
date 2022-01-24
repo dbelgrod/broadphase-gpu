@@ -9,8 +9,9 @@
 
 #include <algorithm> // std::sort
 #include <execution>
-#include <iostream> // std::cout
-#include <vector>   // std::vector
+#include <vector> // std::vector
+
+#include <spdlog/spdlog.h>
 
 namespace ccdcpu {
 
@@ -152,7 +153,7 @@ void run_sweep_cpu(vector<Aabb> &boxes, int N, int numBoxes,
 
   // sweep(boxes_cpy, box_indices, overlaps, N);
   sweep(boxes, finOverlaps, N);
-  printf("Final count: %i\n", finOverlaps.size());
+  spdlog::trace("Final count: {:i}", finOverlaps.size());
 
   // for (size_t i = 0; i < overlaps.size(); i++) {
 
@@ -169,7 +170,7 @@ void run_sweep_cpu(vector<Aabb> &boxes, int N, int numBoxes,
   //     finOverlaps.emplace_back(minnow, maxxer);
   //   }
   // }
-  printf("Total(filt.) overlaps: %lu\n", finOverlaps.size());
+  spdlog::trace("Total(filt.) overlaps: {:d}", finOverlaps.size());
   // delete[] box_indices;
   // delete[] og_boxes;
 }

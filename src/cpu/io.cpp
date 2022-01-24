@@ -7,18 +7,18 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 // #include <cuda.h>
 // #include <cuda_runtime.h>
 #include <fstream>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <set>
 #include <vector>
 
 #include <tbb/task_scheduler_init.h>
+
+#include <spdlog/spdlog.h>
 
 #include <gpubf/aabb.hpp>
 
@@ -29,7 +29,7 @@ namespace ccdcpu {
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
                     vector<Aabb> &boxes) {
-  cout << "CPU_THREADS " << CPU_THREADS << endl;
+  spdlog::critical("CPU_THREADS {}", CPU_THREADS);
   tbb::task_scheduler_init init(CPU_THREADS);
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);

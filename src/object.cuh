@@ -54,7 +54,7 @@ __device__ struct Cell {
     {
         for (int i = 0; i < Nboxes; i++)
         {
-            // pr intf("%i\n", i);
+            // printf("%i\n", i);
             // "bad" box with 1+ vertices not in cell
             if (boxes[i].min.x < min.x && boxes[i].max.x > max.x)
                 {

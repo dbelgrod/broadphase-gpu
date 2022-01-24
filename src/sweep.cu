@@ -4,6 +4,8 @@
 #include <gpubf/queue.cuh>
 #include <gpubf/sweep.cuh>
 
+#include <spdlog/spdlog.h>
+
 using namespace ccdgpu;
 
 __global__ void build_index(Aabb *boxes, int N, int *index) {
@@ -160,7 +162,7 @@ __global__ void calc_variance(Aabb *boxes, ccdgpu::Scalar3 *var, int N,
 
   ccdgpu::Scalar3 fx = __powf(abs(boxes[tid].min - mean[0]), 2.0) +
                        __powf(abs(boxes[tid].max - mean[0]), 2.0);
-  // if (tid == 0) printf("%.6f %.6f %.6f\n", fx.x, fx.y, fx.z);
+  // if (tid == 0) spdlog::trace("{:.6f} {:.6f} {:.6f}", fx.x, fx.y, fx.z);
   atomicAdd(&var[0].x, fx.x);
   atomicAdd(&var[0].y, fx.y);
   atomicAdd(&var[0].z, fx.z);
@@ -497,7 +499,7 @@ __global__ void sweepqueue(int2 *queue, const Aabb *boxes, int *count,
 //     for (int i=N-50; i < N; i++)
 //     {
 //         RankBox & curr = rankboxes[i];
-//         printf("id: %i -> rank_x %llu rank_y %llu rank_c %llu\n",
+//         spdlog::trace("id: {:i} -> rank_x {:d} rank_y {:d} rank_c {:d}",
 //         curr.aabb->id, curr.rank_x, curr.rank_y, curr.rank_c);
 //     }
 //     // rankboxes[tid].rank_c = cantor(rankboxes[tid].rank_x,

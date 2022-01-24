@@ -2,6 +2,8 @@
 #include <gpubf/aabb.cuh>
 #include <gpubf/util.cuh>
 
+#include <spdlog/spdlog.h>
+
 using namespace ccdgpu;
 using namespace std;
 
@@ -13,21 +15,21 @@ void setup(int devId, int &smemSize, int &threads, int &nbox) {
 
   int maxSmem;
   cudaDeviceGetAttribute(&maxSmem, cudaDevAttrMaxSharedMemoryPerBlock, devId);
-  printf("Max shared Memory per Block: %i B\n", maxSmem);
+  spdlog::trace("Max shared Memory per Block: {:i} B", maxSmem);
 
   int maxThreads;
   cudaDeviceGetAttribute(&maxThreads, cudaDevAttrMaxThreadsPerBlock, devId);
-  printf("Max threads per Block: %i thrds\n", maxThreads);
+  spdlog::trace("Max threads per Block: {:i} thrds", maxThreads);
 
   nbox = nbox ? nbox : std::max((int)(maxSmem / sizeof(Aabb)) / maxThreads, 1);
-  printf("Boxes per Thread: %i\n", nbox);
+  spdlog::trace("Boxes per Thread: {:i}", nbox);
 
   // divide threads by an arbitrary number as long as its reasonable >64
   if (!threads) {
     cudaDeviceGetAttribute(&threads, cudaDevAttrMaxThreadsPerMultiProcessor,
                            devId);
 
-    printf("Max threads per Multiprocessor: %i thrds\n", threads);
+    spdlog::trace("Max threads per Multiprocessor: {:i} thrds", threads);
   }
   smemSize = nbox * threads * sizeof(Aabb);
 
@@ -35,20 +37,20 @@ void setup(int devId, int &smemSize, int &threads, int &nbox) {
     threads--;
     smemSize = nbox * threads * sizeof(Aabb);
   }
-  printf("Actual threads per Block: %i thrds\n", threads);
-  printf("Shared mem alloc: %i B\n", smemSize);
+  spdlog::trace("Actual threads per Block: {:i} thrds", threads);
+  spdlog::trace("Shared mem alloc: {:i} B", smemSize);
 
   // int warpSize;
   // cudaDeviceGetAttribute(&warpSize,
   //     cudaDevAttrWarpSize, devId);
-  // printf("Warp Size: %i\n", warpSize);
+  // spdlog::trace("Warp Size: {:i}", warpSize);
 
   // bank conflict avoid
   // cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
   // cudaSharedMemConfig bankSize;
   // cudaDeviceGetSharedMemConfig(&bankSize);
-  // printf("Bank size: %i\n", bankSize );
+  // spdlog::trace("Bank size: {:i}", bankSize );
 
   return;
 }

@@ -3,7 +3,7 @@
 #include <igl/edges.h>
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
-#include <iostream>
+#include <spdlog/spdlog.h>
 #include <tbb/task_scheduler_init.h>
 
 // using namespace ccdgpu;
@@ -13,12 +13,12 @@ void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
                     vector<ccdgpu::Aabb> &boxes,
                     ccdgpu::Scalar inflation_radius) {
-  cout << "CPU_THREADS " << CPU_THREADS << endl;
+  spdlog::trace("CPU_THREADS {}", CPU_THREADS);
   tbb::task_scheduler_init init(CPU_THREADS);
   addVertices(vertices_t0, vertices_t1, inflation_radius, boxes);
-  printf("Finished vertices\n");
+  spdlog::trace("Finished vertices");
   addEdges(vertices_t0, vertices_t1, edges, inflation_radius, boxes);
-  printf("Finished edges\n");
+  spdlog::trace("Finished edges");
   addFaces(vertices_t0, vertices_t1, faces, inflation_radius, boxes);
   init.terminate();
 }

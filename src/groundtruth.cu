@@ -1,5 +1,7 @@
 #include <gpubf/groundtruth.cuh>
 
+#include <spdlog/spdlog.h>
+
 // https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
 unsigned long cantor(unsigned long x, unsigned long y) {
   return (x + y) * (x + y + 1) / 2 + y;
@@ -24,10 +26,10 @@ void compare_mathematica(vector<pair<int, int>> overlaps,
   // Get from file
   ifstream in(jsonPath);
   if (in.fail()) {
-    printf("%s does not exist\n", jsonPath);
+    spdlog::trace("{:s} does not exist", jsonPath);
     return;
   } else
-    printf("Comparing mathematica file %s\n", jsonPath);
+    spdlog::trace("Comparing mathematica file {:s}", jsonPath);
 
   json j_vec = json::parse(in);
 
@@ -49,7 +51,7 @@ void compare_mathematica(vector<pair<int, int>> overlaps,
       algoBroadPhase.end(), algotruePositives.begin());
   algotruePositives.resize(it - algotruePositives.begin());
 
-  printf("Contains %lu/%lu TP\n", algotruePositives.size(),
+  spdlog::trace("Contains {:d}/{:d} TP", algotruePositives.size(),
          truePositives.size());
   return;
 }

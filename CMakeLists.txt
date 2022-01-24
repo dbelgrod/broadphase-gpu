@@ -107,6 +107,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC TBB::tbb)
 include(json)
 target_link_libraries(${PROJECT_NAME} PUBLIC nlohmann::json)
 
+# Logger
+include(spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog)
+
 #-------------------------------------------------------------------------------
 # Binary
 #-------------------------------------------------------------------------------
@@ -167,6 +171,10 @@ target_link_libraries(CPUSWEEP PUBLIC TBB::tbb)
 # JSON
 include(json)
 target_link_libraries(CPUSWEEP PUBLIC nlohmann::json)
+
+# Logger
+include(spdlog)
+target_link_libraries(CPUSWEEP PUBLIC spdlog::spdlog)
 
 #-------------------------------------------------------------------------------
 # Binary

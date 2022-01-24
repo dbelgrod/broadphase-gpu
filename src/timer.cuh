@@ -1,5 +1,7 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 class CudaTimer {
     cudaEvent_t	_start, _end;
     std::vector<std::pair<std::string, float>>	_records;
@@ -44,15 +46,15 @@ void recordLaunch(char* tag, int gs, int bs, size_t mem, void(*f)(Arguments...),
 	cudaError_t error = cudaGetLastError();
 	if (error != cudaSuccess) 
     {
-        printf("Kernel launch failure %s\nTrying device-kernel launch\n", cudaGetErrorString(error));
+        spdlog::trace("Kernel launch failure {:s}\nTrying device-kernel launch", cudaGetErrorString(error));
         timer.tick();
         f(args...);
         timer.tock();
         cudaError_t err = cudaGetLastError();
-	    if (err != cudaSuccess) printf("Device-kernel launch failure %s\n", cudaGetErrorString(err));
+	    if (err != cudaSuccess) spdlog::trace("Device-kernel launch failure {:s}", cudaGetErrorString(err));
     }
     double elapsed = timer.elapsed();
-    printf("%s : %.6f ms\n", tag, elapsed );
+    spdlog::trace("{:s} : {:.6f} ms", tag, elapsed );
     return;
 };
 

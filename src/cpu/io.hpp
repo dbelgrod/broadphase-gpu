@@ -7,13 +7,11 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 // #include <cuda.h>
 // #include <cuda_runtime.h>
 #include <fstream>
-#include <iostream>
 #include <set>
 #include <vector>
 // #include <nlohmann/json.hpp>
