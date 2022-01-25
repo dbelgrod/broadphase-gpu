@@ -17,8 +17,12 @@
 // #include <gpubf/klee.cuh>
 #include <gpubf/io.cuh>
 
+#include <spdlog/spdlog.h>
+
 using namespace std;
 using namespace ccdgpu;
+
+// spdlog::set_level(spdlog::level::trace);
 
 bool is_file_exist(const char *fileName) {
   ifstream infile(fileName);
@@ -26,6 +30,7 @@ bool is_file_exist(const char *fileName) {
 }
 
 int main(int argc, char **argv) {
+  spdlog::set_level(static_cast<spdlog::level::level_enum>(0));
   vector<char *> compare;
 
   char *filet0;
@@ -46,7 +51,6 @@ int main(int argc, char **argv) {
   parseMesh(filet0, filet1, vertices_t0, vertices_t1, faces, edges);
   constructBoxes(vertices_t0, vertices_t1, edges, faces, boxes);
   size_t N = boxes.size();
-  std::cout << boxes.size() << std::endl;
 
   int nbox = 0;
   int parallel = 0;
@@ -93,7 +97,6 @@ int main(int argc, char **argv) {
     }
   }
 
-  printf("Boxes (N): %i\n", N);
   vector<pair<int, int>> overlaps;
   int2 *d_overlaps; // device
   int *d_count;     // device
@@ -111,8 +114,6 @@ int main(int argc, char **argv) {
     run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
 
   for (auto i : compare) {
-    // printf("%s\n", i );
     compare_mathematica(overlaps, i);
   }
-  cout << endl;
 }

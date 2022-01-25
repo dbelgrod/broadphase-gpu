@@ -16,9 +16,7 @@ void constructBoxes(const Eigen::MatrixXd &vertices_t0,
   spdlog::trace("CPU_THREADS {}", CPU_THREADS);
   tbb::task_scheduler_init init(CPU_THREADS);
   addVertices(vertices_t0, vertices_t1, inflation_radius, boxes);
-  spdlog::trace("Finished vertices");
   addEdges(vertices_t0, vertices_t1, edges, inflation_radius, boxes);
-  spdlog::trace("Finished edges");
   addFaces(vertices_t0, vertices_t1, faces, inflation_radius, boxes);
   init.terminate();
 }

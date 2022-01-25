@@ -15,7 +15,8 @@ using namespace ccdgpu;
 inline void gpuAssert(cudaError_t code, const char *file, int line,
                       bool abort = true) {
   if (code != cudaSuccess) {
-    spdlog::error("GPUassert: {} {} {:d}", cudaGetErrorString(code), file, line);
+    spdlog::error("GPUassert: {} {} {:d}", cudaGetErrorString(code), file,
+                  line);
     if (abort)
       exit(code);
   }
@@ -71,7 +72,7 @@ void run_collision_counter(Aabb *boxes, int N) {
   spdlog::trace("Elapsed time: {:.6f} ms/c", milliseconds / collisions);
   spdlog::trace("Collision: {:d}", collisions);
   spdlog::trace("Effective Bandwidth (GB/s): {:.6f} (GB/s)",
-         32 * 2 / milliseconds / 1e6);
+                32 * 2 / milliseconds / 1e6);
 
   reset_counter<<<1, 1>>>(d_counter);
   cudaEventRecord(start);
@@ -187,7 +188,7 @@ void run_scaling(const Aabb *boxes, int N, int desiredBoxesPerThread,
   reset_counter<<<1, 1>>>(d_queries);
 
   spdlog::trace("Shared mem alloc: {:d} B",
-         nBoxesPerThread * 2 * (BLOCK_PADDED) * sizeof(Aabb));
+                nBoxesPerThread * 2 * (BLOCK_PADDED) * sizeof(Aabb));
   cudaEventRecord(start);
   get_collision_pairs<<<grid, block,
                         nBoxesPerThread * 2 * (BLOCK_PADDED) * sizeof(Aabb)>>>(
@@ -444,7 +445,8 @@ struct sort_aabb_x : sorter {
 //         cudaDeviceSynchronize();
 //         milliseconds = 0;
 //         cudaEventElapsedTime(&milliseconds, start, stop);
-//         spdlog::trace("Elapsed time for findoverlaps: {:.6f} ms", milliseconds);
+//         spdlog::trace("Elapsed time for findoverlaps: {:.6f} ms",
+//         milliseconds);
 //     }
 //     // int count;
 //     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
@@ -516,7 +518,8 @@ void merge_local_overlaps(
 void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
                         vector<pair<int, int>> &finOverlaps, int &threads,
                         int &devcount) {
-  spdlog::critical("default threads {}", tbb::task_scheduler_init::default_num_threads());
+  spdlog::critical("default threads {}",
+                   tbb::task_scheduler_init::default_num_threads());
   tbb::enumerable_thread_specific<tbb::concurrent_vector<pair<int, int>>>
       storages;
 
@@ -601,7 +604,8 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
   tbb::parallel_for(0, devices_count, 1, [&](int &device_id) {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
-    spdlog::trace("{:s} -> unifiedAddressing = {:d}", prop.name, prop.unifiedAddressing);
+    spdlog::trace("{:s} -> unifiedAddressing = {:d}", prop.name,
+                  prop.unifiedAddressing);
 
     cudaSetDevice(device_id);
 
@@ -617,11 +621,13 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
       cudaDeviceEnablePeerAccess(device_init_id, 0);
       cudaDeviceSynchronize();
     } else if (device_init_id != device_id)
-      spdlog::trace("Device {:d} cant access Device {:d}", device_id, device_init_id);
+      spdlog::trace("Device {:d} cant access Device {:d}", device_id,
+                    device_init_id);
 
     int range_start = range * device_id;
     int range_end = range * (device_id + 1);
-    spdlog::trace("device_id: {:d} [{:d}, {:d})", device_id, range_start, range_end);
+    spdlog::trace("device_id: {:d} [{:d}, {:d})", device_id, range_start,
+                  range_end);
 
     Aabb *d_b;
     cudaMalloc((void **)&d_b, sizeof(Aabb) * N);
@@ -634,7 +640,8 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
       cudaDeviceDisablePeerAccess(device_init_id);
       cudaDeviceSynchronize();
     } else if (device_init_id != device_id)
-      spdlog::trace("Device {:d} cant access Device {:d}", device_id, device_init_id);
+      spdlog::trace("Device {:d} cant access Device {:d}", device_id,
+                    device_init_id);
 
     // Allocate counter to GPU + set to 0 collisions
     int *d_count;
@@ -720,7 +727,7 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
     }
 
     spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", device_id,
-           local_overlaps.size());
+                  local_overlaps.size());
     // delete [] overlaps;
     // free(overlaps);
 
@@ -753,6 +760,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
                            int2 *&d_overlaps, int *&d_count, int &threads,
                            int &devcount, bool keep_cpu_overlaps) {
   cudaDeviceSynchronize();
+  spdlog::trace("Number of boxes: {:d}", N);
 
   int device_init_id = 0;
 
@@ -795,8 +803,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   //   // temporary
   //   ccdgpu::Scalar3 mean;
   //   cudaMemcpy(&mean, d_mean, sizeof(ccdgpu::Scalar3),
-  //   cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z {:.6f}", mean.x,
-  //   mean.y, mean.z);
+  //   cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z
+  //   {:.6f}", mean.x, mean.y, mean.z);
 
   //   // calculate variance and determine which axis to sort on
   //   ccdgpu::Scalar3 *d_var; // 2 vertices per box
@@ -813,7 +821,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   //   cudaMemcpyDeviceToHost); float maxVar = max(max(var3d.x, var3d.y),
   //   var3d.z);
 
-  //   spdlog::trace("var: x {:.6f} y {:.6f} z {:.6f}", var3d.x, var3d.y, var3d.z);
+  //   spdlog::trace("var: x {:.6f} y {:.6f} z {:.6f}", var3d.x, var3d.y,
+  //   var3d.z);
 
   Dimension axis;
   //   if (maxVar == var3d.x)
@@ -844,13 +853,17 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 
   // Guessing global collision output size
   int guess = 200 * N;
+  spdlog::trace("Guess overlaps: {:d}", guess);
+  size_t overlaps_size = guess * sizeof(int2);
+  spdlog::trace("overlaps_size: {:d}", overlaps_size);
 
   // int * d_count;
   cudaMalloc((void **)&d_count, sizeof(int));
   cudaMemset(d_count, 0, sizeof(int));
 
   // int2 * d_overlaps;
-  cudaMalloc((void **)&d_overlaps, sizeof(int2) * guess);
+  spdlog::trace("Allocating overlaps memory");
+  gpuErrchk(cudaMalloc((void **)&d_overlaps, overlaps_size));
 
   spdlog::trace("Starting two stage_queue");
   recordLaunch<ccdgpu::Scalar2 *, const MiniBox *, int2 *, int, int *, int, int,
@@ -908,7 +921,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
     });
     free(overlaps);
     merge_local_overlaps(storages, finOverlaps);
-    spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0, finOverlaps.size());
+    spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0,
+                  finOverlaps.size());
     init.terminate();
   }
 }
@@ -967,10 +981,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 //     cudaGetLastError() );
 
 //     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-//     spdlog::trace("First count from building all overlapping x: {:d}", count);
-//     cudaFree(d_overlaps);
-//     gpuErrchk(cudaMalloc((void**)&d_overlaps, sizeof(int2)*count));
-//     gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
+//     spdlog::trace("First count from building all overlapping x: {:d}",
+//     count); cudaFree(d_overlaps); gpuErrchk(cudaMalloc((void**)&d_overlaps,
+//     sizeof(int2)*count)); gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
 //     gpuErrchk( cudaGetLastError() );
 //     recordLaunch<const RankBox *, int2 *, int, int *,
 //     int>("build_checker2", grid, block, 49152, build_checker2, d_rankboxes,
@@ -981,11 +994,12 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 //     // build_checker<<<grid, block, 49152>>>(d_sortedmin, outpair, N,
 //     d_count, count); gpuErrchk( cudaDeviceSynchronize());
 //     cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-//     spdlog::trace("Second count from building all overlapping x: {:d}", count);
-//     gpuErrchk( cudaGetLastError()
+//     spdlog::trace("Second count from building all overlapping x: {:d}",
+//     count); gpuErrchk( cudaGetLastError()
 //     );
 
-//     spdlog::trace("Final count for device {:d}:  {:d}", device_init_id, count);
+//     spdlog::trace("Final count for device {:d}:  {:d}", device_init_id,
+//     count);
 
 //      // int2 * overlaps = new int2[count];
 //      int2* overlaps =  (int2*)malloc(sizeof(int2) * count);
@@ -1032,7 +1046,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
                               vector<pair<int, int>> &finOverlaps, int &threads,
                               int &devcount) {
-  // spdlog::critical("default threads {}", tbb::task_scheduler_init::default_num_threads());
+  // spdlog::critical("default threads {}",
+  // tbb::task_scheduler_init::default_num_threads());
   // tbb::enumerable_thread_specific<tbb::concurrent_vector<pair<int, int>>>
   //     storages;
 
@@ -1080,8 +1095,8 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
   // // temporary
   // //   ccdgpu::Scalar3 mean;
   // //   cudaMemcpy(&mean, d_mean, sizeof(ccdgpu::Scalar3),
-  // //   cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z {:.6f}",
-  // mean.x,
+  // //   cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z
+  // {:.6f}", mean.x,
   // //   mean.y, mean.z);
 
   // //   // calculate variance and determine which axis to sort on
@@ -1100,7 +1115,8 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
   // var3d.y),
   // //   var3d.z);
 
-  // //   spdlog::trace("var: x {:.6f} y {:.6f} z {:.6f}", var3d.x, var3d.y, var3d.z);
+  // //   spdlog::trace("var: x {:.6f} y {:.6f} z {:.6f}", var3d.x, var3d.y,
+  // var3d.z);
 
   // //   Dimension axis;
   // //   if (maxVar == var3d.x)
@@ -1244,7 +1260,8 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
   //     spdlog::trace("count2 for device {:d} : {:d}", device_id, count);
   //   }
 
-  //   // spdlog::trace("Elapsed time: {:.9f} ms/collision", milliseconds/count);
+  //   // spdlog::trace("Elapsed time: {:.9f} ms/collision",
+  //   milliseconds/count);
   //   // spdlog::trace("Boxes: {:d}", N);
   //   // spdlog::trace("Elapsed time: {:.9f} ms/box", milliseconds/N);
 
@@ -1355,8 +1372,8 @@ void run_sweep_bigworkerqueue(const Aabb *boxes, int N, int nbox,
   // // temporary
   // ccdgpu::Scalar3 mean;
   // cudaMemcpy(&mean, d_mean, sizeof(ccdgpu::Scalar3),
-  // cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z {:.6f}", mean.x,
-  // mean.y, mean.z);
+  // cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z {:.6f}",
+  // mean.x, mean.y, mean.z);
 
   // // calculate variance and determine which axis to sort on
   // ccdgpu::Scalar3 * d_var; //2 vertices per box
@@ -1371,7 +1388,8 @@ void run_sweep_bigworkerqueue(const Aabb *boxes, int N, int nbox,
   // cudaMemcpyDeviceToHost); float maxVar = max(max(var3d.x, var3d.y),
   // var3d.z);
 
-  // spdlog::trace("var: x {:.6f} y {:.6f} z {:.6f}", var3d.x, var3d.y, var3d.z);
+  // spdlog::trace("var: x {:.6f} y {:.6f} z {:.6f}", var3d.x, var3d.y,
+  // var3d.z);
 
   Dimension axis;
   // if (maxVar == var3d.x)
@@ -1524,5 +1542,6 @@ void run_sweep_bigworkerqueue(const Aabb *boxes, int N, int nbox,
     // }
   }
   free(overlaps);
-  spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0, local_overlaps.size());
+  spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0,
+                local_overlaps.size());
 }
