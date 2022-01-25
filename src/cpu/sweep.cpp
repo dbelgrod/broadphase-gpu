@@ -153,7 +153,7 @@ void run_sweep_cpu(vector<Aabb> &boxes, int N, int numBoxes,
 
   // sweep(boxes_cpy, box_indices, overlaps, N);
   sweep(boxes, finOverlaps, N);
-  spdlog::trace("Final count: {:i}", finOverlaps.size());
+  spdlog::trace("Final count: {:d}", finOverlaps.size());
 
   // for (size_t i = 0; i < overlaps.size(); i++) {
 

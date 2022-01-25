@@ -499,7 +499,7 @@ __global__ void sweepqueue(int2 *queue, const Aabb *boxes, int *count,
 //     for (int i=N-50; i < N; i++)
 //     {
 //         RankBox & curr = rankboxes[i];
-//         spdlog::trace("id: {:i} -> rank_x {:d} rank_y {:d} rank_c {:d}",
+//         spdlog::trace("id: {:d} -> rank_x {:d} rank_y {:d} rank_c {:d}",
 //         curr.aabb->id, curr.rank_x, curr.rank_y, curr.rank_c);
 //     }
 //     // rankboxes[tid].rank_c = cantor(rankboxes[tid].rank_x,

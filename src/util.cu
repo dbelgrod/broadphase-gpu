@@ -15,21 +15,21 @@ void setup(int devId, int &smemSize, int &threads, int &nbox) {
 
   int maxSmem;
   cudaDeviceGetAttribute(&maxSmem, cudaDevAttrMaxSharedMemoryPerBlock, devId);
-  spdlog::trace("Max shared Memory per Block: {:i} B", maxSmem);
+  spdlog::trace("Max shared Memory per Block: {:d} B", maxSmem);
 
   int maxThreads;
   cudaDeviceGetAttribute(&maxThreads, cudaDevAttrMaxThreadsPerBlock, devId);
-  spdlog::trace("Max threads per Block: {:i} thrds", maxThreads);
+  spdlog::trace("Max threads per Block: {:d} thrds", maxThreads);
 
   nbox = nbox ? nbox : std::max((int)(maxSmem / sizeof(Aabb)) / maxThreads, 1);
-  spdlog::trace("Boxes per Thread: {:i}", nbox);
+  spdlog::trace("Boxes per Thread: {:d}", nbox);
 
   // divide threads by an arbitrary number as long as its reasonable >64
   if (!threads) {
     cudaDeviceGetAttribute(&threads, cudaDevAttrMaxThreadsPerMultiProcessor,
                            devId);
 
-    spdlog::trace("Max threads per Multiprocessor: {:i} thrds", threads);
+    spdlog::trace("Max threads per Multiprocessor: {:d} thrds", threads);
   }
   smemSize = nbox * threads * sizeof(Aabb);
 
@@ -37,20 +37,20 @@ void setup(int devId, int &smemSize, int &threads, int &nbox) {
     threads--;
     smemSize = nbox * threads * sizeof(Aabb);
   }
-  spdlog::trace("Actual threads per Block: {:i} thrds", threads);
-  spdlog::trace("Shared mem alloc: {:i} B", smemSize);
+  spdlog::trace("Actual threads per Block: {:d} thrds", threads);
+  spdlog::trace("Shared mem alloc: {:d} B", smemSize);
 
   // int warpSize;
   // cudaDeviceGetAttribute(&warpSize,
   //     cudaDevAttrWarpSize, devId);
-  // spdlog::trace("Warp Size: {:i}", warpSize);
+  // spdlog::trace("Warp Size: {:d}", warpSize);
 
   // bank conflict avoid
   // cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte);
 
   // cudaSharedMemConfig bankSize;
   // cudaDeviceGetSharedMemConfig(&bankSize);
-  // spdlog::trace("Bank size: {:i}", bankSize );
+  // spdlog::trace("Bank size: {:d}", bankSize );
 
   return;
 }
