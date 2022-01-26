@@ -11,10 +11,12 @@
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
-                    vector<ccdgpu::Aabb> &boxes,
+                    vector<ccdgpu::Aabb> &boxes, int threads,
                     ccdgpu::Scalar inflation_radius) {
-  spdlog::trace("CPU_THREADS {}", CPU_THREADS);
-  tbb::task_scheduler_init init(CPU_THREADS);
+  if (threads < 0)
+    threads = CPU_THREADS;
+  spdlog::trace("constructBoxes threads : {}", threads);
+  tbb::task_scheduler_init init(threads);
   addVertices(vertices_t0, vertices_t1, inflation_radius, boxes);
   addEdges(vertices_t0, vertices_t1, edges, inflation_radius, boxes);
   addFaces(vertices_t0, vertices_t1, faces, inflation_radius, boxes);
