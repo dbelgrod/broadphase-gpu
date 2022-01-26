@@ -23,7 +23,7 @@ namespace ccdcpu {
 
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
-                    vector<Aabb> &boxes);
+                    vector<Aabb> &boxes, int threads = -1);
 
 void parseMesh(const char *filet0, const char *filet1, vector<Aabb> &boxes);
 

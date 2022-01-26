@@ -28,9 +28,11 @@ namespace ccdcpu {
 
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
-                    vector<Aabb> &boxes) {
-  spdlog::critical("CPU_THREADS {}", CPU_THREADS);
-  tbb::task_scheduler_init init(CPU_THREADS);
+                    vector<Aabb> &boxes, int threads) {
+  if (threads < 0)
+    threads = CPU_THREADS;
+  spdlog::trace("constructBoxes threads : {}", threads);
+  tbb::task_scheduler_init init(threads);
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);
   addFaces(vertices_t0, vertices_t1, faces, boxes);
