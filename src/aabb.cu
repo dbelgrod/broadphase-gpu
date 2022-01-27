@@ -87,8 +87,8 @@ void merge_local_boxes(
   }
 }
 
-float nextafter_up(float x) { return nextafterf(x, x + 1.); };
-float nextafter_down(float x) { return nextafterf(x, x - 1.); };
+float nextafter_up(float x) { return nextafterf(x, x + FLT_MAX); };
+float nextafter_down(float x) { return nextafterf(x, x - FLT_MAX); };
 
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
@@ -152,7 +152,7 @@ void addVertices(const Eigen::MatrixXd &vertices_t0,
     Eigen::MatrixXf lower_bound =
         points.colwise().minCoeff().unaryExpr(&nextafter_down).array() - nextafter_up(inflation_radius);;
     Eigen::MatrixXf upper_bound =
-        points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() +  nextafter_up(inflation_radius);;
+    points.colwise().maxCoeff().unaryExpr(&nextafter_up).array() +  nextafter_up(inflation_radius);;
 #endif
     auto &local_boxes = storages.local();
     local_boxes.emplace_back(boxes.size() + i, i, vertexIds, lower_bound.data(),
