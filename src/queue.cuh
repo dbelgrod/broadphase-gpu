@@ -4,8 +4,6 @@
 
 // #include <gpubf/object.cuh>
 
-// https://github.com/wangbolun300/GPUTI/blob/master/src/queue.cu
-
 static const int HEAP_SIZE = 64;
 
 using namespace std;
