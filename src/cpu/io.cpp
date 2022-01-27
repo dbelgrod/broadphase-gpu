@@ -29,7 +29,7 @@ namespace ccdcpu {
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
                     vector<Aabb> &boxes, int threads) {
-  if (threads < 0)
+  if (threads <= 0)
     threads = CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
   tbb::task_scheduler_init init(threads);

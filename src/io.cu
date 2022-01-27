@@ -13,7 +13,7 @@ void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
                     vector<ccdgpu::Aabb> &boxes, int threads,
                     ccdgpu::Scalar inflation_radius) {
-  if (threads < 0)
+  if (threads <= 0)
     threads = CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
   tbb::task_scheduler_init init(threads);
