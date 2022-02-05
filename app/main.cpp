@@ -26,9 +26,8 @@ using json = nlohmann::json;
 
 #include <tbb/blocked_range.h>
 #include <tbb/enumerable_thread_specific.h>
-#include <tbb/mutex.h>
+#include <tbb/global_control.h>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
 
 using namespace std;
 // using namespace ccdcpu;
@@ -100,17 +99,16 @@ int main(int argc, char **argv) {
     }
   }
   auto start = std::chrono::system_clock::now();
-  // cout << "default threads " <<
-  // tbb::task_scheduler_init::default_num_threads()
-  //      << endl;
-  tbb::task_scheduler_init init(CPU_THREADS);
-  printf("Running with %i threads\n", CPU_THREADS);
+  // cout << "default threads " << tbb::info::default_concurrency() << endl;
+  tbb::global_control thread_limiter(
+      tbb::global_control::max_allowed_parallelism, ccdcpu::CPU_THREADS);
+  printf("Running with %i threads\n", ccdcpu::CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
   // printf("Running sweep\n");
   run_sweep_cpu(boxes, N, nbox, overlaps);
-  init.terminate();
-  auto stop = std::chrono::system_clock::now();
+  auto stop = 
+  std::chrono::system_clock::now();
   double elapsed =
       std::chrono::duration_cast<std::chrono::milliseconds>(stop - start)
           .count();

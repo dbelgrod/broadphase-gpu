@@ -3,24 +3,22 @@
 #include <gpubf/groundtruth.h>
 #include <gpubf/util.cuh>
 
-
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
-
-#include <tbb/mutex.h>
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range.h>
-#include <tbb/task_scheduler_init.h>
-#include <tbb/enumerable_thread_specific.h>
-#include "tbb/concurrent_vector.h"
 #include <vector>
 #include <iostream>
 #include <vector>
 #include <numeric>
 #include <string>
 #include <functional>
-
 #include <cmath>
+
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+#include <tbb/enumerable_thread_specific.h>
+#include <tbb/global_control.h>
+#include <tbb/concurrent_vector.h>
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
@@ -81,8 +79,8 @@ void run_sweep_multigpu(int N, int devcount)
     for (int i = 0; i < N; i++)
         in[i] = N - i;
 
-    cout<<"default threads "<<tbb::task_scheduler_init::default_num_threads()<<endl;
-    // tbb::task_scheduler_init init(2);
+    cout << "default threads " << tbb::info::default_concurrency() << endl;
+    // tbb::global_control thread_limiter(tbb::global_control::max_allowed_parallelism, 2);
     tbb::enumerable_thread_specific<vector<int>> storages;
 
     int device_init_id = 0;

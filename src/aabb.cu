@@ -1,8 +1,11 @@
 #include <gpubf/aabb.cuh>
 
+#include <limits>
+
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <iostream>
+
+#include <tbb/parallel_for.h>
 
 // __host__ __device__ half3 make_half3(__half x, __half y, __half z) {
 //   half3 t;
@@ -23,7 +26,7 @@
 namespace ccdgpu {
 
 #ifdef CCD_USE_DOUBLE
-#warning Using Double
+// #warning Using Double
 __host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
                                          const Scalar &c) {
   return make_double3(a, b, c);
@@ -39,7 +42,7 @@ __host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
 __host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b) {
   return make_float2(a, b);
 }
-#warning Using Float
+// #warning Using Float
 #endif
 
 __host__ __device__ bool is_face(const Aabb &x) { return x.vertexIds.z >= 0; };
@@ -87,12 +90,12 @@ void merge_local_boxes(
   }
 }
 
-float nextafter_up(float x) { return nextafterf(x, x + FLT_MAX); };
-float nextafter_down(float x) { return nextafterf(x, x - FLT_MAX); };
+float nextafter_up(float x) { return nextafterf(x, x + std::numeric_limits<float>::max()); };
+float nextafter_down(float x) { return nextafterf(x, x - std::numeric_limits<float>::max()); };
 
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
-              Scalar inflation_radius, vector<Aabb> &boxes) {
+              Scalar inflation_radius, std::vector<Aabb> &boxes) {
   tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(edges.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < edges.rows(); i++) {
@@ -129,7 +132,7 @@ void addEdges(const Eigen::MatrixXd &vertices_t0,
 
 void addVertices(const Eigen::MatrixXd &vertices_t0,
                  const Eigen::MatrixXd &vertices_t1, Scalar inflation_radius,
-                 vector<Aabb> &boxes) {
+                 std::vector<Aabb> &boxes) {
   tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(vertices_t0.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
@@ -163,7 +166,7 @@ void addVertices(const Eigen::MatrixXd &vertices_t0,
 
 void addFaces(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
-              Scalar inflation_radius, vector<Aabb> &boxes) {
+              Scalar inflation_radius, std::vector<Aabb> &boxes) {
   tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(faces.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < faces.rows(); i++) {

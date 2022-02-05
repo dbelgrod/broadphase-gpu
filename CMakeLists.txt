@@ -100,7 +100,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 )
 
 # tbb (for multiGPU)
-include(tbb)
+include(onetbb)
 target_link_libraries(${PROJECT_NAME} PUBLIC TBB::tbb)
 
 # JSON
@@ -165,7 +165,7 @@ target_link_libraries(CPUSWEEP PUBLIC
 )
 
 # tbb (for multiGPU)
-include(tbb)
+include(onetbb)
 target_link_libraries(CPUSWEEP PUBLIC TBB::tbb)
 
 # JSON

@@ -3,8 +3,6 @@
 #include <gpubf/aabb.hpp>
 #include <vector>
 
-using namespace std;
-
 namespace ccdcpu {
 
 bool is_face(const int *vids);
@@ -15,7 +13,7 @@ bool is_vertex(const int *vids);
 
 bool is_valid_pair(const int *a, const int *b);
 
-void run_sweep_cpu(vector<Aabb> &boxes, int N, int numBoxes,
-                   vector<pair<int, int>> &finOverlaps);
+void run_sweep_cpu(std::vector<Aabb> &boxes, int N, int numBoxes,
+                   std::vector<std::pair<int, int>> &finOverlaps);
 
 } // namespace ccdcpu

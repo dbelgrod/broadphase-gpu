@@ -1,13 +1,13 @@
 #pragma once
 
-#include <gpubf/aabb.cuh>
+#include <vector>
 
-// using namespace ccdgpu;
+#include <gpubf/aabb.cuh>
 
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
-                    vector<ccdgpu::Aabb> &boxes, int threads = -1,
+                    std::vector<ccdgpu::Aabb> &boxes, int threads = -1,
                     ccdgpu::Scalar inflation_radius = 0);
 
 void parseMesh(const char *filet0, const char *filet1, Eigen::MatrixXd &V0,

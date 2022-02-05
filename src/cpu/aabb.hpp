@@ -1,31 +1,25 @@
 #pragma once
 
-#include <Eigen/Core>
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <vector>
 
-#include "tbb/concurrent_vector.h"
-#include <tbb/blocked_range.h>
-#include <tbb/enumerable_thread_specific.h>
-#include <tbb/parallel_for.h>
+#include <Eigen/Core>
 
-#define CPU_THREADS                                                            \
-  std::min(tbb::task_scheduler_init::default_num_threads(), 64)
+#include <tbb/concurrent_vector.h>
+#include <tbb/enumerable_thread_specific.h>
+#include <tbb/info.h>
+
 
 #ifdef CCD_USE_DOUBLE
 typedef double Scalar;
-#warning Using Double
+// #warning Using Double
 #else
 typedef float Scalar;
-#warning Using Float
+// #warning Using Float
 #endif
 
-using namespace std;
-
 namespace ccdcpu {
+
+static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
 
 class Aabb {
 public:
@@ -52,12 +46,12 @@ void merge_local_boxes(
     std::vector<Aabb> &boxes);
 
 void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &edges, vector<Aabb> &boxes);
+              Eigen::MatrixXi &edges, std::vector<Aabb> &boxes);
 
 void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                 vector<Aabb> &boxes);
+                 std::vector<Aabb> &boxes);
 
 void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &faces, vector<Aabb> &boxes);
+              Eigen::MatrixXi &faces, std::vector<Aabb> &boxes);
 
 } // namespace ccdcpu

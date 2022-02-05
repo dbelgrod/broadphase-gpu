@@ -3,13 +3,11 @@
 #include <tbb/blocked_range.h>
 #include <tbb/combinable.h>
 #include <tbb/enumerable_thread_specific.h>
-#include <tbb/mutex.h>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
+#include <tbb/parallel_sort.h>
 
 #include <algorithm> // std::sort
-#include <execution>
-#include <vector> // std::vector
+#include <vector>    // std::vector
 
 #include <spdlog/spdlog.h>
 
@@ -59,16 +57,16 @@ struct // sort_aabb_x
   bool operator()(Aabb a, Aabb b) const { return (a.min[0] < b.min[0]); }
 } sort_boxes;
 
-void sort_along_xaxis(vector<Aabb> &boxes, vector<int> &box_indices, int N) {
+void sort_along_xaxis(std::vector<Aabb> &boxes, std::vector<int> &box_indices, int N) {
   // sort box indices by boxes minx val
-  sort(execution::par_unseq, box_indices.begin(), box_indices.end(),
-       sort_indices(boxes.data()));
+  tbb::parallel_sort(box_indices.begin(), box_indices.end(),
+                     sort_indices(boxes.data()));
   // sort boxes by minx val
-  sort(execution::par_unseq, boxes.begin(), boxes.end(), sort_boxes);
+  tbb::parallel_sort(boxes.begin(), boxes.end(), sort_boxes);
 }
 
-void sort_along_xaxis(vector<Aabb> &boxes, int N) {
-  sort(execution::par_unseq, boxes.begin(), boxes.end(), sort_boxes);
+void sort_along_xaxis(std::vector<Aabb> &boxes, int N) {
+  tbb::parallel_sort(boxes.begin(), boxes.end(), sort_boxes);
 }
 
 void merge_local_overlaps(
@@ -88,9 +86,9 @@ void merge_local_overlaps(
   }
 }
 
-// void sweep(const vector<Aabb> &boxes, const vector<int> &box_indices,
-//  vector<std::pair<int, int>> &overlaps, int N) {
-void sweep(const vector<Aabb> &boxes, vector<std::pair<int, int>> &overlaps,
+// void sweep(const std::vector<Aabb> &boxes, const std::vector<int> &box_indices,
+//  std::vector<std::pair<int, int>> &overlaps, int N) {
+void sweep(const std::vector<Aabb> &boxes, std::vector<std::pair<int, int>> &overlaps,
            int N) {
   tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
   tbb::combinable<int> incrementer;
@@ -129,15 +127,15 @@ void sweep(const vector<Aabb> &boxes, vector<std::pair<int, int>> &overlaps,
   merge_local_overlaps(storages, overlaps);
 }
 
-void run_sweep_cpu(vector<Aabb> &boxes, int N, int numBoxes,
-                   vector<pair<int, int>> &finOverlaps) {
-  // vector<Aabb> boxes_cpy;
+void run_sweep_cpu(std::vector<Aabb> &boxes, int N, int numBoxes,
+                   std::vector<std::pair<int, int>> &finOverlaps) {
+  // std::vector<Aabb> boxes_cpy;
   // boxes_cpy.reserve(N);
   // for (int i = 0; i < N; ++i)
   //   boxes_cpy.push_back(boxes[i]);
   // sort boxes by xaxis in parallel
   // we will need an index vector
-  // vector<int> box_indices;
+  // std::vector<int> box_indices;
   // box_indices.reserve(N);
   // for (int i = 0; i < N; i++) {
   //   box_indices.push_back(i);

@@ -5,7 +5,6 @@
 #include <spdlog/spdlog.h>
 
 using namespace ccdgpu;
-using namespace std;
 
 void setup(int devId, int &smemSize, int &threads, int &nbox) {
   // Host code

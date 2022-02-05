@@ -1,26 +1,28 @@
-#include <gpubf/aabb.cuh>
 #include <gpubf/io.cuh>
+
+#include <string>
+
 #include <igl/edges.h>
 #include <igl/readOBJ.h>
 #include <igl/readPLY.h>
-#include <spdlog/spdlog.h>
-#include <tbb/task_scheduler_init.h>
 
-// using namespace ccdgpu;
+#include <spdlog/spdlog.h>
+
+#include <tbb/global_control.h>
 
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
-                    vector<ccdgpu::Aabb> &boxes, int threads,
+                    std::vector<ccdgpu::Aabb> &boxes, int threads,
                     ccdgpu::Scalar inflation_radius) {
   if (threads <= 0)
-    threads = CPU_THREADS;
+    threads = ccdgpu::CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
-  tbb::task_scheduler_init init(threads);
+  tbb::global_control thread_limiter(
+        tbb::global_control::max_allowed_parallelism, threads);
   addVertices(vertices_t0, vertices_t1, inflation_radius, boxes);
   addEdges(vertices_t0, vertices_t1, edges, inflation_radius, boxes);
   addFaces(vertices_t0, vertices_t1, faces, inflation_radius, boxes);
-  init.terminate();
 }
 
 void parseMesh(const char *filet0, const char *filet1, Eigen::MatrixXd &V0,
@@ -29,8 +31,8 @@ void parseMesh(const char *filet0, const char *filet1, Eigen::MatrixXd &V0,
   // Eigen::MatrixXd V1;
   // Eigen::MatrixXi F;
 
-  string fn = string(filet0);
-  string ext = fn.substr(fn.rfind('.') + 1);
+  std::string fn(filet0);
+  std::string ext = fn.substr(fn.rfind('.') + 1);
 
   if (ext == "obj") {
     igl::readOBJ(filet0, V0, F);

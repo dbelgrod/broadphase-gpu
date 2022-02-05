@@ -6,8 +6,6 @@
 
 static const int HEAP_SIZE = 64;
 
-using namespace std;
-
 // Prototype of a utility function to swap two integers
 // __device__ void swap(Cell&x, Cell &y);
 
