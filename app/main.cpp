@@ -56,8 +56,8 @@ void compare_mathematica(vector<pair<int, int>> overlaps,
   // Get intersection of true positive
   vector<pair<int, int>> algotruePositives(truePositives.size());
   vector<pair<int, int>>::iterator it = std::set_intersection(
-      truePositives.begin(), truePositives.end(), algoBroadPhase.begin(),
-      algoBroadPhase.end(), algotruePositives.begin());
+    truePositives.begin(), truePositives.end(), algoBroadPhase.begin(),
+    algoBroadPhase.end(), algotruePositives.begin());
   algotruePositives.resize(it - algotruePositives.begin());
 
   printf("Contains %lu/%lu TP\n", algotruePositives.size(),
@@ -101,17 +101,15 @@ int main(int argc, char **argv) {
   auto start = std::chrono::system_clock::now();
   // cout << "default threads " << tbb::info::default_concurrency() << endl;
   tbb::global_control thread_limiter(
-      tbb::global_control::max_allowed_parallelism, ccdcpu::CPU_THREADS);
+    tbb::global_control::max_allowed_parallelism, ccdcpu::CPU_THREADS);
   printf("Running with %i threads\n", ccdcpu::CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
   // printf("Running sweep\n");
   run_sweep_cpu(boxes, N, nbox, overlaps);
-  auto stop = 
-  std::chrono::system_clock::now();
+  auto stop = std::chrono::system_clock::now();
   double elapsed =
-      std::chrono::duration_cast<std::chrono::milliseconds>(stop - start)
-          .count();
+    std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
   printf("Elapsed time: %.1f ms\n", elapsed);
   for (auto i : compare) {
     printf("%s\n", i);

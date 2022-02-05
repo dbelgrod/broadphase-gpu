@@ -76,9 +76,8 @@ __host__ __device__ bool is_valid_pair(const int3 &a, const int3 &b) {
 };
 
 void merge_local_boxes(
-    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
-        &storages,
-    std::vector<Aabb> &boxes) {
+  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  std::vector<Aabb> &boxes) {
   size_t num_boxes = boxes.size();
   for (const auto &local_boxes : storages) {
     num_boxes += local_boxes.size();
@@ -90,8 +89,12 @@ void merge_local_boxes(
   }
 }
 
-float nextafter_up(float x) { return nextafterf(x, x + std::numeric_limits<float>::max()); };
-float nextafter_down(float x) { return nextafterf(x, x - std::numeric_limits<float>::max()); };
+float nextafter_up(float x) {
+  return nextafterf(x, x + std::numeric_limits<float>::max());
+};
+float nextafter_down(float x) {
+  return nextafterf(x, x - std::numeric_limits<float>::max());
+};
 
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
@@ -113,9 +116,9 @@ void addEdges(const Eigen::MatrixXd &vertices_t0,
     int vertexIds[3] = {edges(i, 0), edges(i, 1), -edges(i, 0) - 1};
 #ifdef CCD_USE_DOUBLE
     Eigen::Vector3d lower_bound =
-        points.colwise().minCoeff().array() - inflation_radius;
+      points.colwise().minCoeff().array() - inflation_radius;
     Eigen::Vector3d upper_bound =
-        points.colwise().maxCoeff().array() + inflation_radius;
+      points.colwise().maxCoeff().array() + inflation_radius;
 #else
 
     Eigen::MatrixXf lower_bound =
@@ -147,9 +150,9 @@ void addVertices(const Eigen::MatrixXd &vertices_t0,
 
 #ifdef CCD_USE_DOUBLE
     Eigen::MatrixXd lower_bound =
-        points.colwise().minCoeff().array() - inflation_radius;
+      points.colwise().minCoeff().array() - inflation_radius;
     Eigen::MatrixXd upper_bound =
-        points.colwise().maxCoeff().array() + inflation_radius;
+      points.colwise().maxCoeff().array() + inflation_radius;
 #else
 
     Eigen::MatrixXf lower_bound =

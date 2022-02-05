@@ -76,9 +76,8 @@ public:
 };
 
 void merge_local_boxes(
-    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
-        &storages,
-    std::vector<Aabb> &boxes);
+  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  std::vector<Aabb> &boxes);
 
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
@@ -115,8 +114,8 @@ public:
   int3 vertexIds;
   int id;
 
-  __device__ MiniBox(int assignid, ccdgpu::Scalar *tempmin, ccdgpu::Scalar *tempmax,
-                     int3 vids) {
+  __device__ MiniBox(int assignid, ccdgpu::Scalar *tempmin,
+                     ccdgpu::Scalar *tempmax, int3 vids) {
     min = ccdgpu::make_Scalar2(tempmin[0], tempmin[1]);
     max = ccdgpu::make_Scalar2(tempmax[0], tempmax[1]);
     vertexIds = vids;

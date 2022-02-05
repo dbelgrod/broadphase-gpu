@@ -28,7 +28,8 @@ void compare_mathematica(std::vector<std::pair<int, int>> overlaps,
 }
 
 void compare_mathematica(std::vector<std::pair<int, int>> overlaps,
-                         const std::vector<int> &result_list, const char *jsonPath) {
+                         const std::vector<int> &result_list,
+                         const char *jsonPath) {
   // Get from file
   std::ifstream in(jsonPath);
   if (in.fail()) {
@@ -40,7 +41,8 @@ void compare_mathematica(std::vector<std::pair<int, int>> overlaps,
   json j_vec = json::parse(in);
 
   std::set<std::pair<long, long>> truePositives;
-  std::vector<std::array<long, 2>> tmp = j_vec.get<std::vector<std::array<long, 2>>>();
+  std::vector<std::array<long, 2>> tmp =
+    j_vec.get<std::vector<std::array<long, 2>>>();
   for (auto &arr : tmp)
     truePositives.emplace(arr[0], arr[1]);
 
@@ -53,11 +55,11 @@ void compare_mathematica(std::vector<std::pair<int, int>> overlaps,
   // Get intersection of true positive
   std::vector<std::pair<long, long>> algotruePositives(truePositives.size());
   std::vector<std::pair<long, long>>::iterator it = std::set_intersection(
-      truePositives.begin(), truePositives.end(), algoBroadPhase.begin(),
-      algoBroadPhase.end(), algotruePositives.begin());
+    truePositives.begin(), truePositives.end(), algoBroadPhase.begin(),
+    algoBroadPhase.end(), algotruePositives.begin());
   algotruePositives.resize(it - algotruePositives.begin());
 
   spdlog::trace("Contains {:d}/{:d} TP", algotruePositives.size(),
-         truePositives.size());
+                truePositives.size());
   return;
 }

@@ -23,16 +23,16 @@ __global__ void count_collisions(Aabb *boxes, int *count, int N) {
 
 __device__ bool does_collide(const Aabb &a, const Aabb &b) {
   return
-      //    a.max.x >= b.min.x && a.min.x <= b.max.x &&
-      a.max.y >= b.min.y && a.min.y <= b.max.y && a.max.z >= b.min.z &&
-      a.min.z <= b.max.z;
+    //    a.max.x >= b.min.x && a.min.x <= b.max.x &&
+    a.max.y >= b.min.y && a.min.y <= b.max.y && a.max.z >= b.min.z &&
+    a.min.z <= b.max.z;
 }
 
 __device__ bool does_collide(Aabb *a, Aabb *b) {
   return
-      //    a->max.x >= b->min.x && a->min.x <= b->max.x &&
-      a->max.y >= b->min.y && a->min.y <= b->max.y && a->max.z >= b->min.z &&
-      a->min.z <= b->max.z;
+    //    a->max.x >= b->min.x && a->min.x <= b->max.x &&
+    a->max.y >= b->min.y && a->min.y <= b->max.y && a->max.z >= b->min.z &&
+    a->min.z <= b->max.z;
 }
 
 __device__ bool does_collide(const MiniBox &a, const MiniBox &b) {

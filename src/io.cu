@@ -19,7 +19,7 @@ void constructBoxes(const Eigen::MatrixXd &vertices_t0,
     threads = ccdgpu::CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
   tbb::global_control thread_limiter(
-        tbb::global_control::max_allowed_parallelism, threads);
+    tbb::global_control::max_allowed_parallelism, threads);
   addVertices(vertices_t0, vertices_t1, inflation_radius, boxes);
   addEdges(vertices_t0, vertices_t1, edges, inflation_radius, boxes);
   addFaces(vertices_t0, vertices_t1, faces, inflation_radius, boxes);

@@ -8,7 +8,6 @@
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/info.h>
 
-
 #ifdef CCD_USE_DOUBLE
 typedef double Scalar;
 // #warning Using Double
@@ -41,9 +40,8 @@ public:
 };
 
 void merge_local_boxes(
-    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
-        &storages,
-    std::vector<Aabb> &boxes);
+  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  std::vector<Aabb> &boxes);
 
 void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
               Eigen::MatrixXi &edges, std::vector<Aabb> &boxes);

@@ -150,8 +150,8 @@ void run_scaling(const Aabb *boxes, int N, int desiredBoxesPerThread,
 
   setup(devId, smemSize, threads, desiredBoxesPerThread);
   const int nBoxesPerThread =
-      desiredBoxesPerThread ? desiredBoxesPerThread
-                            : smemSize / sizeof(Aabb) / (2 * (BLOCK_PADDED));
+    desiredBoxesPerThread ? desiredBoxesPerThread
+                          : smemSize / sizeof(Aabb) / (2 * (BLOCK_PADDED));
   spdlog::trace("Boxes per Thread: {:d}", nBoxesPerThread);
 
   finOverlaps.clear();
@@ -200,7 +200,7 @@ void run_scaling(const Aabb *boxes, int N, int desiredBoxesPerThread,
   cudaEventRecord(start);
   get_collision_pairs<<<grid, block,
                         nBoxesPerThread * 2 * (BLOCK_PADDED) * sizeof(Aabb)>>>(
-      d_boxes, d_count, d_overlaps, N, guess, nBoxesPerThread, d_queries);
+    d_boxes, d_count, d_overlaps, N, guess, nBoxesPerThread, d_queries);
   // get_collision_pairs_old<<<grid, block>>>(d_boxes, d_count, d_overlaps, N,
   // guess);
   cudaEventRecord(stop);
@@ -228,8 +228,8 @@ void run_scaling(const Aabb *boxes, int N, int desiredBoxesPerThread,
     cudaDeviceSynchronize();
     cudaEventRecord(start);
     get_collision_pairs<<<
-        grid, block, nBoxesPerThread * 2 * (BLOCK_PADDED) * sizeof(Aabb)>>>(
-        d_boxes, d_count, d_overlaps, N, count, nBoxesPerThread, d_queries);
+      grid, block, nBoxesPerThread * 2 * (BLOCK_PADDED) * sizeof(Aabb)>>>(
+      d_boxes, d_count, d_overlaps, N, count, nBoxesPerThread, d_queries);
     // get_collision_pairs_old<<<grid, block>>>(d_boxes, d_count, d_overlaps, N,
     // 2*count);
     cudaEventRecord(stop);
@@ -353,8 +353,8 @@ struct sort_aabb_x : sorter {
 // };
 
 // DEPRECATED
-// void run_sweep(const Aabb* boxes, int N, int nbox, std::vector<std::pair<int,int>>&
-// finOverlaps, int& threads)
+// void run_sweep(const Aabb* boxes, int N, int nbox,
+// std::vector<std::pair<int,int>>& finOverlaps, int& threads)
 // {
 //     int devId = 0;
 //     cudaSetDevice(devId);
@@ -507,9 +507,9 @@ struct sort_aabb_x : sorter {
 
 // MULTI GPU SWEEP SUPPORT
 void merge_local_overlaps(
-    const tbb::enumerable_thread_specific<
-        tbb::concurrent_vector<std::pair<int, int>>> &storages,
-    std::vector<std::pair<int, int>> &overlaps) {
+  const tbb::enumerable_thread_specific<
+    tbb::concurrent_vector<std::pair<int, int>>> &storages,
+  std::vector<std::pair<int, int>> &overlaps) {
   overlaps.clear();
   size_t num_overlaps = overlaps.size();
   for (const auto &local_overlaps : storages) {
@@ -524,11 +524,11 @@ void merge_local_overlaps(
 }
 
 void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
-                        std::vector<std::pair<int, int>> &finOverlaps, int &threads,
-                        int &devcount) {
+                        std::vector<std::pair<int, int>> &finOverlaps,
+                        int &threads, int &devcount) {
   spdlog::critical("default threads {}", tbb::info::default_concurrency());
   tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int, int>>>
-      storages;
+    storages;
 
   float milliseconds = 0;
   int device_init_id = 0;
@@ -670,7 +670,7 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
     int count;
     cudaEventRecord(starts[device_id]);
     retrieve_collision_pairs<<<grid, block, smemSize>>>(
-        d_b, d_count, d_overlaps, N, guess, nbox, range_start, range_end);
+      d_b, d_count, d_overlaps, N, guess, nbox, range_start, range_end);
     cudaEventRecord(stops[device_id]);
     cudaEventSynchronize(stops[device_id]);
     cudaEventElapsedTime(&millisecondss[device_id], starts[device_id],
@@ -687,7 +687,7 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
       cudaMemset(d_count, 0, sizeof(int));
       cudaEventRecord(starts[device_id]);
       retrieve_collision_pairs<<<grid, block, smemSize>>>(
-          d_b, d_count, d_overlaps, N, count, nbox, range_start, range_end);
+        d_b, d_count, d_overlaps, N, count, nbox, range_start, range_end);
       cudaEventRecord(stops[device_id]);
       cudaEventSynchronize(stops[device_id]);
       cudaEventElapsedTime(&millisecondss[device_id], starts[device_id],
@@ -844,8 +844,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   spdlog::trace("Axis: {:s}", axis == x ? "x" : (axis == y ? "y" : "z"));
 
   recordLaunch<ccdgpu::Aabb *, ccdgpu::Scalar2 *, MiniBox *, int, Dimension>(
-      "create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm,
-      d_mini, N, axis);
+    "create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm,
+    d_mini, N, axis);
 
   try {
     // thrust::sort(thrust::device, d_mini, d_mini + N, sort_aabb_x()
@@ -909,9 +909,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 
     spdlog::trace("Final count for device {:d}:  {:d}", 0, count);
     tbb::global_control thread_limiter(
-        tbb::global_control::max_allowed_parallelism, threads);
+      tbb::global_control::max_allowed_parallelism, threads);
     tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int, int>>>
-        storages;
+      storages;
     auto &local_overlaps = storages.local();
     tbb::parallel_for(0, count, 1, [&](int &i) {
       local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
@@ -934,8 +934,8 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   }
 }
 
-// void run_sweep_pairing(const Aabb* boxes, int N, int nbox, std::vector<std::pair<int,
-// int>>& finOverlaps, int& threads, int & devcount)
+// void run_sweep_pairing(const Aabb* boxes, int N, int nbox,
+// std::vector<std::pair<int, int>>& finOverlaps, int& threads, int & devcount)
 // {
 
 //     int device_init_id = 0;
@@ -1051,11 +1051,12 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 // }
 
 void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
-                              std::vector<std::pair<int, int>> &finOverlaps, int &threads,
-                              int &devcount) {
+                              std::vector<std::pair<int, int>> &finOverlaps,
+                              int &threads, int &devcount) {
   // spdlog::critical("default threads {}",
   // tbb::info::default_concurrency());
-  // tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int, int>>>
+  // tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int,
+  // int>>>
   //     storages;
 
   // float milliseconds = 0;
@@ -1473,9 +1474,8 @@ void run_sweep_bigworkerqueue(const Aabb *boxes, int N, int nbox,
 
   int inc = 0;
   while (N > 0) {
-    sweepqueue<<<N / threads + 1, threads>>>(d_queue, d_boxes, d_count, count,
-                                             d_N, N, N0, d_start, d_end,
-                                             d_overlaps);
+    sweepqueue<<<N / threads + 1, threads>>>(
+      d_queue, d_boxes, d_count, count, d_N, N, N0, d_start, d_end, d_overlaps);
     gpuErrchk(cudaDeviceSynchronize());
     shift_queue_pointers<<<1, 1>>>(d_N, d_start, d_end);
     gpuErrchk(cudaDeviceSynchronize());

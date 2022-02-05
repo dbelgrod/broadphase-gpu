@@ -7,7 +7,7 @@
     cudaError_t __err = cudaGetLastError();                                    \
     if (__err != cudaSuccess) {                                                \
       spdlog::error("Fatal error: {:s} ({:s} at {:s}:{:d})", msg,              \
-              cudaGetErrorString(__err), __FILE__, __LINE__);                  \
+                    cudaGetErrorString(__err), __FILE__, __LINE__);            \
       spdlog::error("FAILED - ABORTING");                                      \
       exit(1);                                                                 \
     }                                                                          \

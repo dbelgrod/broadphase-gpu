@@ -24,13 +24,13 @@ bool is_vertex(const int *vids) { return vids[2] < 0 && vids[1] < 0; };
 bool is_valid_pair(const int *a, const int *b) {
   return (is_vertex(a) && is_face(b)) || (is_face(a) && is_vertex(b)) ||
          (is_edge(a) && is_edge(b));
-};
+}
 
 bool does_collide(const Aabb &a, const Aabb &b) {
   return
-      //    a.max[0] >= b.min[0] && a.min[0] <= b.max[0] && //ignore x axis
-      a.max[1] >= b.min[1] && a.min[1] <= b.max[1] && a.max[2] >= b.min[2] &&
-      a.min[2] <= b.max[2];
+    //    a.max[0] >= b.min[0] && a.min[0] <= b.max[0] && //ignore x axis
+    a.max[1] >= b.min[1] && a.min[1] <= b.max[1] && a.max[2] >= b.min[2] &&
+    a.min[2] <= b.max[2];
 }
 
 bool covertex(const int *a, const int *b) {
@@ -57,7 +57,8 @@ struct // sort_aabb_x
   bool operator()(Aabb a, Aabb b) const { return (a.min[0] < b.min[0]); }
 } sort_boxes;
 
-void sort_along_xaxis(std::vector<Aabb> &boxes, std::vector<int> &box_indices, int N) {
+void sort_along_xaxis(std::vector<Aabb> &boxes, std::vector<int> &box_indices,
+                      int N) {
   // sort box indices by boxes minx val
   tbb::parallel_sort(box_indices.begin(), box_indices.end(),
                      sort_indices(boxes.data()));
@@ -70,9 +71,9 @@ void sort_along_xaxis(std::vector<Aabb> &boxes, int N) {
 }
 
 void merge_local_overlaps(
-    const tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
-        &storages,
-    std::vector<std::pair<int, int>> &overlaps) {
+  const tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
+    &storages,
+  std::vector<std::pair<int, int>> &overlaps) {
   overlaps.clear();
   size_t num_overlaps = overlaps.size();
   for (const auto &local_overlaps : storages) {
@@ -86,10 +87,11 @@ void merge_local_overlaps(
   }
 }
 
-// void sweep(const std::vector<Aabb> &boxes, const std::vector<int> &box_indices,
+// void sweep(const std::vector<Aabb> &boxes, const std::vector<int>
+// &box_indices,
 //  std::vector<std::pair<int, int>> &overlaps, int N) {
-void sweep(const std::vector<Aabb> &boxes, std::vector<std::pair<int, int>> &overlaps,
-           int N) {
+void sweep(const std::vector<Aabb> &boxes,
+           std::vector<std::pair<int, int>> &overlaps, int N) {
   tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
   tbb::combinable<int> incrementer;
   tbb::combinable<Aabb> boxer;

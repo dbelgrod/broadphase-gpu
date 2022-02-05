@@ -343,8 +343,8 @@ __global__ void twostage_queue(ccdgpu::Scalar2 *sm, const MiniBox *const mini,
     __syncthreads();
     queue.nbr_per_loop = queue.end - queue.start;
     queue.nbr_per_loop = queue.nbr_per_loop < 0
-                             ? queue.end + HEAP_SIZE - queue.start
-                             : queue.nbr_per_loop;
+                           ? queue.end + HEAP_SIZE - queue.start
+                           : queue.nbr_per_loop;
     // __syncthreads();
   }
 }

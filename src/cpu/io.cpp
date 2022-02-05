@@ -13,7 +13,6 @@
 
 #include <gpubf/aabb.hpp>
 
-
 namespace ccdcpu {
 
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
@@ -23,13 +22,14 @@ void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
     threads = CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
   tbb::global_control thread_limiter(
-      tbb::global_control::max_allowed_parallelism, threads);
+    tbb::global_control::max_allowed_parallelism, threads);
   addVertices(vertices_t0, vertices_t1, boxes);
   addEdges(vertices_t0, vertices_t1, edges, boxes);
   addFaces(vertices_t0, vertices_t1, faces, boxes);
 }
 
-void parseMesh(const char *filet0, const char *filet1, std::vector<Aabb> &boxes) {
+void parseMesh(const char *filet0, const char *filet1,
+               std::vector<Aabb> &boxes) {
   Eigen::MatrixXd V0;
   Eigen::MatrixXd V1;
   Eigen::MatrixXi F;

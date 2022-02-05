@@ -3,10 +3,10 @@
 #include <tbb/parallel_for.h>
 
 namespace ccdcpu {
+
 void merge_local_boxes(
-    const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>>
-        &storages,
-    std::vector<Aabb> &boxes) {
+  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  std::vector<Aabb> &boxes) {
   size_t num_boxes = boxes.size();
   for (const auto &local_boxes : storages) {
     num_boxes += local_boxes.size();
