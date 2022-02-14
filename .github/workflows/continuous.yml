@@ -44,6 +44,11 @@ jobs:
       #   if: runner.os == 'macOS'
       #   run: brew install ccache
 
+      - uses: Jimver/cuda-toolkit@v0.2.5
+        id: cuda-toolkit
+        with:
+          cuda: '11.5.1'
+
       - name: Cache Build
         id: cache-build
         uses: actions/cache@v1
