@@ -26,8 +26,8 @@ jobs:
         os: [ubuntu-latest]
         config: [Debug, Release]
         include:
-          - os: macos-latest
-            name: macOS
+          # - os: macos-latest
+          #   name: macOS
           - os: ubuntu-latest
             name: Linux
     steps:
@@ -40,9 +40,9 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get install ccache
 
-      - name: Dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: brew install ccache
+      # - name: Dependencies (macOS)
+      #   if: runner.os == 'macOS'
+      #   run: brew install ccache
 
       - name: Cache Build
         id: cache-build
