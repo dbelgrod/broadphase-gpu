@@ -1,4 +1,4 @@
-set(GPUBF_SOURCES
+set(STQ_CUDA_SOURCES
 # src/queue.cu
 # src/queue.h
 # src/para.h
@@ -36,7 +36,7 @@ PARENT_SCOPE
 ################################################################################
 
 # add_subdirectory(cpu)
-set(CPUSWEEP_SOURCES
+set(STQ_CPU_SOURCES
   src/cpu/aabb.cpp
   src/cpu/aabb.hpp
   src/cpu/io.cpp

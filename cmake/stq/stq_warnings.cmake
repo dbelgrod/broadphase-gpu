@@ -3,11 +3,11 @@
 # http://stackoverflow.com/questions/5088460/flags-to-enable-thorough-and-verbose-g-warnings
 ################################################################################
 
-if(TARGET warnings::all)
+if(TARGET STQ::warnings)
 	return()
 endif()
 
-set(MY_FLAGS
+set(STQ_FLAGS
 		-Wall
 		-Wextra
 		-pedantic
@@ -145,13 +145,13 @@ set(MY_FLAGS
 
 # Flags above don't make sense for MSVC
 if(MSVC)
-	set(MY_FLAGS)
+	set(STQ_FLAGS)
 endif()
 
 include(CheckCXXCompilerFlag)
 
-add_library(warnings_all INTERFACE)
-add_library(warnings::all ALIAS warnings_all)
+add_library(STQ_warnings INTERFACE)
+add_library(STQ::warnings ALIAS STQ_warnings)
 
 foreach(FLAG IN ITEMS ${MY_FLAGS})
 	string(REPLACE "=" "-" FLAG_VAR "${FLAG}")
@@ -159,6 +159,6 @@ foreach(FLAG IN ITEMS ${MY_FLAGS})
 		check_cxx_compiler_flag("${FLAG}" IS_SUPPORTED_${FLAG_VAR})
 	endif()
 	if(IS_SUPPORTED_${FLAG_VAR})
-		target_compile_options(warnings_all INTERFACE ${FLAG})
+		target_compile_options(STQ_warnings INTERFACE ${FLAG})
 	endif()
 endforeach()
