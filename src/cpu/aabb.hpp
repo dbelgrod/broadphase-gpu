@@ -1,11 +1,9 @@
 #pragma once
 
+#include <array>
 #include <vector>
 
 #include <Eigen/Core>
-
-#include <tbb/enumerable_thread_specific.h>
-#include <tbb/info.h>
 
 namespace stq::cpu {
 
@@ -17,40 +15,36 @@ typedef float Scalar;
 // #warning Using Float
 #endif
 
-static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
+using ArrayMax3 =
+  Eigen::Array<Scalar, Eigen::Dynamic, 1, Eigen::ColMajor, 3, 1>;
 
 class Aabb {
 public:
   int id;
-  Scalar min[3];
-  Scalar max[3];
-  int vertexIds[3];
-
-  Aabb(int assignid, int *vids, Scalar *tempmin, Scalar *tempmax) {
-    id = assignid;
-    for (size_t i = 0; i < 3; i++) {
-      min[i] = tempmin[i];
-      max[i] = tempmax[i];
-      vertexIds[i] = vids[i];
-    }
-  };
+  ArrayMax3 min;
+  ArrayMax3 max;
+  std::array<int, 3> vertexIds;
 
   Aabb() = default;
+
+  Aabb(int assignid, const std::array<int, 3> &vids, const ArrayMax3 &tempmin,
+       const ArrayMax3 &tempmax)
+      : id(assignid), min(tempmin), max(tempmax), vertexIds(vids){};
 };
 
-void merge_local_boxes(
-  const tbb::enumerable_thread_specific<std::vector<Aabb>> &storages,
-  std::vector<Aabb> &boxes);
-
-void addEdges(const Eigen::MatrixXd &vertices_t0,
-              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
-              std::vector<Aabb> &boxes);
+void constructBoxes(const Eigen::MatrixXd &vertices_t0,
+                    const Eigen::MatrixXd &vertices_t1,
+                    const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
+                    std::vector<Aabb> &boxes, double inflation_radius = 0);
 
 void addVertices(const Eigen::MatrixXd &vertices_t0,
-                 const Eigen::MatrixXd &vertices_t1, std::vector<Aabb> &boxes);
+                 const Eigen::MatrixXd &vertices_t1, std::vector<Aabb> &boxes,
+                 double inflation_radius = 0);
 
-void addFaces(const Eigen::MatrixXd &vertices_t0,
-              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
-              std::vector<Aabb> &boxes);
+void addEdges(const std::vector<Aabb> &vertex_boxes,
+              const Eigen::MatrixXi &edges, std::vector<Aabb> &boxes);
+
+void addFaces(const std::vector<Aabb> &vertex_boxes,
+              const Eigen::MatrixXi &faces, std::vector<Aabb> &boxes);
 
 } // namespace stq::cpu

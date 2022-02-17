@@ -27,6 +27,7 @@ using json = nlohmann::json;
 #include <tbb/blocked_range.h>
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/global_control.h>
+#include <tbb/info.h>
 #include <tbb/parallel_for.h>
 
 using namespace std;
@@ -100,9 +101,10 @@ int main(int argc, char **argv) {
   }
   auto start = std::chrono::system_clock::now();
   // cout << "default threads " << tbb::info::default_concurrency() << endl;
+  static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
   tbb::global_control thread_limiter(
-    tbb::global_control::max_allowed_parallelism, stq::cpu::CPU_THREADS);
-  printf("Running with %i threads\n", stq::cpu::CPU_THREADS);
+    tbb::global_control::max_allowed_parallelism, CPU_THREADS);
+  printf("Running with %i threads\n", CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
   // printf("Running sweep\n");

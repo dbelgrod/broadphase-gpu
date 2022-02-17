@@ -14,13 +14,17 @@ namespace stq::cpu {
 
 // typedef StructAlignment(32) std::array<_simd, 6> SimdObject;
 
-bool is_face(const int *vids) { return vids[2] >= 0; };
+bool is_face(const std::array<int, 3> &vids) { return vids[2] >= 0; };
 
-bool is_edge(const int *vids) { return vids[2] < 0 && vids[1] >= 0; };
+bool is_edge(const std::array<int, 3> &vids) {
+  return vids[2] < 0 && vids[1] >= 0;
+};
 
-bool is_vertex(const int *vids) { return vids[2] < 0 && vids[1] < 0; };
+bool is_vertex(const std::array<int, 3> &vids) {
+  return vids[2] < 0 && vids[1] < 0;
+};
 
-bool is_valid_pair(const int *a, const int *b) {
+bool is_valid_pair(const std::array<int, 3> &a, const std::array<int, 3> &b) {
   return (is_vertex(a) && is_face(b)) || (is_face(a) && is_vertex(b)) ||
          (is_edge(a) && is_edge(b));
 }
@@ -32,8 +36,7 @@ bool does_collide(const Aabb &a, const Aabb &b) {
     a.min[2] <= b.max[2];
 }
 
-bool covertex(const int *a, const int *b) {
-
+bool covertex(const std::array<int, 3> &a, const std::array<int, 3> &b) {
   return a[0] == b[0] || a[0] == b[1] || a[0] == b[2] || a[1] == b[0] ||
          a[1] == b[1] || a[1] == b[2] || a[2] == b[0] || a[2] == b[1] ||
          a[2] == b[2];
