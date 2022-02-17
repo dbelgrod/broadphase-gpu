@@ -7,43 +7,7 @@
 
 #include <tbb/parallel_for.h>
 
-// __host__ __device__ half3 make_half3(__half x, __half y, __half z) {
-//   half3 t;
-//   t.x = x;
-//   t.y = y;
-//   t.z = z;
-//   return t;
-// }
-
-// __host__ __device__ half3 make_half3(float x, float y, float z) {
-//   half3 t;
-//   t.x = __float2half(x);
-//   t.y = __float2half(y);
-//   t.z = __float2half(z);
-//   return t;
-// }
-
 namespace stq::gpu {
-
-#ifdef CCD_USE_DOUBLE
-// #warning Using Double
-__host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
-                                         const Scalar &c) {
-  return make_double3(a, b, c);
-}
-__host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b) {
-  return make_double2(a, b);
-}
-#else
-__host__ __device__ Scalar3 make_Scalar3(const Scalar a, const Scalar b,
-                                         const Scalar &c) {
-  return make_float3(a, b, c);
-}
-__host__ __device__ Scalar2 make_Scalar2(const Scalar a, const Scalar b) {
-  return make_float2(a, b);
-}
-// #warning Using Float
-#endif
 
 __host__ __device__ bool is_face(const Aabb &x) { return x.vertexIds.z >= 0; };
 
@@ -76,7 +40,7 @@ __host__ __device__ bool is_valid_pair(const int3 &a, const int3 &b) {
 };
 
 void merge_local_boxes(
-  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  const tbb::enumerable_thread_specific<std::vector<Aabb>> &storages,
   std::vector<Aabb> &boxes) {
   size_t num_boxes = boxes.size();
   for (const auto &local_boxes : storages) {
@@ -99,7 +63,7 @@ float nextafter_down(float x) {
 void addEdges(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
               Scalar inflation_radius, std::vector<Aabb> &boxes) {
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+  tbb::enumerable_thread_specific<std::vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(edges.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < edges.rows(); i++) {
     Eigen::MatrixXd edge_vertex0_t0 = vertices_t0.row(edges(i, 0));
@@ -136,7 +100,7 @@ void addEdges(const Eigen::MatrixXd &vertices_t0,
 void addVertices(const Eigen::MatrixXd &vertices_t0,
                  const Eigen::MatrixXd &vertices_t1, Scalar inflation_radius,
                  std::vector<Aabb> &boxes) {
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+  tbb::enumerable_thread_specific<std::vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(vertices_t0.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
     Eigen::MatrixXd vertex_t0 = vertices_t0.row(i);
@@ -170,7 +134,7 @@ void addVertices(const Eigen::MatrixXd &vertices_t0,
 void addFaces(const Eigen::MatrixXd &vertices_t0,
               const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
               Scalar inflation_radius, std::vector<Aabb> &boxes) {
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+  tbb::enumerable_thread_specific<std::vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(faces.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < faces.rows(); i++) {
     Eigen::MatrixXd face_vertex0_t0 = vertices_t0.row(faces(i, 0));

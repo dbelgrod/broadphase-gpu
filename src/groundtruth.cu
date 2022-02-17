@@ -8,6 +8,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+namespace stq::gpu {
+
 // https://stackoverflow.com/questions/919612/mapping-two-integers-to-one-in-a-unique-and-deterministic-way
 unsigned long cantor(unsigned long x, unsigned long y) {
   return (x + y) * (x + y + 1) / 2 + y;
@@ -63,3 +65,5 @@ void compare_mathematica(std::vector<std::pair<int, int>> overlaps,
                 truePositives.size());
   return;
 }
+
+} // namespace stq::gpu

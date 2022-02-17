@@ -3,7 +3,7 @@
 // #include <cooperative_groups.h>
 // using namespace cooperative_groups;
 
-using namespace stq::gpu;
+namespace stq::gpu {
 
 __global__ void count_collisions(Aabb *boxes, int *count, int N) {
   int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -157,3 +157,5 @@ __global__ void get_collision_pairs_old(Aabb *boxes, int *count, int2 *overlaps,
   if (does_collide(a, b))
     add_overlap(threadRowId, threadColId, count, overlaps, G);
 }
+
+} // namespace stq::gpu

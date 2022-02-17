@@ -4,7 +4,7 @@
 
 #include <spdlog/spdlog.h>
 
-using namespace stq::gpu;
+namespace stq::gpu {
 
 void setup(int devId, int &smemSize, int &threads, int &nbox) {
   // Host code
@@ -53,3 +53,5 @@ void setup(int devId, int &smemSize, int &threads, int &nbox) {
 
   return;
 }
+
+} // namespace stq::gpu

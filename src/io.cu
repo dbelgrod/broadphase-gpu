@@ -10,13 +10,15 @@
 
 #include <tbb/global_control.h>
 
+namespace stq::gpu {
+
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
-                    std::vector<stq::gpu::Aabb> &boxes, int threads,
-                    stq::gpu::Scalar inflation_radius) {
+                    std::vector<Aabb> &boxes, int threads,
+                    Scalar inflation_radius) {
   if (threads <= 0)
-    threads = stq::gpu::CPU_THREADS;
+    threads = CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
   tbb::global_control thread_limiter(
     tbb::global_control::max_allowed_parallelism, threads);
@@ -47,3 +49,5 @@ void parseMesh(const char *filet0, const char *filet1, Eigen::MatrixXd &V0,
   // faces should be same F^{t=0} = F^{t=1}
   // constructBoxes(V0, V1, F, E, boxes);
 }
+
+} // namespace stq::gpu

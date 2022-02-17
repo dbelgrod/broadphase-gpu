@@ -8,6 +8,8 @@
 #include <stq/gpu/queue.cuh>
 // #include <stq/gpu/util.cuh>
 
+namespace stq::gpu {
+
 void setup(int devId, int &smemSize, int &threads, int &nboxes);
 
 void run_klee(const Aabb *boxes, int N, int numBoxes,
@@ -35,3 +37,5 @@ void run_klee(const Aabb *boxes, int N, int numBoxes,
 //  sort the boxes first the x,y axis and feed in those 2 sets
 //  __device__ Cell(Aabb * boxes) -> get the big cell size
 //  __device__ Cut()
+
+} // namespace stq::gpu

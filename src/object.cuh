@@ -1,5 +1,7 @@
 #pragma once
 
+namespace stq::gpu {
+
 __device__ struct Cell {
   float3 min;
   float3 max;
@@ -110,3 +112,5 @@ __device__ struct Cell {
     return;
   };
 };
+
+} // namespace stq::gpu

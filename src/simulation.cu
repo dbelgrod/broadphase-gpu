@@ -8,14 +8,13 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 
-#include <tbb/concurrent_vector.h>
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 #include <tbb/global_control.h>
 
 #include <spdlog/spdlog.h>
 
-using namespace stq::gpu;
+namespace stq::gpu {
 
 #define gpuErrchk(ans)                                                         \
   { gpuAssert((ans), __FILE__, __LINE__); }
@@ -298,13 +297,11 @@ struct sort_aabb_x : sorter {
     return (a.min.x < b.min.x);
   }
 
-  __device__ bool operator()(const stq::gpu::Scalar3 &a,
-                             const stq::gpu::Scalar3 &b) const {
+  __device__ bool operator()(const Scalar3 &a, const Scalar3 &b) const {
     return (a.x < b.x);
   }
 
-  __device__ bool operator()(const stq::gpu::Scalar2 &a,
-                             const stq::gpu::Scalar2 &b) const {
+  __device__ bool operator()(const Scalar2 &a, const Scalar2 &b) const {
     return (a.x < b.x);
   }
 
@@ -321,7 +318,7 @@ struct sort_aabb_x : sorter {
 // {
 //      // useless bc x is alays the min
 //     // __host__ __device__
-//     // bool operator()(const stq::gpu::Scalar3 &a, const stq::gpu::Scalar3
+//     // bool operator()(const Scalar3 &a, const Scalar3
 //     &b) const {
 //     //     return (a.y < b.y);}
 
@@ -335,7 +332,7 @@ struct sort_aabb_x : sorter {
 // {
 //     // useless bc x is alays the min
 //     // __host__ __device__
-//     // bool operator()(const stq::gpu::Scalar3 &a, const stq::gpu::Scalar3
+//     // bool operator()(const Scalar3 &a, const Scalar3
 //     &b) const {
 //     //     return (a.z < b.z);}
 
@@ -507,8 +504,8 @@ struct sort_aabb_x : sorter {
 
 // MULTI GPU SWEEP SUPPORT
 void merge_local_overlaps(
-  const tbb::enumerable_thread_specific<
-    tbb::concurrent_vector<std::pair<int, int>>> &storages,
+  const tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
+    &storages,
   std::vector<std::pair<int, int>> &overlaps) {
   overlaps.clear();
   size_t num_overlaps = overlaps.size();
@@ -527,8 +524,7 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
                         std::vector<std::pair<int, int>> &finOverlaps,
                         int &threads, int &devcount) {
   spdlog::critical("default threads {}", tbb::info::default_concurrency());
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int, int>>>
-    storages;
+  tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
 
   float milliseconds = 0;
   int device_init_id = 0;
@@ -787,19 +783,19 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   spdlog::trace("Grid dim (1D): {:d}", grid_dim_1d);
   spdlog::trace("Box size: {:d}", sizeof(Aabb));
   // spdlog::trace("MiniBox size: {:d}", sizeof(MiniBox));
-  spdlog::trace("stq::gpu::Scalar3 size: {:d}", sizeof(stq::gpu::Scalar3));
+  spdlog::trace("Scalar3 size: {:d}", sizeof(Scalar3));
   spdlog::trace("sizeof(queue) size: {:d}", sizeof(Queue));
 
-  stq::gpu::Scalar2 *d_sm;
-  cudaMalloc((void **)&d_sm, sizeof(stq::gpu::Scalar2) * N);
+  Scalar2 *d_sm;
+  cudaMalloc((void **)&d_sm, sizeof(Scalar2) * N);
 
   MiniBox *d_mini;
   cudaMalloc((void **)&d_mini, sizeof(MiniBox) * N);
 
   // mean of all box points (used to find best axis)
-  //   stq::gpu::Scalar3 *d_mean;
-  //   cudaMalloc((void **)&d_mean, sizeof(stq::gpu::Scalar3));
-  //   cudaMemset(d_mean, 0, sizeof(stq::gpu::Scalar3));
+  //   Scalar3 *d_mean;
+  //   cudaMalloc((void **)&d_mean, sizeof(Scalar3));
+  //   cudaMemset(d_mean, 0, sizeof(Scalar3));
 
   //   // recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds,
   //   // d_boxes, d_sm, d_mini, N, d_mean);
@@ -808,23 +804,23 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   //                d_mean, N);
 
   //   // temporary
-  //   stq::gpu::Scalar3 mean;
-  //   cudaMemcpy(&mean, d_mean, sizeof(stq::gpu::Scalar3),
+  //   Scalar3 mean;
+  //   cudaMemcpy(&mean, d_mean, sizeof(Scalar3),
   //   cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z
   //   {:.6f}", mean.x, mean.y, mean.z);
 
   //   // calculate variance and determine which axis to sort on
-  //   stq::gpu::Scalar3 *d_var; // 2 vertices per box
-  //   cudaMalloc((void **)&d_var, sizeof(stq::gpu::Scalar3));
-  //   cudaMemset(d_var, 0, sizeof(stq::gpu::Scalar3));
+  //   Scalar3 *d_var; // 2 vertices per box
+  //   cudaMalloc((void **)&d_var, sizeof(Scalar3));
+  //   cudaMemset(d_var, 0, sizeof(Scalar3));
   //   // calc_variance(boxes, d_var, N, d_mean);
   //   recordLaunch("calc_variance", grid_dim_1d, threads, smemSize,
   //   calc_variance,
   //                d_boxes, d_var, N, d_mean);
   //   cudaDeviceSynchronize();
 
-  //   stq::gpu::Scalar3 var3d;
-  //   cudaMemcpy(&var3d, d_var, sizeof(stq::gpu::Scalar3),
+  //   Scalar3 var3d;
+  //   cudaMemcpy(&var3d, d_var, sizeof(Scalar3),
   //   cudaMemcpyDeviceToHost); float maxVar = max(max(var3d.x, var3d.y),
   //   var3d.z);
 
@@ -843,9 +839,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 
   spdlog::trace("Axis: {:s}", axis == x ? "x" : (axis == y ? "y" : "z"));
 
-  recordLaunch<stq::gpu::Aabb *, stq::gpu::Scalar2 *, MiniBox *, int,
-               Dimension>("create_ds", grid_dim_1d, threads, smemSize,
-                          create_ds, d_boxes, d_sm, d_mini, N, axis);
+  recordLaunch<Aabb *, Scalar2 *, MiniBox *, int, Dimension>(
+    "create_ds", grid_dim_1d, threads, smemSize, create_ds, d_boxes, d_sm,
+    d_mini, N, axis);
 
   try {
     // thrust::sort(thrust::device, d_mini, d_mini + N, sort_aabb_x()
@@ -873,10 +869,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   gpuErrchk(cudaMalloc((void **)&d_overlaps, overlaps_size));
 
   spdlog::trace("Starting two stage_queue");
-  recordLaunch<stq::gpu::Scalar2 *, const MiniBox *, int2 *, int, int *, int,
-               int, int>("twostage_queue_1st", grid_dim_1d, threads,
-                         twostage_queue, d_sm, d_mini, d_overlaps, N, d_count,
-                         guess, 0, INT_MAX);
+  recordLaunch<Scalar2 *, const MiniBox *, int2 *, int, int *, int, int, int>(
+    "twostage_queue_1st", grid_dim_1d, threads, twostage_queue, d_sm, d_mini,
+    d_overlaps, N, d_count, guess, 0, INT_MAX);
   gpuErrchk(cudaDeviceSynchronize());
 
   int count;
@@ -888,10 +883,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
     cudaMalloc((void **)&d_overlaps, sizeof(int2) * (count));
     cudaMemset(d_count, 0, sizeof(int));
 
-    recordLaunch<stq::gpu::Scalar2 *, const MiniBox *, int2 *, int, int *, int,
-                 int, int>("twostage_queue_1st", grid_dim_1d, threads,
-                           twostage_queue, d_sm, d_mini, d_overlaps, N, d_count,
-                           count, 0, INT_MAX);
+    recordLaunch<Scalar2 *, const MiniBox *, int2 *, int, int *, int, int, int>(
+      "twostage_queue_1st", grid_dim_1d, threads, twostage_queue, d_sm, d_mini,
+      d_overlaps, N, d_count, count, 0, INT_MAX);
 
     gpuErrchk(cudaDeviceSynchronize());
     gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
@@ -911,8 +905,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
     spdlog::trace("Final count for device {:d}:  {:d}", 0, count);
     tbb::global_control thread_limiter(
       tbb::global_control::max_allowed_parallelism, threads);
-    tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int, int>>>
-      storages;
+    tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
     auto &local_overlaps = storages.local();
     tbb::parallel_for(0, count, 1, [&](int &i) {
       local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
@@ -1056,7 +1049,7 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
                               int &threads, int &devcount) {
   // spdlog::critical("default threads {}",
   // tbb::info::default_concurrency());
-  // tbb::enumerable_thread_specific<tbb::concurrent_vector<std::pair<int,
+  // tbb::enumerable_thread_specific<std::vector<std::pair<int,
   // int>>>
   //     storages;
 
@@ -1084,16 +1077,16 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
   // spdlog::trace("Grid dim (1D): {:d}", grid_dim_1d);
   // spdlog::trace("Box size: {:d}", sizeof(Aabb));
 
-  // stq::gpu::Scalar3 *d_sm;
-  // cudaMalloc((void **)&d_sm, sizeof(stq::gpu::Scalar3) * N);
+  // Scalar3 *d_sm;
+  // cudaMalloc((void **)&d_sm, sizeof(Scalar3) * N);
 
   // MiniBox *d_mini;
   // cudaMalloc((void **)&d_mini, sizeof(MiniBox) * N);
 
   // // mean of all box points (used to find best axis)
-  // stq::gpu::Scalar3 *d_mean;
-  // cudaMalloc((void **)&d_mean, sizeof(stq::gpu::Scalar3));
-  // cudaMemset(d_mean, 0, sizeof(stq::gpu::Scalar3));
+  // Scalar3 *d_mean;
+  // cudaMalloc((void **)&d_mean, sizeof(Scalar3));
+  // cudaMemset(d_mean, 0, sizeof(Scalar3));
 
   // // recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds,
   // // d_boxes, d_sm, d_mini, N, d_mean);
@@ -1102,24 +1095,24 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
   //              d_mean, N);
 
   // // temporary
-  // //   stq::gpu::Scalar3 mean;
-  // //   cudaMemcpy(&mean, d_mean, sizeof(stq::gpu::Scalar3),
+  // //   Scalar3 mean;
+  // //   cudaMemcpy(&mean, d_mean, sizeof(Scalar3),
   // //   cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z
   // {:.6f}", mean.x,
   // //   mean.y, mean.z);
 
   // //   // calculate variance and determine which axis to sort on
-  // //   stq::gpu::Scalar3 *d_var; // 2 vertices per box
-  // //   cudaMalloc((void **)&d_var, sizeof(stq::gpu::Scalar3));
-  // //   cudaMemset(d_var, 0, sizeof(stq::gpu::Scalar3));
+  // //   Scalar3 *d_var; // 2 vertices per box
+  // //   cudaMalloc((void **)&d_var, sizeof(Scalar3));
+  // //   cudaMemset(d_var, 0, sizeof(Scalar3));
   // //   // calc_variance(boxes, d_var, N, d_mean);
   // //   recordLaunch("calc_variance", grid_dim_1d, threads, smemSize,
   // //   calc_variance,
   // //                d_boxes, d_var, N, d_mean);
   // //   cudaDeviceSynchronize();
 
-  // //   stq::gpu::Scalar3 var3d;
-  // //   cudaMemcpy(&var3d, d_var, sizeof(stq::gpu::Scalar3),
+  // //   Scalar3 var3d;
+  // //   cudaMemcpy(&var3d, d_var, sizeof(Scalar3),
   // //   cudaMemcpyDeviceToHost); Scalar maxVar = max(max(var3d.x,
   // var3d.y),
   // //   var3d.z);
@@ -1201,9 +1194,9 @@ void run_sweep_multigpu_queue(const Aabb *boxes, int N, int nbox,
   //   cudaMemcpy(d_boxes_peer, d_boxes, sizeof(Aabb) * N,
   //   cudaMemcpyDefault); cudaDeviceSynchronize();
 
-  //   stq::gpu::Scalar3 *d_sm_peer;
-  //   cudaMalloc((void **)&d_sm_peer, sizeof(stq::gpu::Scalar3) * N);
-  //   cudaMemcpy(d_sm_peer, d_sm, sizeof(stq::gpu::Scalar3) * N,
+  //   Scalar3 *d_sm_peer;
+  //   cudaMalloc((void **)&d_sm_peer, sizeof(Scalar3) * N);
+  //   cudaMemcpy(d_sm_peer, d_sm, sizeof(Scalar3) * N,
   //   cudaMemcpyDefault); cudaDeviceSynchronize();
 
   //   MiniBox *d_mini_peer;
@@ -1360,40 +1353,40 @@ void run_sweep_bigworkerqueue(const Aabb *boxes, int N, int nbox,
   spdlog::trace("Grid dim (1D): {:d}", grid_dim_1d);
   spdlog::trace("Box size: {:d}", sizeof(Aabb));
   // spdlog::trace("MiniBox size: {:d}", sizeof(MiniBox));
-  spdlog::trace("stq::gpu::Scalar3 size: {:d}", sizeof(stq::gpu::Scalar3));
+  spdlog::trace("Scalar3 size: {:d}", sizeof(Scalar3));
   spdlog::trace("sizeof(queue) size: {:d}", sizeof(Queue));
 
-  // stq::gpu::Scalar3 * d_sm;
-  // cudaMalloc((void**)&d_sm, sizeof(stq::gpu::Scalar3)*N);
+  // Scalar3 * d_sm;
+  // cudaMalloc((void**)&d_sm, sizeof(Scalar3)*N);
 
   // MiniBox * d_mini;
   // cudaMalloc((void**)&d_mini, sizeof(MiniBox)*N);
 
   // // mean of all box points (used to find best axis)
-  // stq::gpu::Scalar3 * d_mean;
-  // cudaMalloc((void**)&d_mean, sizeof(stq::gpu::Scalar3));
-  // cudaMemset(d_mean, 0, sizeof(stq::gpu::Scalar3));
+  // Scalar3 * d_mean;
+  // cudaMalloc((void**)&d_mean, sizeof(Scalar3));
+  // cudaMemset(d_mean, 0, sizeof(Scalar3));
 
   // // recordLaunch("create_ds", grid_dim_1d, threads, smemSize, create_ds,
   // d_boxes, d_sm, d_mini, N, d_mean); recordLaunch("calc_mean",
   // grid_dim_1d, threads, smemSize, calc_mean, d_boxes, d_mean, N);
 
   // // temporary
-  // stq::gpu::Scalar3 mean;
-  // cudaMemcpy(&mean, d_mean, sizeof(stq::gpu::Scalar3),
+  // Scalar3 mean;
+  // cudaMemcpy(&mean, d_mean, sizeof(Scalar3),
   // cudaMemcpyDeviceToHost); spdlog::trace("mean: x {:.6f} y {:.6f} z {:.6f}",
   // mean.x, mean.y, mean.z);
 
   // // calculate variance and determine which axis to sort on
-  // stq::gpu::Scalar3 * d_var; //2 vertices per box
-  // cudaMalloc((void**)&d_var, sizeof(stq::gpu::Scalar3));
-  // cudaMemset(d_var, 0, sizeof(stq::gpu::Scalar3));
+  // Scalar3 * d_var; //2 vertices per box
+  // cudaMalloc((void**)&d_var, sizeof(Scalar3));
+  // cudaMemset(d_var, 0, sizeof(Scalar3));
   // // calc_variance(boxes, d_var, N, d_mean);
   // recordLaunch("calc_variance", grid_dim_1d, threads, smemSize,
   // calc_variance, d_boxes, d_var, N, d_mean); cudaDeviceSynchronize();
 
-  // stq::gpu::Scalar3 var3d;
-  // cudaMemcpy(&var3d, d_var, sizeof(stq::gpu::Scalar3),
+  // Scalar3 var3d;
+  // cudaMemcpy(&var3d, d_var, sizeof(Scalar3),
   // cudaMemcpyDeviceToHost); float maxVar = max(max(var3d.x, var3d.y),
   // var3d.z);
 
@@ -1553,3 +1546,5 @@ void run_sweep_bigworkerqueue(const Aabb *boxes, int N, int nbox,
   spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0,
                 local_overlaps.size());
 }
+
+} // namespace stq::gpu

@@ -1,6 +1,8 @@
 #include <stq/gpu/queue.cuh>
 #include <iostream>
 
+namespace stq::gpu {
+
 // __device__ __host__ Enqueue::Enqueue()
 // {
 // 	heap_size = 0;
@@ -111,3 +113,5 @@ __device__ void Queue::push(const int2 pair) {
 }
 
 __device__ int Queue::size() { return heap_size; }
+
+} // namespace stq::gpu

@@ -5,7 +5,7 @@
 namespace stq::cpu {
 
 void merge_local_boxes(
-  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  const tbb::enumerable_thread_specific<std::vector<Aabb>> &storages,
   std::vector<Aabb> &boxes) {
   size_t num_boxes = boxes.size();
   for (const auto &local_boxes : storages) {
@@ -21,9 +21,10 @@ void merge_local_boxes(
 float nextafter_up(float x) { return nextafterf(x, x + 1.); };
 float nextafter_down(float x) { return nextafterf(x, x - 1.); };
 
-void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &edges, std::vector<Aabb> &boxes) {
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+void addEdges(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
+              std::vector<Aabb> &boxes) {
+  tbb::enumerable_thread_specific<std::vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(edges.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < edges.rows(); i++) {
     Eigen::MatrixXd edge_vertex0_t0 = vertices_t0.row(edges(i, 0));
@@ -55,9 +56,9 @@ void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
   merge_local_boxes(storages, boxes);
 }
 
-void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                 std::vector<Aabb> &boxes) {
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+void addVertices(const Eigen::MatrixXd &vertices_t0,
+                 const Eigen::MatrixXd &vertices_t1, std::vector<Aabb> &boxes) {
+  tbb::enumerable_thread_specific<std::vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(vertices_t0.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < vertices_t0.rows(); i++) {
     Eigen::MatrixXd vertex_t0 = vertices_t0.row(i);
@@ -87,9 +88,10 @@ void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
   merge_local_boxes(storages, boxes);
 }
 
-void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &faces, std::vector<Aabb> &boxes) {
-  tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> storages;
+void addFaces(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
+              std::vector<Aabb> &boxes) {
+  tbb::enumerable_thread_specific<std::vector<Aabb>> storages;
   tbb::parallel_for(0, static_cast<int>(faces.rows()), 1, [&](int &i) {
     // for (unsigned long i = 0; i < faces.rows(); i++) {
     Eigen::MatrixXd face_vertex0_t0 = vertices_t0.row(faces(i, 0));

@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 
+namespace stq::gpu {
+
 #define cudaCheckErrors(msg)                                                   \
   do {                                                                         \
     cudaError_t __err = cudaGetLastError();                                    \
@@ -14,3 +16,5 @@
   } while (0)
 
 void setup(int devId, int &smemSize, int &threads, int &nbox);
+
+} // namespace stq::gpu

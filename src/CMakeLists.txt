@@ -4,7 +4,6 @@ if(STQ_WITH_CUDA)
     # src/queue.h
     # src/para.h
     # src/para.cu
-    # src/Type.hpp
     # src/body.h
     # src/body.cu
     # src/root_finder.h
@@ -29,6 +28,8 @@ if(STQ_WITH_CUDA)
     src/io.cuh
     src/io.cu
     src/timer.cuh
+    src/types.cu
+    src/types.cuh
 
     PARENT_SCOPE
   )

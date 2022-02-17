@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 
+namespace stq::gpu {
+
 __global__ void klee_pair_discover(Aabb *boxes__x, Aabb *boxes__y, int *count,
                                    int2 *overlaps, int N, int guess,
                                    int *numBoxes) {
@@ -181,3 +183,5 @@ void run_klee(const Aabb *boxes, int N, int numBoxes,
   // free(counter);
   cudaFree(d_count);
 }
+
+} // namespace stq::gpu

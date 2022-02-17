@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 
+namespace stq::gpu {
+
 class CudaTimer {
   cudaEvent_t _start, _end;
   std::vector<std::pair<std::string, float>> _records;
@@ -130,3 +132,5 @@ __device__ Fun recordLaunch(char *tag, Fun (*f)(Arguments...),
   }
   return res;
 };
+
+} // namespace stq::gpu

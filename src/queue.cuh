@@ -2,6 +2,8 @@
 
 #include <cuda/semaphore>
 
+namespace stq::gpu {
+
 // #include <stq/gpu/object.cuh>
 
 static const int HEAP_SIZE = 64;
@@ -34,3 +36,5 @@ public:
 
   __device__ int size();
 };
+
+} // namespace stq::gpu

@@ -4,9 +4,10 @@
 
 #include <Eigen/Core>
 
-#include <tbb/concurrent_vector.h>
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/info.h>
+
+namespace stq::cpu {
 
 #ifdef CCD_USE_DOUBLE
 typedef double Scalar;
@@ -15,8 +16,6 @@ typedef double Scalar;
 typedef float Scalar;
 // #warning Using Float
 #endif
-
-namespace stq::cpu {
 
 static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
 
@@ -40,16 +39,18 @@ public:
 };
 
 void merge_local_boxes(
-  const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
+  const tbb::enumerable_thread_specific<std::vector<Aabb>> &storages,
   std::vector<Aabb> &boxes);
 
-void addEdges(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &edges, std::vector<Aabb> &boxes);
+void addEdges(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &edges,
+              std::vector<Aabb> &boxes);
 
-void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-                 std::vector<Aabb> &boxes);
+void addVertices(const Eigen::MatrixXd &vertices_t0,
+                 const Eigen::MatrixXd &vertices_t1, std::vector<Aabb> &boxes);
 
-void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
-              Eigen::MatrixXi &faces, std::vector<Aabb> &boxes);
+void addFaces(const Eigen::MatrixXd &vertices_t0,
+              const Eigen::MatrixXd &vertices_t1, const Eigen::MatrixXi &faces,
+              std::vector<Aabb> &boxes);
 
 } // namespace stq::cpu
