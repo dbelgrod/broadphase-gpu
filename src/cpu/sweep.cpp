@@ -1,7 +1,6 @@
 #include <stq/cpu/sweep.hpp>
 
 #include <tbb/blocked_range.h>
-#include <tbb/combinable.h>
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
@@ -94,39 +93,29 @@ void merge_local_overlaps(const ThreadSpecificOverlaps &storages,
 void sweep(const std::vector<Aabb> &boxes,
            std::vector<std::pair<int, int>> &overlaps, int N) {
   ThreadSpecificOverlaps storages;
-  tbb::combinable<int> incrementer;
-  tbb::combinable<Aabb> boxer;
-  // tbb::enumerable_thread_specific<std::vector<int>> increments;
 
-  // tbb::parallel_for(tbb::blocked_range<int>(0,N), [&](const
-  // tbb::blocked_range<int>& r){
+  tbb::parallel_for(tbb::blocked_range<long>(0l, N - 1),
+                    [&](const tbb::blocked_range<long> &r) {
+                      auto &local_overlaps = storages.local();
 
-  // for (int i=r.begin(); i<r.end(); i++){
+                      for (long i = r.begin(); i < r.end(); i++) {
+                        const Aabb &a = boxes[i];
 
-  tbb::parallel_for(0, N, 1, [&](int &i) {
-    auto &local_overlaps = storages.local();
+                        for (long j = i + 1; j < N; j++) {
+                          const Aabb &b = boxes[j];
 
-    const Aabb a = boxes[i];
-    int inc = i + 1;
-    if (inc >= N)
-      return;
-    Aabb b = boxes[inc];
+                          if (a.max[0] < b.min[0]) {
+                            break;
+                          }
 
-    // local_overlaps.emplace_back(1, 2);
-    while (a.max[0] >= b.min[0]) //&& inc-i <=1)
-    {
-      if (does_collide(a, b) && is_valid_pair(a.vertexIds, b.vertexIds) &&
-          !covertex(a.vertexIds, b.vertexIds)) {
-        // local_overlaps.emplace_back(box_indices[i], box_indices[inc]);
-        local_overlaps.emplace_back(a.id, b.id);
-      }
-      inc++;
-      if (inc >= N)
-        return;
-      b = boxes[inc];
-    }
-    // }
-  });
+                          if (does_collide(a, b) &&
+                              is_valid_pair(a.vertexIds, b.vertexIds) &&
+                              !covertex(a.vertexIds, b.vertexIds)) {
+                            local_overlaps.emplace_back(a.id, b.id);
+                          }
+                        }
+                      }
+                    });
 
   merge_local_overlaps(storages, overlaps);
 }
