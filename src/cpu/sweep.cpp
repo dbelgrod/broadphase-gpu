@@ -11,7 +11,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace ccdcpu {
+namespace ccd::cpu {
 
 // typedef StructAlignment(32) std::array<_simd, 6> SimdObject;
 
@@ -181,4 +181,4 @@ void run_sweep_cpu(std::vector<Aabb> &boxes, int N, int numBoxes,
 // #pragma omp parallel for num_threads(num_threads),reduction(+:m_narrowPhase),
 // reduction(merge:narrowPhaseValues)
 
-} // namespace ccdcpu
+} // namespace ccd::cpu

@@ -23,7 +23,7 @@
 typedef enum { x, y, z } Dimension;
 typedef unsigned long long int ull;
 
-namespace ccdgpu {
+namespace ccd::gpu {
 
 static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
 
@@ -105,19 +105,19 @@ __host__ __device__ bool is_edge(const int3 &vids);
 __host__ __device__ bool is_vertex(const int3 &vids);
 __host__ __device__ bool is_valid_pair(const int3 &a, const int3 &b);
 
-} // namespace ccdgpu
+} // namespace ccd::gpu
 
 __global__ class MiniBox {
 public:
-  ccdgpu::Scalar2 min; // only y,z coord
-  ccdgpu::Scalar2 max;
+  ccd::gpu::Scalar2 min; // only y,z coord
+  ccd::gpu::Scalar2 max;
   int3 vertexIds;
   int id;
 
-  __device__ MiniBox(int assignid, ccdgpu::Scalar *tempmin,
-                     ccdgpu::Scalar *tempmax, int3 vids) {
-    min = ccdgpu::make_Scalar2(tempmin[0], tempmin[1]);
-    max = ccdgpu::make_Scalar2(tempmax[0], tempmax[1]);
+  __device__ MiniBox(int assignid, ccd::gpu::Scalar *tempmin,
+                     ccd::gpu::Scalar *tempmax, int3 vids) {
+    min = ccd::gpu::make_Scalar2(tempmin[0], tempmin[1]);
+    max = ccd::gpu::make_Scalar2(tempmax[0], tempmax[1]);
     vertexIds = vids;
     id = assignid;
   };
@@ -133,21 +133,21 @@ public:
 
 __global__ class SortedMin {
 public:
-  ccdgpu::Scalar3 data;
+  ccd::gpu::Scalar3 data;
   int3 vertexIds;
 
-  __device__ SortedMin(ccdgpu::Scalar _min, ccdgpu::Scalar _max, int assignid,
-                       int *vids) {
-    data = ccdgpu::make_Scalar3(_min, _max, ccdgpu::Scalar(assignid));
+  __device__ SortedMin(ccd::gpu::Scalar _min, ccd::gpu::Scalar _max,
+                       int assignid, int *vids) {
+    data = ccd::gpu::make_Scalar3(_min, _max, ccd::gpu::Scalar(assignid));
     // min = _min;
     // max = _max;
     vertexIds = make_int3(vids[0], vids[1], vids[2]);
     // id = assignid;
   };
 
-  __device__ SortedMin(ccdgpu::Scalar _min, ccdgpu::Scalar _max, int assignid,
-                       int3 vids) {
-    data = ccdgpu::make_Scalar3(_min, _max, ccdgpu::Scalar(assignid));
+  __device__ SortedMin(ccd::gpu::Scalar _min, ccd::gpu::Scalar _max,
+                       int assignid, int3 vids) {
+    data = ccd::gpu::make_Scalar3(_min, _max, ccd::gpu::Scalar(assignid));
     // min = _min;
     // max = _max;
     vertexIds = vids;
@@ -159,7 +159,7 @@ public:
 
 __global__ class RankBox {
 public:
-  ccdgpu::Aabb *aabb;
+  ccd::gpu::Aabb *aabb;
   ull rank_x;
   ull rank_y;
   ull rank_c;

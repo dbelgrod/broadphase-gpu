@@ -30,7 +30,7 @@ using json = nlohmann::json;
 #include <tbb/parallel_for.h>
 
 using namespace std;
-// using namespace ccdcpu;
+// using namespace ccd::cpu;
 
 void compare_mathematica(vector<pair<int, int>> overlaps,
                          const char *jsonPath) {
@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
   const char *filet0 = argv[1];
   const char *filet1 = argv[2];
 
-  vector<ccdcpu::Aabb> boxes;
-  ccdcpu::parseMesh(filet0, filet1, boxes);
+  vector<ccd::cpu::Aabb> boxes;
+  ccd::cpu::parseMesh(filet0, filet1, boxes);
   int N = boxes.size();
   int nbox = 0;
 
@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
   auto start = std::chrono::system_clock::now();
   // cout << "default threads " << tbb::info::default_concurrency() << endl;
   tbb::global_control thread_limiter(
-    tbb::global_control::max_allowed_parallelism, ccdcpu::CPU_THREADS);
-  printf("Running with %i threads\n", ccdcpu::CPU_THREADS);
+    tbb::global_control::max_allowed_parallelism, ccd::cpu::CPU_THREADS);
+  printf("Running with %i threads\n", ccd::cpu::CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
   // printf("Running sweep\n");

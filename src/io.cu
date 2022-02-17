@@ -13,10 +13,10 @@
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,
                     const Eigen::MatrixXi &edges, const Eigen::MatrixXi &faces,
-                    std::vector<ccdgpu::Aabb> &boxes, int threads,
-                    ccdgpu::Scalar inflation_radius) {
+                    std::vector<ccd::gpu::Aabb> &boxes, int threads,
+                    ccd::gpu::Scalar inflation_radius) {
   if (threads <= 0)
-    threads = ccdgpu::CPU_THREADS;
+    threads = ccd::gpu::CPU_THREADS;
   spdlog::trace("constructBoxes threads : {}", threads);
   tbb::global_control thread_limiter(
     tbb::global_control::max_allowed_parallelism, threads);
