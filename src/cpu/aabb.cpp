@@ -2,7 +2,7 @@
 
 #include <tbb/parallel_for.h>
 
-namespace ccd::cpu {
+namespace stq::cpu {
 
 void merge_local_boxes(
   const tbb::enumerable_thread_specific<tbb::concurrent_vector<Aabb>> &storages,
@@ -127,4 +127,4 @@ void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
   merge_local_boxes(storages, boxes);
 }
 
-} // namespace ccd::cpu
+} // namespace stq::cpu

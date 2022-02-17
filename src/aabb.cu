@@ -23,7 +23,7 @@
 //   return t;
 // }
 
-namespace ccd::gpu {
+namespace stq::gpu {
 
 #ifdef CCD_USE_DOUBLE
 // #warning Using Double
@@ -209,4 +209,4 @@ void addFaces(const Eigen::MatrixXd &vertices_t0,
   merge_local_boxes(storages, boxes);
 };
 
-} // namespace ccd::gpu
+} // namespace stq::gpu

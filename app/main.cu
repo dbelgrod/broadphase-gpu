@@ -20,7 +20,7 @@
 #include <spdlog/spdlog.h>
 
 using namespace std;
-using namespace ccd::gpu;
+using namespace stq::gpu;
 
 // spdlog::set_level(spdlog::level::trace);
 

@@ -16,7 +16,7 @@ typedef float Scalar;
 // #warning Using Float
 #endif
 
-namespace ccd::cpu {
+namespace stq::cpu {
 
 static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
 
@@ -52,4 +52,4 @@ void addVertices(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
 void addFaces(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
               Eigen::MatrixXi &faces, std::vector<Aabb> &boxes);
 
-} // namespace ccd::cpu
+} // namespace stq::cpu

@@ -13,7 +13,7 @@
 
 #include <gpubf/aabb.hpp>
 
-namespace ccd::cpu {
+namespace stq::cpu {
 
 void constructBoxes(Eigen::MatrixXd &vertices_t0, Eigen::MatrixXd &vertices_t1,
                     Eigen::MatrixXi &edges, Eigen::MatrixXi &faces,
@@ -51,4 +51,4 @@ void parseMesh(const char *filet0, const char *filet1,
   constructBoxes(V0, V1, E, F, boxes);
 }
 
-} // namespace ccd::cpu
+} // namespace stq::cpu

@@ -14,16 +14,16 @@ __global__ void reset_counter(uint *counter);
 __global__ void reset_counter(int *counter);
 __global__ void reset_counter(long long *counter);
 
-__global__ void count_collisions(ccd::gpu::Aabb *boxes, int *count, int N);
-__global__ void get_collision_pairs(ccd::gpu::Aabb *boxes, int *count,
+__global__ void count_collisions(stq::gpu::Aabb *boxes, int *count, int N);
+__global__ void get_collision_pairs(stq::gpu::Aabb *boxes, int *count,
                                     int2 *overlaps, int N, int G,
                                     const int nBoxesPerThread,
                                     long long *queries);
-__global__ void get_collision_pairs_old(ccd::gpu::Aabb *boxes, int *count,
+__global__ void get_collision_pairs_old(stq::gpu::Aabb *boxes, int *count,
                                         int2 *overlaps, int N, int G);
 
-__device__ bool does_collide(const ccd::gpu::Aabb &a, const ccd::gpu::Aabb &b);
-__device__ bool does_collide(ccd::gpu::Aabb *a, ccd::gpu::Aabb *b);
+__device__ bool does_collide(const stq::gpu::Aabb &a, const stq::gpu::Aabb &b);
+__device__ bool does_collide(stq::gpu::Aabb *a, stq::gpu::Aabb *b);
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
                             int2 *overlaps, int G);
 __device__ bool covertex(const int3 &a, const int3 &b);
