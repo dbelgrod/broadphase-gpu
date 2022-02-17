@@ -503,10 +503,11 @@ struct sort_aabb_x : sorter {
 // }
 
 // MULTI GPU SWEEP SUPPORT
-void merge_local_overlaps(
-  const tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
-    &storages,
-  std::vector<std::pair<int, int>> &overlaps) {
+typedef tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
+  ThreadSpecificOverlaps;
+
+void merge_local_overlaps(const ThreadSpecificOverlaps &storages,
+                          std::vector<std::pair<int, int>> &overlaps) {
   overlaps.clear();
   size_t num_overlaps = overlaps.size();
   for (const auto &local_overlaps : storages) {
@@ -524,7 +525,7 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
                         std::vector<std::pair<int, int>> &finOverlaps,
                         int &threads, int &devcount) {
   spdlog::critical("default threads {}", tbb::info::default_concurrency());
-  tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
+  ThreadSpecificOverlaps storages;
 
   float milliseconds = 0;
   int device_init_id = 0;
@@ -605,6 +606,8 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
   float millisecondss[devices_count];
 
   tbb::parallel_for(0, devices_count, 1, [&](int &device_id) {
+    auto &local_overlaps = storages.local();
+
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, device_id);
     spdlog::trace("{:s} -> unifiedAddressing = {:d}", prop.name,
@@ -705,7 +708,6 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
 
     spdlog::trace("Final count for device {:d}:  {:d}", device_id, count);
 
-    auto &local_overlaps = storages.local();
     // local_overlaps.reserve(local_overlaps.size() + count);
 
     // auto is_face = [&](Aabb x){return x.vertexIds.z >= 0;};
@@ -903,26 +905,25 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
     gpuErrchk(cudaGetLastError());
 
     spdlog::trace("Final count for device {:d}:  {:d}", 0, count);
-    tbb::global_control thread_limiter(
-      tbb::global_control::max_allowed_parallelism, threads);
-    tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
-    auto &local_overlaps = storages.local();
-    tbb::parallel_for(0, count, 1, [&](int &i) {
-      local_overlaps.emplace_back(overlaps[i].x, overlaps[i].y);
+
+    finOverlaps.reserve(finOverlaps.size() + count);
+    for (int i = 0; i < count; i++) {
+      finOverlaps.emplace_back(overlaps[i].x, overlaps[i].y);
       // int aid = overlaps[i].x;
       // int bid = overlaps[i].y;
       // Aabb a = boxes[aid];
       // Aabb b = boxes[bid];
 
       // if (is_vertex(a) && is_face(b)) // vertex, face
-      //   local_overlaps.emplace_back(aid, bid);
+      //   finOverlaps.emplace_back(aid, bid);
       // else if (is_edge(a) && is_edge(b))
-      //   local_overlaps.emplace_back(min(aid, bid), max(aid, bid));
+      //   finOverlaps.emplace_back(min(aid, bid), max(aid, bid));
       // else if (is_face(a) && is_vertex(b))
-      //   local_overlaps.emplace_back(bid, aid);
-    });
+      //   finOverlaps.emplace_back(bid, aid);
+    }
+
     free(overlaps);
-    merge_local_overlaps(storages, finOverlaps);
+
     spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0,
                   finOverlaps.size());
   }

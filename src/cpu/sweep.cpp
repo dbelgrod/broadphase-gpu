@@ -70,10 +70,11 @@ void sort_along_xaxis(std::vector<Aabb> &boxes, int N) {
   tbb::parallel_sort(boxes.begin(), boxes.end(), sort_boxes);
 }
 
-void merge_local_overlaps(
-  const tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
-    &storages,
-  std::vector<std::pair<int, int>> &overlaps) {
+typedef tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>>
+  ThreadSpecificOverlaps;
+
+void merge_local_overlaps(const ThreadSpecificOverlaps &storages,
+                          std::vector<std::pair<int, int>> &overlaps) {
   overlaps.clear();
   size_t num_overlaps = overlaps.size();
   for (const auto &local_overlaps : storages) {
@@ -92,7 +93,7 @@ void merge_local_overlaps(
 //  std::vector<std::pair<int, int>> &overlaps, int N) {
 void sweep(const std::vector<Aabb> &boxes,
            std::vector<std::pair<int, int>> &overlaps, int N) {
-  tbb::enumerable_thread_specific<std::vector<std::pair<int, int>>> storages;
+  ThreadSpecificOverlaps storages;
   tbb::combinable<int> incrementer;
   tbb::combinable<Aabb> boxer;
   // tbb::enumerable_thread_specific<std::vector<int>> increments;
@@ -103,6 +104,8 @@ void sweep(const std::vector<Aabb> &boxes,
   // for (int i=r.begin(); i<r.end(); i++){
 
   tbb::parallel_for(0, N, 1, [&](int &i) {
+    auto &local_overlaps = storages.local();
+
     const Aabb a = boxes[i];
     int inc = i + 1;
     if (inc >= N)
@@ -114,7 +117,6 @@ void sweep(const std::vector<Aabb> &boxes,
     {
       if (does_collide(a, b) && is_valid_pair(a.vertexIds, b.vertexIds) &&
           !covertex(a.vertexIds, b.vertexIds)) {
-        auto &local_overlaps = storages.local();
         // local_overlaps.emplace_back(box_indices[i], box_indices[inc]);
         local_overlaps.emplace_back(a.id, b.id);
       }
@@ -144,10 +146,10 @@ void run_sweep_cpu(std::vector<Aabb> &boxes, int N, int numBoxes,
   // }
   finOverlaps.clear();
 
-  printf("Running sort\n");
+  spdlog::trace("Running sort\n");
   // sort_along_xaxis(boxes_cpy, box_indices, N);
   sort_along_xaxis(boxes, N);
-  printf("Finished sort\n");
+  spdlog::trace("Finished sort\n");
 
   // std::vector<std::pair<int, int>> overlaps;
 
