@@ -17,9 +17,9 @@
 // for convenience
 using json = nlohmann::json;
 
-#include <gpubf/aabb.hpp>
-#include <gpubf/io.hpp>
-#include <gpubf/sweep.hpp>
+#include <stq/cpu/aabb.hpp>
+#include <stq/cpu/io.hpp>
+#include <stq/cpu/sweep.hpp>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;

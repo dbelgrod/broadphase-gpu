@@ -1,4 +1,4 @@
-#include <gpubf/sweep.hpp>
+#include <stq/cpu/sweep.hpp>
 
 #include <tbb/blocked_range.h>
 #include <tbb/combinable.h>

@@ -1,6 +1,6 @@
 
-#include <gpubf/aabb.cuh>
-#include <gpubf/util.cuh>
+#include <stq/gpu/aabb.cuh>
+#include <stq/gpu/util.cuh>
 
 #include <spdlog/spdlog.h>
 

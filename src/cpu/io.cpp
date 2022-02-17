@@ -1,4 +1,4 @@
-#include <gpubf/io.hpp>
+#include <stq/cpu/io.hpp>
 
 #include <vector>
 #include <string>
@@ -11,7 +11,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include <gpubf/aabb.hpp>
+#include <stq/cpu/aabb.hpp>
 
 namespace stq::cpu {
 

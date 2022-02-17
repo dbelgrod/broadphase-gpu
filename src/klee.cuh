@@ -3,10 +3,10 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 
-#include <gpubf/aabb.cuh>
-#include <gpubf/collision.cuh>
-#include <gpubf/queue.cuh>
-// #include <gpubf/util.cuh>
+#include <stq/gpu/aabb.cuh>
+#include <stq/gpu/collision.cuh>
+#include <stq/gpu/queue.cuh>
+// #include <stq/gpu/util.cuh>
 
 void setup(int devId, int &smemSize, int &threads, int &nboxes);
 

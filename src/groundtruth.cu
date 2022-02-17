@@ -1,4 +1,4 @@
-#include <gpubf/groundtruth.cuh>
+#include <stq/gpu/groundtruth.cuh>
 
 #include <set>
 #include <fstream>

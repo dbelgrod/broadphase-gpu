@@ -7,8 +7,8 @@
 
 #include <cooperative_groups.h>
 
-// #include <gpubf/aabb.cuh>
-#include <gpubf/collision.cuh>
+// #include <stq/gpu/aabb.cuh>
+#include <stq/gpu/collision.cuh>
 
 namespace cg = cooperative_groups;
 

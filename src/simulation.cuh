@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gpubf/aabb.cuh>
+#include <stq/gpu/aabb.cuh>
 
 #include <vector>
 #include <utility> // std::std::pair

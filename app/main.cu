@@ -11,11 +11,11 @@
 
 // #define CCD_USE_DOUBLE
 
-#include <gpubf/groundtruth.cuh>
-#include <gpubf/simulation.cuh>
-#include <gpubf/util.cuh>
-// #include <gpubf/klee.cuh>
-#include <gpubf/io.cuh>
+#include <stq/gpu/groundtruth.cuh>
+#include <stq/gpu/simulation.cuh>
+#include <stq/gpu/util.cuh>
+// #include <stq/gpu/klee.cuh>
+#include <stq/gpu/io.cuh>
 
 #include <spdlog/spdlog.h>
 

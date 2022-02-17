@@ -2,7 +2,7 @@
 
 #include <cuda/semaphore>
 
-// #include <gpubf/object.cuh>
+// #include <stq/gpu/object.cuh>
 
 static const int HEAP_SIZE = 64;
 

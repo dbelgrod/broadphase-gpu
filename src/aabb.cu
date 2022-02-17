@@ -1,4 +1,4 @@
-#include <gpubf/aabb.cuh>
+#include <stq/gpu/aabb.cuh>
 
 #include <limits>
 

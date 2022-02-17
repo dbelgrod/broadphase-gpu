@@ -1,4 +1,4 @@
-#include <gpubf/queue.cuh>
+#include <stq/gpu/queue.cuh>
 #include <iostream>
 
 // __device__ __host__ Enqueue::Enqueue()

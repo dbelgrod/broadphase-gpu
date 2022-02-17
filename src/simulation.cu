@@ -1,9 +1,9 @@
-#include <gpubf/simulation.cuh>
+#include <stq/gpu/simulation.cuh>
 
-#include <gpubf/collision.cuh>
-#include <gpubf/queue.cuh>
-#include <gpubf/sweep.cuh>
-#include <gpubf/timer.cuh>
+#include <stq/gpu/collision.cuh>
+#include <stq/gpu/queue.cuh>
+#include <stq/gpu/sweep.cuh>
+#include <stq/gpu/timer.cuh>
 
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>

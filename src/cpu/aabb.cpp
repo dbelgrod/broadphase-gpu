@@ -1,4 +1,4 @@
-#include <gpubf/aabb.hpp>
+#include <stq/cpu/aabb.hpp>
 
 #include <tbb/parallel_for.h>
 

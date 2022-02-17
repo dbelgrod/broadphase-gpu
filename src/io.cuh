@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <gpubf/aabb.cuh>
+#include <stq/gpu/aabb.cuh>
 
 void constructBoxes(const Eigen::MatrixXd &vertices_t0,
                     const Eigen::MatrixXd &vertices_t1,

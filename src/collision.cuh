@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gpubf/aabb.cuh>
+#include <stq/gpu/aabb.cuh>
 
 #define BLOCK_SIZE_1D 32 // sqrt(MAX_BLOCK_SIZE)
 // #define MAX_BLOCK_SIZE 1024 //for 1080Ti, V100

@@ -1,7 +1,7 @@
-// #include <gpubf/simulation.h>
-#include <gpubf/simulation.cuh>
-#include <gpubf/groundtruth.h>
-#include <gpubf/util.cuh>
+// #include <stq/gpu/simulation.h>
+#include <stq/gpu/simulation.cuh>
+#include <stq/gpu/groundtruth.h>
+#include <stq/gpu/util.cuh>
 
 #include <vector>
 #include <iostream>

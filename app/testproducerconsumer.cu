@@ -16,10 +16,10 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
-#include <gpubf/queue.cuh>
-#include <gpubf/aabb.cuh>
-#include <gpubf/timer.cuh>
-#include <gpubf/util.cuh>
+#include <stq/gpu/queue.cuh>
+#include <stq/gpu/aabb.cuh>
+#include <stq/gpu/timer.cuh>
+#include <stq/gpu/util.cuh>
 
 using namespace std;
 // using namespace cooperative_groups;

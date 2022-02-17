@@ -1,4 +1,4 @@
-#include <gpubf/collision.cuh>
+#include <stq/gpu/collision.cuh>
 
 // #include <cooperative_groups.h>
 // using namespace cooperative_groups;

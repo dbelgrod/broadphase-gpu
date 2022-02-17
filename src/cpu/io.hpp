@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <gpubf/aabb.hpp>
+#include <stq/cpu/aabb.hpp>
 
 namespace stq::cpu {
 

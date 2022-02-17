@@ -33,7 +33,7 @@ if(STQ_WITH_CPU)
   add_library(STQ_CPU STATIC ${STQ_CPU_SOURCES})
   add_library(STQ::CPU ALIAS STQ_CPU)
 
-  target_include_directories(STQ_CPU PUBLIC ${PROJECT_BINARY_DIR}/include/cpu)
+  target_include_directories(STQ_CPU PUBLIC ${PROJECT_BINARY_DIR}/include)
 
   include(stq_warnings)
   target_link_libraries(STQ_CPU PRIVATE STQ::warnings)

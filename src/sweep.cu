@@ -1,8 +1,8 @@
 #include <cuda/pipeline>
 
-// #include <gpubf/aabb.cuh>
-#include <gpubf/queue.cuh>
-#include <gpubf/sweep.cuh>
+// #include <stq/gpu/aabb.cuh>
+#include <stq/gpu/queue.cuh>
+#include <stq/gpu/sweep.cuh>
 
 #include <spdlog/spdlog.h>
 
