@@ -138,10 +138,8 @@ void run_sweep_cpu(std::vector<Aabb> &boxes, int N, int numBoxes,
   // }
   finOverlaps.clear();
 
-  spdlog::trace("Running sort\n");
   // sort_along_xaxis(boxes_cpy, box_indices, N);
   sort_along_xaxis(boxes, N);
-  spdlog::trace("Finished sort\n");
 
   // std::vector<std::pair<int, int>> overlaps;
 
