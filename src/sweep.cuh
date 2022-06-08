@@ -42,14 +42,11 @@ __global__ void build_checker(Scalar3 *sortedmin, int2 *outpairs, int N,
                               int *count, int guess);
 __global__ void create_ds(Aabb *boxes, Scalar2 *sortedmin, MiniBox *mini, int N,
                           Dimension axis);
-__global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
-                                          int2 *inpairs, int2 *overlaps, int N,
-                                          int guess);
 __global__ void calc_variance(Aabb *boxes, Scalar3 *var, int N, Scalar3 *mean);
 __global__ void calc_mean(Aabb *boxes, Scalar3 *mean, int N);
 __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
-                               int start = 0, int end = INT_MAX);
+                               int *start, int *end, const int maxOverlaps);
 
 // for pairing
 __global__ void create_ds(Aabb *boxes, Scalar3 *sortedmin, MiniBox *mini, int N,

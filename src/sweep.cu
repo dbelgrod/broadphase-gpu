@@ -17,20 +17,6 @@ __global__ void build_index(Aabb *boxes, int N, int *index) {
   index[tid] = tid;
 }
 
-// __global__ void sort_sorting_axis(SweepMarker* axis)
-// {
-
-// }
-
-__global__ void print_sort_axis(Aabb *axis, int C) {
-  // for (uint i = 0; i < C; i++)
-  //     printf("id: %i, x: %.6f\n", axis[i].id, axis[i].min.x);
-}
-
-__global__ void print_overlap_start(int2 *overlaps) {
-  printf("overlap[0].x %d\n", overlaps[0].x);
-}
-
 __global__ void retrieve_collision_pairs(const Aabb *const boxes, int *count,
                                          int2 *overlaps, int N, int guess,
                                          int nbox, int start, int end) {
@@ -232,51 +218,21 @@ __global__ void build_checker(Scalar3 *sm, int2 *out, int N, int *count,
   // }
 }
 
-// __global__ void retrieve_collision_pairs2(const Aabb* const boxes, int *
-// count, int2 * inpairs, int2 * overlaps, int N, int guess)
-__global__ void retrieve_collision_pairs2(const MiniBox *const mini, int *count,
-                                          int2 *inpairs, int2 *overlaps, int N,
-                                          int guess) {
-  extern __shared__ MiniBox s_mini[];
-
-  int nbox = 1;
-
-  int tid = threadIdx.x + nbox * blockIdx.x * blockDim.x;
-  int ltid = threadIdx.x;
-
-  if (tid >= N)
-    return;
-
-  for (int i = 0; i < nbox; i++) {
-    int aid = inpairs[tid + i * blockDim.x].x;
-    int bid = inpairs[tid + i * blockDim.x].y;
-
-    // s_mini[2*(ltid+i*blockDim.x)] = mini[aid];
-    // s_mini[2*(ltid+i*blockDim.x)+1] = mini[bid];
-
-    // const MiniBox& a = s_mini[2*(ltid+i*blockDim.x)];
-    // const MiniBox& b = s_mini[2*(ltid+i*blockDim.x)+1];
-
-    const MiniBox &a = mini[aid];
-    const MiniBox &b = mini[bid];
-
-    if (does_collide(a, b) && !covertex(a.vertexIds, b.vertexIds)) {
-      add_overlap(aid, bid, count, overlaps, guess);
-    }
-  }
-}
-
 __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
                                int2 *overlaps, int N, int *count, int guess,
-                               int start, int end) {
+                               int *start, int *end, const int MAX_OVERLAP_SIZE) {
   __shared__ Queue queue;
   queue.heap_size = HEAP_SIZE;
   queue.start = 0;
   queue.end = 0;
 
-  int tid = threadIdx.x + blockIdx.x * blockDim.x + start;
+  int tid = threadIdx.x + blockIdx.x * blockDim.x + *start;
   if (tid >= N || tid + 1 >= N)
     return;
+
+  // if (count >= MAX_OVERLAP_SIZE && blockIdx.x > maxBlockId )
+  //   return;
+
   Scalar2 a = sm[tid];
   Scalar2 b = sm[tid + 1];
 
@@ -286,7 +242,6 @@ __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
   }
   __syncthreads();
   queue.nbr_per_loop = queue.end - queue.start;
-  // __syncthreads();
 
   while (queue.nbr_per_loop > 0) {
     if (threadIdx.x >= queue.nbr_per_loop)
@@ -313,14 +268,8 @@ __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
     queue.nbr_per_loop = queue.nbr_per_loop < 0
                            ? queue.end + HEAP_SIZE - queue.start
                            : queue.nbr_per_loop;
-    // __syncthreads();
   }
 }
-
-// BigWorkerQueue
-// we will have int2 queue, int start, int end
-// we keep going start+tid, atomicAdd the end
-// we need to have the sweep function + initially setup first array
 
 __global__ void init_bigworkerqueue(int2 *queue, int N) {
   int tid = threadIdx.x + blockDim.x * blockIdx.x;
