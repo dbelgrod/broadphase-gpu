@@ -47,12 +47,6 @@ __device__ bool covertex(const int3 &a, const int3 &b) {
          a.y == b.z || a.z == b.x || a.z == b.y || a.z == b.z;
 }
 
-// __device__ bool covertex_box(const Aabb a, const Aabb b) {
-//     return a.max.x == b.max.x || a.max.x == b.max.y || a.max.x == b.max.z ||
-//         a.max.y == b.max.x || a.max.y == b.max.y || a.max.y == b.max.z ||
-//         a.max.z == b.max.x || a.max.z == b.max.y || a.max.z == b.max.z;
-// }
-
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
                             int2 *overlaps, int G) {
   int i = atomicAdd(count, 1);

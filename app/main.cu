@@ -100,10 +100,11 @@ int main(int argc, char **argv) {
   vector<pair<int, int>> overlaps;
   int2 *d_overlaps; // device
   int *d_count;     // device
+  int tidstart = 0;
 
   if (evenworkload)
     run_sweep_sharedqueue(boxes.data(), N, nbox, overlaps, d_overlaps, d_count,
-                          parallel, devcount);
+                          parallel, tidstart, devcount);
   else if (sharedqueue_mgpu)
     run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel,
                              devcount);
