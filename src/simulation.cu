@@ -652,9 +652,10 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   gpuErrchk(cudaGetLastError());
 
   // Guessing global collision output size
-  int guess = MAX_OVERLAP_SIZE; //200 * N;
+  int guess = MAX_OVERLAP_CUTOFF; //200 * N;
   spdlog::trace("Guess overlaps: {:d}", guess);
-  size_t overlaps_size = 10*guess * sizeof(int2);
+  // size_t overlaps_size = 10*guess * sizeof(int2);
+  size_t overlaps_size = MAX_OVERLAP_SIZE * sizeof(int2);
   spdlog::trace("overlaps_size: {:d}", overlaps_size);
   gpuErrchk(cudaGetLastError());
 
@@ -681,7 +682,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   recordLaunch<Scalar2 *, const MiniBox *, int2 *, int, int *, int, int *,
                int *, int>(
     "twostage_queue_1st", grid_dim_1d, threads, twostage_queue, d_sm, d_mini,
-    d_overlaps, N, d_count, guess, d_start, d_end, MAX_OVERLAP_SIZE);
+    d_overlaps, N, d_count, guess, d_start, d_end, MAX_OVERLAP_CUTOFF);
   gpuErrchk(cudaDeviceSynchronize());
 
   gpuErrchk(cudaGetLastError());

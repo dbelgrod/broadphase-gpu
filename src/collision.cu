@@ -61,10 +61,14 @@ __device__ void add_overlap(const int &xid, const int &yid, int *count,
   }
   else if (nptid <= nextPossibleThread[0]) // process up to the last block running
   {
+    // printf("%d count\n", i);
     overlaps[i] = make_int2(xid, yid);
   }
   else 
+  {
+    // printf("%d count\n", i);
     atomicSub(count, 1);
+  }
   
 }
 

@@ -9,7 +9,8 @@
 
 namespace stq::gpu {
 
-static const int MAX_OVERLAP_SIZE = 1e6;
+static const int MAX_OVERLAP_CUTOFF = 1e2;
+static const int MAX_OVERLAP_SIZE = 1e7;
 
 void run_collision_counter(Aabb *boxes, int N);
 // void run_scaling(const Aabb* boxes, int N, int nBox, std::vector<unsigned
