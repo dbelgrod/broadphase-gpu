@@ -5,12 +5,10 @@
 #include <vector>
 #include <utility> // std::std::pair
 
-
-
 namespace stq::gpu {
 
-static const int MAX_OVERLAP_CUTOFF = 1e2;
-static const int MAX_OVERLAP_SIZE = 1e7;
+static const int MAX_OVERLAP_CUTOFF = 1e4;
+static const int MAX_OVERLAP_SIZE = 1e8;
 
 void run_collision_counter(Aabb *boxes, int N);
 // void run_scaling(const Aabb* boxes, int N, int nBox, std::vector<unsigned
@@ -23,8 +21,8 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
 void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
                            std::vector<std::pair<int, int>> &finOverlaps,
                            int2 *&d_overlaps, int *&d_count, int &threads,
-                           int &tidstart,
-                           int &devcount, bool keep_cpu_overlaps = false);
+                           int &tidstart, int &devcount,
+                           bool keep_cpu_overlaps = false);
 
 void run_sweep_pairing(const Aabb *boxes, int N, int nbox,
                        std::vector<std::pair<int, int>> &finOverlaps,

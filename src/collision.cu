@@ -48,8 +48,9 @@ __device__ bool covertex(const int3 &a, const int3 &b) {
 }
 
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
-                            int2 *overlaps, int* nextPossibleThread, int* start, int G) {
-  int nptid = (blockIdx.x+1)*blockDim.x + *start;                
+                            int2 *overlaps, int *nextPossibleThread, int *start,
+                            int G) {
+  int nptid = (blockIdx.x + 1) * blockDim.x + *start;
 
   int i = atomicAdd(count, 1);
 
@@ -57,28 +58,25 @@ __device__ void add_overlap(const int &xid, const int &yid, int *count,
     overlaps[i] = make_int2(xid, yid);
 
     // register the largest tid possible before cutoff
-    atomicMax(nextPossibleThread, nptid) ;
-  }
-  else if (nptid <= nextPossibleThread[0]) // process up to the last block running
+    atomicMax(nextPossibleThread, nptid);
+  } else if (nptid <=
+             nextPossibleThread[0]) // process up to the last block running
   {
     // printf("%d count\n", i);
     overlaps[i] = make_int2(xid, yid);
-  }
-  else 
-  {
+  } else {
     // printf("%d count\n", i);
     atomicSub(count, 1);
   }
-  
 }
 
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
-  int2 *overlaps, int G) {
-int i = atomicAdd(count, 1);
+                            int2 *overlaps, int G) {
+  int i = atomicAdd(count, 1);
 
-if (i < G) {
-overlaps[i] = make_int2(xid, yid);
-}
+  if (i < G) {
+    overlaps[i] = make_int2(xid, yid);
+  }
 }
 
 __device__ void append_queue(const int2 &lastcheck, int inc, int2 *queue,

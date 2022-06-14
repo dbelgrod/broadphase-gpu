@@ -6,7 +6,7 @@ namespace stq::gpu {
 
 // #include <stq/gpu/object.cuh>
 
-static const int HEAP_SIZE = 64;
+static const int HEAP_SIZE = 2048; // 64;
 
 // Prototype of a utility function to swap two integers
 // __device__ void swap(Cell&x, Cell &y);
