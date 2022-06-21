@@ -56,7 +56,7 @@ if(STQ_WITH_CPU)
 
   # JSON
   include(json)
-  target_link_libraries(STQ_CPU PUBLIC nlohmann::json)
+  target_link_libraries(STQ_CPU PUBLIC nlohmann_json::nlohmann_json)
 
   # Logger
   include(spdlog)
@@ -140,8 +140,7 @@ if(STQ_WITH_CUDA)
   # Required Libraries
   #-------------------------------------------------------------------------------
 
-  # libigl
-  include(eigen)
+  # libigl include(eigen)
   include(libigl)
   target_link_libraries(STQ_CUDA PUBLIC Eigen3::Eigen igl::core)
 
@@ -151,7 +150,7 @@ if(STQ_WITH_CUDA)
 
   # JSON
   include(json)
-  target_link_libraries(STQ_CUDA PUBLIC nlohmann::json)
+  target_link_libraries(STQ_CUDA PUBLIC nlohmann_json::nlohmann_json)
 
   # Logger
   include(spdlog)
