@@ -26,7 +26,7 @@ FetchContent_Declare(
 option(TBB_TEST "Enable testing" OFF)
 option(TBB_EXAMPLES "Enable examples" OFF)
 option(TBB_STRICT "Treat compiler warnings as errors" ON)
-option(TBB_PREFER_STATIC "Use the static version of TBB for the alias target" ON)
+option(TBB_PREFER_STATIC "Use the static version of TBB for the alias target" OFF)
 unset(TBB_DIR CACHE)
 
 set(OLD_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})

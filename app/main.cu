@@ -105,12 +105,12 @@ int main(int argc, char **argv) {
   if (evenworkload)
     run_sweep_sharedqueue(boxes.data(), N, nbox, overlaps, d_overlaps, d_count,
                           parallel, tidstart, devcount);
-  else if (sharedqueue_mgpu)
-    run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel,
-                             devcount);
-  else if (bigworkerqueue)
-    run_sweep_bigworkerqueue(boxes.data(), N, nbox, overlaps, d_overlaps,
-                             d_count, parallel, devcount);
+  // else if (sharedqueue_mgpu)
+  //   run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel,
+  //                            devcount);
+  // else if (bigworkerqueue)
+  //   run_sweep_bigworkerqueue(boxes.data(), N, nbox, overlaps, d_overlaps,
+  //                            d_count, parallel, devcount);
   else
     run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
 
