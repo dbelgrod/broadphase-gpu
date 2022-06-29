@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stq/gpu/aabb.cuh>
+#include <stq/gpu/memory.cuh>
 
 namespace stq::gpu {
 
@@ -26,7 +27,8 @@ __global__ void get_collision_pairs_old(Aabb *boxes, int *count, int2 *overlaps,
 __device__ bool does_collide(const Aabb &a, const Aabb &b);
 __device__ bool does_collide(Aabb *a, Aabb *b);
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
-                            int2 *overlaps, int* nextPossibleThread, int*start, int G);
+                            int2 *overlaps, int *nextPossibleThread, int *start,
+                            MemHandler *mem);
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
                             int2 *overlaps, int G);
 __device__ bool covertex(const int3 &a, const int3 &b);

@@ -219,9 +219,8 @@ __global__ void build_checker(Scalar3 *sm, int2 *out, int N, int *count,
 }
 
 __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
-                               int2 *overlaps, int N, int *count, int guess,
-                               int *start, int *nextPossibleThread,
-                               const int MAX_OVERLAP_CUTOFF) {
+                               int2 *overlaps, int N, int *count, int *start,
+                               int *nextPossibleThread, MemHandler *mem) {
   __shared__ Queue queue;
   queue.heap_size = HEAP_SIZE;
   queue.start = 0;
@@ -251,7 +250,7 @@ __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
     if (does_collide(ax, bx) && is_valid_pair(ax.vertexIds, bx.vertexIds) &&
         !covertex(ax.vertexIds, bx.vertexIds)) {
       add_overlap(ax.id, bx.id, count, overlaps, nextPossibleThread, start,
-                  guess);
+                  mem);
     }
 
     if (res.y + 1 >= N)

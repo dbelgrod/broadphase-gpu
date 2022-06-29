@@ -1,5 +1,6 @@
 if(STQ_WITH_CUDA)
   set(STQ_CUDA_SOURCES
+
     # src/queue.cu
     # src/queue.h
     # src/para.h
@@ -18,27 +19,29 @@ if(STQ_WITH_CUDA)
     src/groundtruth.cuh
     src/sweep.cu
     src/sweep.cuh
+
     # src/klee.cu
     # src/klee.cuh
     src/util.cu
     src/util.cuh
     src/queue.cu
     src/queue.cuh
+
     # src/object.cuh
     src/io.cuh
     src/io.cu
     src/timer.cuh
     src/types.cu
     src/types.cuh
+    src/memory.cuh
 
     PARENT_SCOPE
   )
 endif()
 
-################################################################################
+# ###############################################################################
 # Subfolders
-################################################################################
-
+# ###############################################################################
 if(STQ_WITH_CPU)
   # add_subdirectory(cpu)
   set(STQ_CPU_SOURCES
