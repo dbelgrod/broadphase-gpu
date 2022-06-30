@@ -4,7 +4,7 @@
 #include <stq/gpu/queue.cuh>
 #include <stq/gpu/sweep.cuh>
 #include <stq/gpu/timer.cuh>
-// #include <stq/gpu/memory.cuh>
+#include <stq/gpu/memory.cuh>
 
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
@@ -16,6 +16,8 @@
 #include <spdlog/spdlog.h>
 
 namespace stq::gpu {
+
+extern MemHandler *memhandle;
 
 #define gpuErrchk(ans)                                                         \
   { gpuAssert((ans), __FILE__, __LINE__); }
@@ -560,13 +562,17 @@ void run_sweep_multigpu(const Aabb *boxes, int N, int nbox,
   printf("\n");
 }
 
-void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
+void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
+                           int nbox,
                            std::vector<std::pair<int, int>> &finOverlaps,
                            int2 *&d_overlaps, int *&d_count, int &threads,
                            int &tidstart, int &devcount,
                            bool keep_cpu_overlaps) {
   cudaDeviceSynchronize();
   spdlog::trace("Number of boxes: {:d}", N);
+
+  if (!memhandle->MAX_OVERLAP_CUTOFF)
+    memhandle->MAX_OVERLAP_CUTOFF = N;
 
   int device_init_id = 0;
 
@@ -654,20 +660,20 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
 
   // MemHandler memhandle;
   // Guessing global collision output size
-  // int guess = memhandle.MAX_OVERLAP_CUTOFF; // 200 * N;
-  spdlog::trace("Guess cutoff: {:d}", memhandle.MAX_OVERLAP_CUTOFF);
-  size_t overlaps_size = memhandle.MAX_OVERLAP_SIZE * sizeof(int2);
+  // int guess = memhandle->MAX_OVERLAP_CUTOFF; // 200 * N;
+  spdlog::trace("Guess cutoff: {:d}", memhandle->MAX_OVERLAP_CUTOFF);
+  size_t overlaps_size = memhandle->MAX_OVERLAP_SIZE * sizeof(int2);
   spdlog::trace("overlaps_size: {:d}", overlaps_size);
   gpuErrchk(cudaGetLastError());
 
   int *d_start;
   int *d_end;
-  int boxes_done = tidstart;
+  // int boxes_done = tidstart;
 
   gpuErrchk(cudaMalloc((void **)&d_start, sizeof(int)));
   gpuErrchk(cudaMalloc((void **)&d_end, sizeof(int)));
   gpuErrchk(
-    cudaMemcpy(d_start, &boxes_done, sizeof(int), cudaMemcpyHostToDevice));
+    cudaMemcpy(d_start, &tidstart, sizeof(int), cudaMemcpyHostToDevice));
   gpuErrchk(cudaMemset(d_end, 0, sizeof(int)));
   gpuErrchk(cudaGetLastError());
 
@@ -678,7 +684,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   // Device memhandler to keep track of vars
   MemHandler *d_memhandle;
   gpuErrchk(cudaMalloc((void **)&d_memhandle, sizeof(MemHandler)));
-  cudaMemcpy(d_memhandle, &memhandle, sizeof(MemHandler),
+  cudaMemcpy(d_memhandle, memhandle, sizeof(MemHandler),
              cudaMemcpyHostToDevice);
 
   // int2 * d_overlaps;
@@ -686,7 +692,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   gpuErrchk(cudaMalloc((void **)&d_overlaps, overlaps_size));
 
   spdlog::trace("Starting two stage_queue");
-  spdlog::trace("Starting tid {:d}", boxes_done);
+  spdlog::trace("Starting tid {:d}", tidstart);
   recordLaunch<Scalar2 *, const MiniBox *, int2 *, int, int *, int *, int *,
                MemHandler *>("twostage_queue_1st", grid_dim_1d, threads,
                              twostage_queue, d_sm, d_mini, d_overlaps, N,
@@ -699,36 +705,64 @@ void run_sweep_sharedqueue(const Aabb *boxes, int N, int nbox,
   gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
   spdlog::trace("1st count for device {:d}:  {:d}", device_init_id, count);
 
-  int diff = boxes_done;
-  gpuErrchk(
-    cudaMemcpy(&boxes_done, d_end, sizeof(int), cudaMemcpyDeviceToHost));
-  diff = boxes_done - diff;
-  while (count > memhandle.MAX_OVERLAP_SIZE) {
-    spdlog::trace("Boxes done total {:d}, total {:d} -> Batching", boxes_done,
-                  N);
-    spdlog::trace("Next threadid start {:d}", tidstart);
+  int realcount;
+  gpuErrchk(cudaMemcpy(&realcount, &(d_memhandle->realcount), sizeof(int),
+                       cudaMemcpyDeviceToHost));
+  spdlog::trace("Real count for device {:d}:  {:d}", device_init_id, realcount);
 
-    if (memhandle.increaseOverlapSize(2)) {
+  // int diff = boxes_done;
+  // gpuErrchk(
+  //   cudaMemcpy(&boxes_done, d_end, sizeof(int), cudaMemcpyDeviceToHost));
+  // diff = boxes_done - diff;
+
+  spdlog::debug("realcount: {:d}, overlap_size {:d} -> Batching", realcount,
+                memhandle->MAX_OVERLAP_SIZE);
+  while (count > memhandle->MAX_OVERLAP_SIZE) {
+    // spdlog::trace("Boxes done total {:d}, total {:d} -> Batching",
+    // boxes_done,
+    //               N);
+
+    if (memhandle->increaseOverlapSize(2)) {
       // do it again
     } else {
-      memhandle.increaseOverlapCutoff(0.5);
+      memhandle->increaseOverlapCutoff(0.5);
     }
 
-    // cudaMalloc((void **)&d_overlaps,
-    //            sizeof(int2) * (memhandle.MAX_OVERLAP_CUTOFF));
-    // cudaMemset(d_count, 0, sizeof(int));
+    gpuErrchk(cudaMalloc((void **)&d_overlaps,
+                         sizeof(int2) * (memhandle->MAX_OVERLAP_SIZE)));
 
-    // recordLaunch<Scalar2 *, const MiniBox *, int2 *, int, int *, int, int *,
-    //            int *, int>(
-    //   "twostage_queue_1st", grid_dim_1d, threads, twostage_queue, d_sm,
-    //   d_mini, d_overlaps, N, d_count, count, d_start, d_end,
-    //   MAX_OVERLAP_SIZE);
+    gpuErrchk(cudaMemset(d_count, 0, sizeof(int)));
+    gpuErrchk(cudaMemset(d_end, 0, sizeof(int)));
 
-    // gpuErrchk(cudaDeviceSynchronize());
-    // gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int),
-    // cudaMemcpyDeviceToHost));
+    cudaMemcpy(d_memhandle, memhandle, sizeof(MemHandler),
+               cudaMemcpyHostToDevice);
+
+    recordLaunch<Scalar2 *, const MiniBox *, int2 *, int, int *, int *, int *,
+                 MemHandler *>("twostage_queue_1st", grid_dim_1d, threads,
+                               twostage_queue, d_sm, d_mini, d_overlaps, N,
+                               d_count, d_start, d_end, d_memhandle);
+
+    gpuErrchk(cudaDeviceSynchronize());
+    gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
+    // gpuErrchk(cudaMemcpy(&count, &(d_memhandle->realcount), sizeof(int),
+    //                      cudaMemcpyDeviceToHost));
+    gpuErrchk(cudaMemcpy(&realcount, &(d_memhandle->realcount), sizeof(int),
+                         cudaMemcpyDeviceToHost));
+    spdlog::trace("Real count for loop:  {:d}", realcount);
+    spdlog::trace("Count for loop:  {:d}", count);
+    // gpuErrchk(
+    //   cudaMemcpy(&boxes_done, d_end, sizeof(int), cudaMemcpyDeviceToHost));
+    spdlog::debug("Count {:d}, max size {:d}", realcount,
+                  memhandle->MAX_OVERLAP_SIZE);
   }
-  tidstart = boxes_done;
+  // tidstart = boxes_done;
+  tidstart += memhandle->MAX_OVERLAP_CUTOFF;
+  // spdlog::trace("Next threadid start {:d}", tidstart);
+
+  gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
+  // spdlog::trace("Final count for device {:d}:  {:d}", device_init_id, count);
+  gpuErrchk(cudaMemcpy(d_count, &(d_memhandle->realcount), sizeof(int),
+                       cudaMemcpyDeviceToDevice));
   // spdlog::trace("Final count for device {:d}:  {:d}", device_init_id, count);
 
   cudaFree(d_boxes);

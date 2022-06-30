@@ -227,7 +227,11 @@ __global__ void twostage_queue(Scalar2 *sm, const MiniBox *const mini,
   queue.end = 0;
 
   int tid = threadIdx.x + blockIdx.x * blockDim.x + *start;
+
   if (tid >= N || tid + 1 >= N)
+    return;
+
+  if (tid >= mem->MAX_OVERLAP_CUTOFF + *start)
     return;
 
   Scalar2 a = sm[tid];

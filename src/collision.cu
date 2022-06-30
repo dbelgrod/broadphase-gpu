@@ -50,20 +50,27 @@ __device__ bool covertex(const int3 &a, const int3 &b) {
 __device__ void add_overlap(const int &xid, const int &yid, int *count,
                             int2 *overlaps, int *nextPossibleThread, int *start,
                             MemHandler *mem) {
-  int nptid = (blockIdx.x + 1) * blockDim.x + *start;
+  // int nptid = (blockIdx.x + 1) * blockDim.x + *start;
 
   int i = atomicAdd(count, 1);
 
-  if (i < mem->MAX_OVERLAP_CUTOFF) {
+  // if (i < mem->MAX_OVERLAP_CUTOFF) {
+  if (i < mem->MAX_OVERLAP_SIZE) {
     overlaps[i] = make_int2(xid, yid);
-
-    // register the largest tid possible before cutoff
-    atomicMax(nextPossibleThread, nptid);
-  } else if (nptid <= nextPossibleThread[0] &&
-             i < mem->MAX_OVERLAP_SIZE) // process up to the last block running
-  {
-    overlaps[i] = make_int2(xid, yid);
+    atomicAdd(&mem->realcount, 1);
   }
+
+  // atomicAdd(&mem->realcount, 1);
+  // register the largest tid possible before cutoff
+  // atomicMax(nextPossibleThread, nptid);
+  // }
+  // else if (nptid <= nextPossibleThread[0]) // process up to the last block
+  // running
+  // {
+  // if (i < mem->MAX_OVERLAP_SIZE) {
+  // overlaps[i] = make_int2(xid, yid);
+  // }
+  // atomicAdd(&mem->realcount, 1);
 }
 
 __device__ void add_overlap(const int &xid, const int &yid, int *count,

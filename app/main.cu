@@ -14,6 +14,7 @@
 #include <stq/gpu/groundtruth.cuh>
 #include <stq/gpu/simulation.cuh>
 #include <stq/gpu/util.cuh>
+#include <stq/gpu/memory.cuh>
 // #include <stq/gpu/klee.cuh>
 #include <stq/gpu/io.cuh>
 
@@ -32,6 +33,8 @@ bool is_file_exist(const char *fileName) {
 int main(int argc, char **argv) {
   spdlog::set_level(static_cast<spdlog::level::level_enum>(0));
   vector<char *> compare;
+
+  MemHandler *memhandle = new MemHandler();
 
   char *filet0;
   char *filet1;
@@ -103,8 +106,8 @@ int main(int argc, char **argv) {
   int tidstart = 0;
 
   if (evenworkload)
-    run_sweep_sharedqueue(boxes.data(), N, nbox, overlaps, d_overlaps, d_count,
-                          parallel, tidstart, devcount);
+    run_sweep_sharedqueue(boxes.data(), memhandle, N, nbox, overlaps,
+                          d_overlaps, d_count, parallel, tidstart, devcount);
   // else if (sharedqueue_mgpu)
   //   run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel,
   //                            devcount);
