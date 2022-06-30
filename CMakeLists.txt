@@ -173,6 +173,6 @@ if(STQ_WITH_CUDA)
                           --relocatable-device-code=true
                           --ptxas-options=-v
                           # --maxrregcount=7
-                          >)  
+                          >)
   endif()
 endif()
