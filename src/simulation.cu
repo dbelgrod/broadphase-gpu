@@ -770,6 +770,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
   cudaFree(d_sm);
   cudaFree(d_start);
   cudaFree(d_end);
+  cudaFree(d_memhandle);
 
   if (keep_cpu_overlaps) {
     int2 *overlaps = (int2 *)malloc(sizeof(int2) * count);
