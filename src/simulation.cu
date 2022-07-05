@@ -703,7 +703,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
 
   int count;
   gpuErrchk(cudaMemcpy(&count, d_count, sizeof(int), cudaMemcpyDeviceToHost));
-  spdlog::trace("1st count for device {:d}:  {:d}", device_init_id, count);
+  spdlog::debug("1st count for device {:d}:  {:d}", device_init_id, count);
 
   int realcount;
   gpuErrchk(cudaMemcpy(&realcount, &(d_memhandle->realcount), sizeof(int),
@@ -721,8 +721,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
     // spdlog::trace("Boxes done total {:d}, total {:d} -> Batching",
     // boxes_done,
     //               N);
+    gpuErrchk(cudaFree(d_overlaps));
 
-    if (memhandle->increaseOverlapSize(2)) {
+    if (memhandle->increaseOverlapSize(count)) {
       // do it again
     } else {
       memhandle->increaseOverlapCutoff(0.5);
