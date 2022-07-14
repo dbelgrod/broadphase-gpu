@@ -117,6 +117,8 @@ int main(int argc, char **argv) {
   else
     run_sweep_multigpu(boxes.data(), N, nbox, overlaps, parallel, devcount);
 
+  spdlog::debug("Final CPU overlaps size : {:d}", overlaps.size());
+
   for (auto i : compare) {
     compare_mathematica(overlaps, i);
   }

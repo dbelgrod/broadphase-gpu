@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.14.0 FATAL_ERROR)
+
 # set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
 project(SweepAndTiniestQueue LANGUAGES CXX)
 
@@ -8,12 +9,12 @@ else()
   set(STQ_TOPLEVEL_PROJECT OFF)
 endif()
 
-################################################################################
+# ###############################################################################
 # Configuration
-################################################################################
-
-option(STQ_WITH_CPU  "Enable CPU Implementation"  ON)
+# ###############################################################################
+option(STQ_WITH_CPU "Enable CPU Implementation" ON)
 option(STQ_WITH_CUDA "Enable CUDA Implementation" ON)
+option(STQ_KEEP_CPU_OVERLAPS "Keep CPU overlaps after CUDA method" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/stq")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/recipes/")
@@ -22,9 +23,9 @@ include(stq_utils)
 
 add_subdirectory(src)
 
-################################################################################
+# ###############################################################################
 # C++ code
-################################################################################
+# ###############################################################################
 if(STQ_WITH_CPU)
   prepend_current_path(STQ_CPU_SOURCES)
   stq_copy_headers_cpu(${STQ_CPU_SOURCES})
@@ -41,9 +42,9 @@ if(STQ_WITH_CPU)
 
   target_compile_features(STQ_CPU PUBLIC cxx_std_17)
 
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
   # Required Libraries
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
 
   # libigl
   include(eigen)
@@ -62,22 +63,22 @@ if(STQ_WITH_CPU)
   include(spdlog)
   target_link_libraries(STQ_CPU PUBLIC spdlog::spdlog)
 
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
   # Binary
-  #-------------------------------------------------------------------------------
-
+  # -------------------------------------------------------------------------------
   if(STQ_TOPLEVEL_PROJECT)
     add_executable(cpusweep_bin app/main.cpp)
     target_link_libraries(cpusweep_bin PUBLIC STQ::CPU)
   endif()
 endif()
 
-################################################################################
+# ###############################################################################
 # GPU Library
-################################################################################
+# ###############################################################################
 if(STQ_WITH_CUDA)
   include(CheckLanguage)
   check_language(CUDA)
+
   if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
   else()
@@ -88,11 +89,16 @@ if(STQ_WITH_CUDA)
   stq_copy_headers(${STQ_CUDA_SOURCES})
   stq_set_source_group(${STQ_CUDA_SOURCES})
 
-  add_library(STQ_CUDA STATIC ${STQ_CUDA_SOURCES} )
+  add_library(STQ_CUDA STATIC ${STQ_CUDA_SOURCES})
   add_library(STQ::CUDA ALIAS STQ_CUDA)
 
   target_include_directories(STQ_CUDA PUBLIC ${PROJECT_BINARY_DIR}/include)
   target_compile_definitions(STQ_CUDA PUBLIC NOMINMAX)
+
+  if(STQ_KEEP_CPU_OVERLAPS)
+    target_compile_definitions(STQ_CUDA PUBLIC KEEP_CPU_OVERLAPS)
+  endif()
+
   # target_compile_definitions(STQ_CUDA PUBLIC CCD_USE_DOUBLE)
 
   # Request that STQ_CUDA be built with -std=c++11
@@ -100,13 +106,13 @@ if(STQ_WITH_CUDA)
   # will also build with -std=c++11
   target_compile_features(STQ_CUDA PUBLIC cxx_std_11)
 
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
   # CUDA
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
   # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
   # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -g -G")
   # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas -O3,-v -use_fast_math -maxrregcount 24")
-  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math --expt-relaxed-constexpr  -gencode arch=compute_86,code=sm_86")# -DCCD_USE_DOUBLE")
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math --expt-relaxed-constexpr  -gencode arch=compute_86,code=sm_86") # -DCCD_USE_DOUBLE")
 
   # We need to explicitly state that we need all CUDA files in the STQ_CUDA
   # library to be built with -dc as the member functions could be called by
@@ -120,6 +126,7 @@ if(STQ_WITH_CUDA)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES 70 75 86)
   endif()
+
   set_target_properties(STQ_CUDA PROPERTIES CUDA_ARCHITECTURES "70;75;86")
 
   # if(APPLE)
@@ -127,18 +134,18 @@ if(STQ_WITH_CUDA)
   # # so that the static cuda runtime can find it at runtime.
   # set_property(TARGET GPUBF_bin PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
   # endif()
-
   target_compile_options(STQ_CUDA PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-                        --generate-line-info
-                        --use_fast_math
-                        --relocatable-device-code=true
-                        # --ptxas-options=-v
-                        #--maxrregcount=40
-                        >)
+    --generate-line-info
+    --use_fast_math
+    --relocatable-device-code=true
 
-  #-------------------------------------------------------------------------------
+    # --ptxas-options=-v
+    # --maxrregcount=40
+    >)
+
+  # -------------------------------------------------------------------------------
   # Required Libraries
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
 
   # libigl include(eigen)
   include(libigl)
@@ -156,10 +163,9 @@ if(STQ_WITH_CUDA)
   include(spdlog)
   target_link_libraries(STQ_CUDA PUBLIC spdlog::spdlog)
 
-  #-------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------
   # Binary
-  #-------------------------------------------------------------------------------
-
+  # -------------------------------------------------------------------------------
   if(STQ_TOPLEVEL_PROJECT)
     # add_executable(GPUBF_bin app/main.cu)
     add_executable(GPUBF_bin app/main.cu)
@@ -168,11 +174,12 @@ if(STQ_WITH_CUDA)
     target_link_libraries(GPUBF_bin PRIVATE STQ::CUDA)
 
     target_compile_options(GPUBF_bin PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-                          --generate-line-info
-                          --use_fast_math
-                          --relocatable-device-code=true
-                          --ptxas-options=-v
-                          # --maxrregcount=7
-                          >)
+      --generate-line-info
+      --use_fast_math
+      --relocatable-device-code=true
+      --ptxas-options=-v
+
+      # --maxrregcount=7
+      >)
   endif()
 endif()

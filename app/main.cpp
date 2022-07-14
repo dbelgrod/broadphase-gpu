@@ -30,6 +30,8 @@ using json = nlohmann::json;
 #include <tbb/info.h>
 #include <tbb/parallel_for.h>
 
+#include <spdlog/spdlog.h>
+
 using namespace std;
 // using namespace stq::cpu;
 
@@ -67,6 +69,8 @@ void compare_mathematica(vector<pair<int, int>> overlaps,
 }
 
 int main(int argc, char **argv) {
+  spdlog::set_level(spdlog::level::trace);
+
   vector<char *> compare;
 
   const char *filet0 = argv[1];
@@ -75,6 +79,10 @@ int main(int argc, char **argv) {
   vector<stq::cpu::Aabb> boxes;
   stq::cpu::parseMesh(filet0, filet1, boxes);
   int N = boxes.size();
+  int n = N;
+  vector<stq::cpu::Aabb> boxes_batching;
+  // boxes_batching.resize(N);
+  std::copy(boxes.begin(), boxes.end(), std::back_inserter(boxes_batching));
   int nbox = 0;
 
   int o;
@@ -99,20 +107,45 @@ int main(int argc, char **argv) {
       break;
     }
   }
+
+  // int *fakearr;
+  // size_t arrsize = 2e11;
+  // fakearr = (int *)calloc(arrsize, sizeof(int));
+
   auto start = std::chrono::system_clock::now();
   // cout << "default threads " << tbb::info::default_concurrency() << endl;
   static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
   tbb::global_control thread_limiter(
     tbb::global_control::max_allowed_parallelism, CPU_THREADS);
-  printf("Running with %i threads\n", CPU_THREADS);
+  spdlog::trace("Running with {:d} threads", CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
-  // printf("Running sweep\n");
-  run_sweep_cpu(boxes, N, nbox, overlaps);
+  int Nfin = 0;
+  std::size_t count = 0;
+
+  sort_along_xaxis(boxes_batching);
+
+  int remaining = boxes.size() - Nfin;
+  while (remaining) {
+    overlaps.clear();
+    run_sweep_cpu(boxes_batching, n, overlaps);
+
+    Nfin += n;
+    remaining = boxes.size() - Nfin;
+    spdlog::debug("N {:d}, boxes {:d}, Nfin {:d}, overlaps {:d}, tot {:d}", n,
+                  boxes_batching.size(), Nfin, overlaps.size(), N);
+    if (remaining)
+      boxes_batching.erase(boxes_batching.begin(), boxes_batching.begin() + n);
+    n = std::min(remaining, n);
+    count += overlaps.size();
+  }
+
   auto stop = std::chrono::system_clock::now();
   double elapsed =
     std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-  printf("Elapsed time: %.1f ms\n", elapsed);
+  spdlog::trace("Elapsed time: {:.6f} ms", elapsed);
+  printf("Overlaps: %zu\n", overlaps.size());
+  printf("Final count: %zu\n", count);
   for (auto i : compare) {
     printf("%s\n", i);
     compare_mathematica(overlaps, i);

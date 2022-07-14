@@ -23,8 +23,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
                            int nbox,
                            std::vector<std::pair<int, int>> &finOverlaps,
                            int2 *&d_overlaps, int *&d_count, int &threads,
-                           int &tidstart, int &devcount,
-                           bool keep_cpu_overlaps = false);
+                           int &tidstart, int &devcount);
 
 void run_sweep_pairing(const Aabb *boxes, int N, int nbox,
                        std::vector<std::pair<int, int>> &finOverlaps,

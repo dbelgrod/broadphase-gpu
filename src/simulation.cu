@@ -566,8 +566,7 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
                            int nbox,
                            std::vector<std::pair<int, int>> &finOverlaps,
                            int2 *&d_overlaps, int *&d_count, int &threads,
-                           int &tidstart, int &devcount,
-                           bool keep_cpu_overlaps) {
+                           int &tidstart, int &devcount) {
   cudaDeviceSynchronize();
   spdlog::trace("Number of boxes: {:d}", N);
 
@@ -773,24 +772,24 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
   cudaFree(d_end);
   cudaFree(d_memhandle);
 
-  if (keep_cpu_overlaps) {
-    int2 *overlaps = (int2 *)malloc(sizeof(int2) * count);
-    gpuErrchk(cudaMemcpy(overlaps, d_overlaps, sizeof(int2) * (count),
-                         cudaMemcpyDeviceToHost));
-    gpuErrchk(cudaGetLastError());
+#ifdef KEEP_CPU_OVERLAPS
+  int2 *overlaps = (int2 *)malloc(sizeof(int2) * count);
+  gpuErrchk(cudaMemcpy(overlaps, d_overlaps, sizeof(int2) * (count),
+                       cudaMemcpyDeviceToHost));
+  gpuErrchk(cudaGetLastError());
 
-    spdlog::trace("Final count for device {:d}:  {:d}", 0, count);
+  spdlog::trace("Final count for device {:d}:  {:d}", 0, count);
 
-    finOverlaps.reserve(finOverlaps.size() + count);
-    for (int i = 0; i < count; i++) {
-      finOverlaps.emplace_back(overlaps[i].x, overlaps[i].y);
-    }
-
-    free(overlaps);
-
-    spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0,
-                  finOverlaps.size());
+  finOverlaps.reserve(finOverlaps.size() + count);
+  for (int i = 0; i < count; i++) {
+    finOverlaps.emplace_back(overlaps[i].x, overlaps[i].y);
   }
+
+  free(overlaps);
+
+  spdlog::trace("Total(filt.) overlaps for devid {:d}: {:d}", 0,
+                finOverlaps.size());
+#endif
   spdlog::trace("Next threadstart {:d}", tidstart);
 }
 } // namespace stq::gpu
