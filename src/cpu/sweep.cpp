@@ -141,4 +141,19 @@ void run_sweep_cpu(std::vector<Aabb> &boxes, int &n,
   spdlog::trace("Total(filt.) overlaps: {:d}", finOverlaps.size());
 }
 
+void sweep_cpu_single_batch(std::vector<Aabb> &boxes_batching, int &n, int N,
+                            std::vector<std::pair<int, int>> &overlaps) {
+  overlaps.clear();
+  if (boxes_batching.size() == 0)
+    return;
+  if (boxes_batching.size() == N)
+    sort_along_xaxis(boxes_batching);
+
+  run_sweep_cpu(boxes_batching, n, overlaps);
+  spdlog::debug("N {:d}, boxes {:d}, overlaps {:d}, tot {:d}", n,
+                boxes_batching.size(), overlaps.size(), N);
+  boxes_batching.erase(boxes_batching.begin(), boxes_batching.begin() + n);
+  n = std::min(static_cast<int>(boxes_batching.size()), n);
+}
+
 } // namespace stq::cpu

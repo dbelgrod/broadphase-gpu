@@ -108,36 +108,19 @@ int main(int argc, char **argv) {
     }
   }
 
-  // int *fakearr;
-  // size_t arrsize = 2e11;
-  // fakearr = (int *)calloc(arrsize, sizeof(int));
-
   auto start = std::chrono::system_clock::now();
-  // cout << "default threads " << tbb::info::default_concurrency() << endl;
   static const int CPU_THREADS = std::min(tbb::info::default_concurrency(), 64);
   tbb::global_control thread_limiter(
     tbb::global_control::max_allowed_parallelism, CPU_THREADS);
   spdlog::trace("Running with {:d} threads", CPU_THREADS);
 
   vector<pair<int, int>> overlaps;
-  int Nfin = 0;
   std::size_t count = 0;
 
-  sort_along_xaxis(boxes_batching);
-
-  int remaining = boxes.size() - Nfin;
-  while (remaining) {
-    overlaps.clear();
-    run_sweep_cpu(boxes_batching, n, overlaps);
-
-    Nfin += n;
-    remaining = boxes.size() - Nfin;
-    spdlog::debug("N {:d}, boxes {:d}, Nfin {:d}, overlaps {:d}, tot {:d}", n,
-                  boxes_batching.size(), Nfin, overlaps.size(), N);
-    if (remaining)
-      boxes_batching.erase(boxes_batching.begin(), boxes_batching.begin() + n);
-    n = std::min(remaining, n);
+  sweep_cpu_single_batch(boxes_batching, n, N, overlaps);
+  while (overlaps.size()) {
     count += overlaps.size();
+    sweep_cpu_single_batch(boxes_batching, n, N, overlaps);
   }
 
   auto stop = std::chrono::system_clock::now();
