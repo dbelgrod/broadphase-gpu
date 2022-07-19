@@ -19,12 +19,8 @@ void run_sweep_cpu(std::vector<Aabb> &boxes, int &n,
 void sweep_cpu_single_batch(std::vector<Aabb> &boxes_batching, int &n, int N,
                             std::vector<std::pair<int, int>> &overlaps);
 
-// inline void run_sweep_cpu(std::vector<Aabb> &boxes,
-//                           std::vector<std::pair<int, int>> &overlaps) {
-//   int N = boxes.size();
-//   int n = boxes.size();
-//   return run_sweep_cpu(boxes, n, N, overlaps);
-// }
+void sweep(const std::vector<Aabb> &boxes,
+           std::vector<std::pair<int, int>> &overlaps, int n);
 
 void sort_along_xaxis(std::vector<Aabb> &boxes);
 
