@@ -63,8 +63,10 @@ int main(int argc, char **argv) {
   bool sharedqueue_mgpu = false;
   bool bigworkerqueue = false;
 
+  int memlimit = 0;
+
   int o;
-  while ((o = getopt(argc, argv, "c:n:b:p:d:WPQZ")) != -1) {
+  while ((o = getopt(argc, argv, "c:n:b:p:d:v:WPQZ")) != -1) {
     switch (o) {
     case 'c':
       optind--;
@@ -78,6 +80,9 @@ int main(int argc, char **argv) {
       break;
     case 'b':
       nbox = atoi(optarg);
+      break;
+    case 'v':
+      memlimit = atoi(optarg);
       break;
     case 'p':
       parallel = stoi(optarg);
@@ -107,7 +112,8 @@ int main(int argc, char **argv) {
 
   if (evenworkload)
     run_sweep_sharedqueue(boxes.data(), memhandle, N, nbox, overlaps,
-                          d_overlaps, d_count, parallel, tidstart, devcount);
+                          d_overlaps, d_count, parallel, tidstart, devcount,
+                          memlimit);
   // else if (sharedqueue_mgpu)
   //   run_sweep_multigpu_queue(boxes.data(), N, nbox, overlaps, parallel,
   //                            devcount);

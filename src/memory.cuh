@@ -5,6 +5,19 @@
 
 namespace stq::gpu {
 
+#define gpuErrchk(ans)                                                         \
+  { gpuAssert((ans), __FILE__, __LINE__); }
+
+inline void gpuAssert(cudaError_t code, const char *file, int line,
+                      bool abort = true) {
+  if (code != cudaSuccess) {
+    spdlog::error("GPUassert: {} {} {:d}", cudaGetErrorString(code), file,
+                  line);
+    if (abort)
+      exit(code);
+  }
+}
+
 class CCDConfig {
 public:
   double co_domain_tolerance; // tolerance of the co-domain
@@ -55,97 +68,86 @@ public:
 
 __device__ __host__ struct MemHandler {
 
-  // pair in BP -> sizeof(int2) = 8 bytes
-  // pair in NP -> 8*sizeof(double) = 64 bytes -> sizeof(CCDData)
-
   size_t MAX_OVERLAP_CUTOFF = 0;
   size_t MAX_OVERLAP_SIZE = 1e6;
   size_t MAX_UNIT_SIZE = 0;
   size_t MAX_QUERIES = 0;
   int realcount = 0;
+  int limitGB = 0;
 
-  void setUnitSize(const size_t constraint) {
-    // if (!MAX_UNIT_SIZE) {
+  size_t __getAllocatable() {
     size_t free;
     size_t total;
-    cudaMemGetInfo(&free, &total);
-    size_t available_units = (0.95 * free - constraint) / sizeof(MP_unit);
-    spdlog::debug("unit options: available {:d} or overlap mulitplier {:d}",
+    gpuErrchk(cudaMemGetInfo(&free, &total));
+
+    size_t used = total - free;
+
+    size_t defaultAllocatable = 0.95 * free;
+    size_t tmp = static_cast<size_t>(limitGB) * 1073741824;
+    size_t userAllocatable = tmp - used;
+
+    spdlog::info("Can allocate {:.2f}% of memory",
+                 static_cast<float>(userAllocatable) / total * 100);
+
+    return std::min(defaultAllocatable, userAllocatable);
+    ;
+  }
+
+  void setUnitSize(const size_t constraint) {
+    size_t allocatable = __getAllocatable();
+    size_t available_units = (allocatable - constraint) / sizeof(MP_unit);
+    spdlog::trace("unit options: available {:d} or overlap mulitplier {:d}",
                   available_units, 32 * MAX_QUERIES);
     MAX_UNIT_SIZE = std::min(available_units, 32 * MAX_QUERIES);
-    spdlog::debug("Set unit_size to {:.2f}% of free mem",
-                  static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) / free *
-                    100);
+    spdlog::trace("Set unit_size to {:.2f}% of allocatable mem",
+                  static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) /
+                    allocatable * 100);
     return;
-    // }
   }
 
   void increaseUnitSize(const size_t constraint) {
-    size_t free;
-    size_t total;
-    cudaMemGetInfo(&free, &total);
-    spdlog::debug("Attempting to double w/ constraint {:d}", constraint);
-    if ((0.95 * free - constraint) > 0) {
+    size_t allocatable = __getAllocatable();
+    spdlog::trace("Attempting to double w/ constraint {:d}", constraint);
+    if ((allocatable - constraint) > 0) {
       MAX_UNIT_SIZE *= 2;
-      spdlog::debug("Doubling unit_size to {:.2f}% of free mem",
-                    static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) / free *
-                      100);
+      spdlog::trace("Doubling unit_size to {:.2f}% of allocatable mem",
+                    static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) /
+                      allocatable * 100);
     }
   }
 
   void handleOverflow(const size_t constraint) {
-    size_t free;
-    size_t total;
-    cudaMemGetInfo(&free, &total);
-    if ((0.95 * free - constraint) > 0) {
+    size_t allocatable = __getAllocatable();
+    if ((allocatable - constraint) > 0) {
       MAX_UNIT_SIZE *= 2;
-      spdlog::debug("Doubling unit_size to {:.2f}% of free mem",
-                    static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) / free *
-                      100);
+      spdlog::trace("Doubling unit_size to {:.2f}% of allocatable mem",
+                    static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) /
+                      allocatable * 100);
     } else {
       MAX_QUERIES /= 2;
       spdlog::warn("Halving queries to {:d}", MAX_QUERIES);
     }
   }
 
-  bool increaseOverlapSize(int desired_count) {
-    size_t free;
-    size_t total;
-    cudaMemGetInfo(&free, &total);
-
-    // // size_t new_ov /rlap_size = 2 * memhandle->MAX_OVERLAP_SIZE;
-    // size_t contraint = sizeof(CCDConfig) + sizeof(CCDData) * new_overlap_size
-    // +
-    //                    sizeof(MP_unit) * new_overlap_size +
-    //                    sizeof(int2) * new_overlap_size * 3;
+  void handleBroadPhaseOverflow(int desired_count) {
+    size_t allocatable = __getAllocatable();
 
     size_t largest_overlap_size =
-      (.95 * free - sizeof(CCDConfig)) /
+      (allocatable - sizeof(CCDConfig)) /
       (sizeof(CCDData) + sizeof(MP_unit) + 3 * sizeof(int2));
     MAX_OVERLAP_SIZE =
       std::min(largest_overlap_size, static_cast<size_t>(desired_count));
-    spdlog::debug("Setting MAX_OVERLAP_SIZE to {:.2f}% ({:d}) of free memory",
-                  static_cast<float>(MAX_OVERLAP_SIZE) * sizeof(int2) / free *
-                    100,
-                  MAX_OVERLAP_SIZE);
+    spdlog::info(
+      "Setting MAX_OVERLAP_SIZE to {:.2f}% ({:d}) of allocatable memory",
+      static_cast<float>(MAX_OVERLAP_SIZE) * sizeof(int2) / allocatable * 100,
+      MAX_OVERLAP_SIZE);
 
     if (MAX_OVERLAP_SIZE == largest_overlap_size) {
+      MAX_OVERLAP_CUTOFF *= 0.5;
       spdlog::warn(
-        "Insufficient memory for 2x MAX_OVERLAP_SIZE, shrinking cutoff");
-      return false;
+        "Insufficient memory to increase overlap size, shrinking cutoff 0.5x to {:d}",
+        MAX_OVERLAP_CUTOFF);
     }
-    // MAX_OVERLAP_SIZE = (0.95 * free - constraint) / sizeof(int2);
-    spdlog::debug("Setting MAX_OVERLAP_SIZE to {:.2f}% ({:d}) of free memory",
-                  static_cast<float>(MAX_OVERLAP_SIZE) * sizeof(int2) / free *
-                    100,
-                  MAX_OVERLAP_SIZE);
-    return true;
-  }
-
-  void increaseOverlapCutoff(const float multiplier) {
-    MAX_OVERLAP_CUTOFF *= multiplier;
-    spdlog::debug("Increasing cutoff {:.1f}x to {:d}", multiplier,
-                  MAX_OVERLAP_CUTOFF);
   }
 };
 

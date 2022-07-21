@@ -19,19 +19,6 @@ namespace stq::gpu {
 
 extern MemHandler *memhandle;
 
-#define gpuErrchk(ans)                                                         \
-  { gpuAssert((ans), __FILE__, __LINE__); }
-
-inline void gpuAssert(cudaError_t code, const char *file, int line,
-                      bool abort = true) {
-  if (code != cudaSuccess) {
-    spdlog::error("GPUassert: {} {} {:d}", cudaGetErrorString(code), file,
-                  line);
-    if (abort)
-      exit(code);
-  }
-}
-
 void setup(int devId, int &smemSize, int &threads, int &nboxes);
 
 void run_collision_counter(Aabb *boxes, int N) {
@@ -566,12 +553,16 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
                            int nbox,
                            std::vector<std::pair<int, int>> &finOverlaps,
                            int2 *&d_overlaps, int *&d_count, int &threads,
-                           int &tidstart, int &devcount) {
+                           int &tidstart, int &devcount, const int memlimit) {
   cudaDeviceSynchronize();
   spdlog::trace("Number of boxes: {:d}", N);
 
   if (!memhandle->MAX_OVERLAP_CUTOFF)
     memhandle->MAX_OVERLAP_CUTOFF = N;
+  if (memlimit) {
+    memhandle->limitGB = memlimit;
+    spdlog::info("Limit set to {:d}", memhandle->limitGB);
+  }
 
   int device_init_id = 0;
 
@@ -717,16 +708,9 @@ void run_sweep_sharedqueue(const Aabb *boxes, MemHandler *memhandle, int N,
   spdlog::debug("realcount: {:d}, overlap_size {:d} -> Batching", realcount,
                 memhandle->MAX_OVERLAP_SIZE);
   while (count > memhandle->MAX_OVERLAP_SIZE) {
-    // spdlog::trace("Boxes done total {:d}, total {:d} -> Batching",
-    // boxes_done,
-    //               N);
     gpuErrchk(cudaFree(d_overlaps));
 
-    if (memhandle->increaseOverlapSize(count)) {
-      // do it again
-    } else {
-      memhandle->increaseOverlapCutoff(0.5);
-    }
+    memhandle->handleBroadPhaseOverflow(count);
 
     gpuErrchk(cudaMalloc((void **)&d_overlaps,
                          sizeof(int2) * (memhandle->MAX_OVERLAP_SIZE)));
