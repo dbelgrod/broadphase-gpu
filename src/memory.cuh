@@ -117,16 +117,16 @@ __device__ __host__ struct MemHandler {
   }
 
   void handleOverflow(const size_t constraint) {
-    size_t allocatable = __getAllocatable();
-    if ((allocatable - constraint) > 0) {
-      MAX_UNIT_SIZE *= 2;
-      spdlog::trace("Doubling unit_size to {:.2f}% of allocatable mem",
-                    static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) /
-                      allocatable * 100);
-    } else {
-      MAX_QUERIES /= 2;
-      spdlog::warn("Halving queries to {:d}", MAX_QUERIES);
-    }
+    // size_t allocatable = __getAllocatable();
+    // if ((allocatable - constraint) > 0) {
+    //   MAX_UNIT_SIZE *= 2;
+    //   spdlog::trace("Doubling unit_size to {:.2f}% of allocatable mem",
+    //                 static_cast<float>(MAX_UNIT_SIZE) * sizeof(MP_unit) /
+    //                   allocatable * 100);
+    // } else {
+    MAX_QUERIES /= 2;
+    spdlog::warn("Halving queries to {:d}", MAX_QUERIES);
+    // }
   }
 
   void handleBroadPhaseOverflow(int desired_count) {
